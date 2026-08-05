@@ -1,6 +1,7 @@
 import { handleLookup } from "./lookup";
-import { resolveTier } from "./auth";
+import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
+import { handleListPending, handleApprove, handleReject } from "./admin";
 
 export interface Env {
   DB: D1Database;
@@ -23,6 +24,24 @@ export default {
 
     if (url.pathname === "/v1/check" && request.method === "POST") {
       return handleCheck(request, env, ctx);
+    }
+
+    const adminMatch = url.pathname.match(/^\/v1\/admin\/pending(?:\/(\d+)(?:\/(approve|reject))?)?$/);
+    if (adminMatch) {
+      if (!(await requireAdminToken(request, env))) {
+        return Response.json({ error: "unauthorized" }, { status: 401 });
+      }
+      const [, idStr, action] = adminMatch;
+
+      if (!idStr && request.method === "GET") {
+        return handleListPending(env);
+      }
+      if (idStr && action === "approve" && request.method === "POST") {
+        return handleApprove(request, env, Number(idStr));
+      }
+      if (idStr && action === "reject" && request.method === "POST") {
+        return handleReject(request, env, Number(idStr));
+      }
     }
 
     return Response.json({ error: "not_found" }, { status: 404 });

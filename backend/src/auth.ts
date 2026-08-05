@@ -42,3 +42,22 @@ export async function requireApiKey(request: Request, env: Env): Promise<Tier | 
   if (!row || row.revoked) return null;
   return row.tier;
 }
+
+// Constant-time comparison. Hashing both sides first means the byte-compare
+// loop always runs over equal-length digests, so a plain "==" length check
+// (or bailing out on the first differing byte) can't leak how much of the
+// caller's token was correct via timing.
+async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+  const [digestA, digestB] = await Promise.all([sha256Hex(a), sha256Hex(b)]);
+  let diff = 0;
+  for (let i = 0; i < digestA.length; i++) {
+    diff |= digestA.charCodeAt(i) ^ digestB.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+export async function requireAdminToken(request: Request, env: Env): Promise<boolean> {
+  const provided = request.headers.get("X-Admin-Token");
+  if (!provided || !env.ADMIN_TOKEN) return false;
+  return timingSafeEqual(provided, env.ADMIN_TOKEN);
+}

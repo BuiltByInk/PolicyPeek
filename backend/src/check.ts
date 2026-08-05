@@ -65,8 +65,11 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
     return Response.json({ error: "invalid_source_url" }, { status: 400 });
   }
   // Belt-and-suspenders: the policy URL has to actually belong to the domain
-  // being submitted, not an arbitrary attacker-chosen SSRF target.
-  if (!parsedSource.hostname.toLowerCase().endsWith(domain)) {
+  // being submitted, not an arbitrary attacker-chosen SSRF target. A plain
+  // .endsWith(domain) would let "evil-acme.com" pass for domain "acme.com" —
+  // require an exact match or a proper subdomain (dot boundary).
+  const sourceHost = parsedSource.hostname.toLowerCase();
+  if (sourceHost !== domain && !sourceHost.endsWith(`.${domain}`)) {
     return Response.json({ error: "source_url_domain_mismatch" }, { status: 400 });
   }
 

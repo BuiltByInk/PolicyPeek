@@ -11,24 +11,71 @@ const MAX_BODY_BYTES = 500_000;
 
 export class SsrfBlockedError extends Error {}
 
+function isBlockedIpv4(a: number, b: number): boolean {
+  if (a === 127) return true; // loopback
+  if (a === 10) return true; // RFC1918
+  if (a === 172 && b >= 16 && b <= 31) return true; // RFC1918
+  if (a === 192 && b === 168) return true; // RFC1918
+  if (a === 169 && b === 254) return true; // link-local + cloud metadata
+  if (a === 0) return true;
+  return false;
+}
+
+// Fully expands an IPv6 literal (handling "::" shorthand) into 8 16-bit
+// groups, or returns null if it doesn't parse. A naive string-prefix check
+// (e.g. hostname.startsWith("fe80:")) misses equivalent forms of the same
+// address — this normalizes first so every representation of the same
+// address gets the same verdict.
+function expandIpv6(hostname: string): number[] | null {
+  if (!hostname.includes(":")) return null;
+  const parts = hostname.split("::");
+  if (parts.length > 2) return null;
+
+  const parseGroups = (s: string): number[] | null => {
+    if (s === "") return [];
+    const groups = s.split(":");
+    const out: number[] = [];
+    for (const g of groups) {
+      if (!/^[0-9a-f]{1,4}$/i.test(g)) return null;
+      out.push(parseInt(g, 16));
+    }
+    return out;
+  };
+
+  if (parts.length === 1) {
+    const groups = parseGroups(parts[0]);
+    return groups && groups.length === 8 ? groups : null;
+  }
+
+  const head = parseGroups(parts[0]);
+  const tail = parseGroups(parts[1]);
+  if (!head || !tail || head.length + tail.length >= 8) return null;
+  const missing = 8 - head.length - tail.length;
+  return [...head, ...Array(missing).fill(0), ...tail];
+}
+
 function isBlockedIpLiteral(hostname: string): boolean {
   const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4) {
-    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
-    if (a === 127) return true; // loopback
-    if (a === 10) return true; // RFC1918
-    if (a === 172 && b >= 16 && b <= 31) return true; // RFC1918
-    if (a === 192 && b === 168) return true; // RFC1918
-    if (a === 169 && b === 254) return true; // link-local + cloud metadata
-    if (a === 0) return true;
-    return false;
+    return isBlockedIpv4(Number(ipv4[1]), Number(ipv4[2]));
   }
 
-  // IPv6 loopback / unique-local / link-local.
-  const lower = hostname.toLowerCase();
-  if (lower === "::1" || lower.startsWith("fe80:") || lower.startsWith("fc") || lower.startsWith("fd")) {
-    return true;
+  const groups = expandIpv6(hostname);
+  if (!groups) return false;
+
+  const isZero = (n: number) => n === 0;
+  if (groups.slice(0, 7).every(isZero) && groups[7] <= 1) return true; // :: and ::1
+  if ((groups[0] & 0xffc0) === 0xfe80) return true; // link-local fe80::/10
+  if ((groups[0] & 0xfe00) === 0xfc00) return true; // unique-local fc00::/7
+  if (groups[0] === 0x64 && groups[1] === 0xff9b) return true; // NAT64 well-known prefix (64:ff9b::/96)
+
+  // IPv4-mapped / IPv4-compatible: ::ffff:a.b.c.d or ::a.b.c.d
+  if (groups.slice(0, 5).every(isZero) && (groups[5] === 0xffff || groups[5] === 0)) {
+    const a = (groups[6] >> 8) & 0xff;
+    const b = groups[6] & 0xff;
+    return isBlockedIpv4(a, b);
   }
+
   return false;
 }
 
