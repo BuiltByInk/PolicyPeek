@@ -26,3 +26,19 @@ export async function resolveTier(request: Request, env: Env): Promise<Tier> {
   if (!row || row.revoked) return "free";
   return row.tier;
 }
+
+// Stricter than resolveTier: for endpoints that cost money to run
+// (POST /v1/check triggers an outbound fetch + LLM call), a missing or
+// invalid key is rejected outright rather than silently downgraded to free.
+export async function requireApiKey(request: Request, env: Env): Promise<Tier | null> {
+  const key = request.headers.get("X-Api-Key");
+  if (!key) return null;
+
+  const hash = await sha256Hex(key);
+  const row = await env.DB.prepare("SELECT tier, revoked FROM api_keys WHERE key_hash = ?")
+    .bind(hash)
+    .first<ApiKeyRow>();
+
+  if (!row || row.revoked) return null;
+  return row.tier;
+}

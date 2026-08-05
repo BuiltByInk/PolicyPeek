@@ -1,5 +1,6 @@
 import { handleLookup } from "./lookup";
 import { resolveTier } from "./auth";
+import { handleCheck } from "./check";
 
 export interface Env {
   DB: D1Database;
@@ -18,6 +19,10 @@ export default {
     if (url.pathname === "/v1/lookup" && request.method === "GET") {
       const tier = await resolveTier(request, env);
       return handleLookup(request, env, tier);
+    }
+
+    if (url.pathname === "/v1/check" && request.method === "POST") {
+      return handleCheck(request, env, ctx);
     }
 
     return Response.json({ error: "not_found" }, { status: 404 });

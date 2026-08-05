@@ -17,6 +17,10 @@ interface ToolRow {
 // Most-specific to least-specific, e.g. "checkout.shop.example.com" ->
 // ["checkout.shop.example.com", "shop.example.com", "example.com"].
 // Drops the bare TLD (a single label has nothing to match against).
+export function isValidDomain(host: string): boolean {
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(host.toLowerCase());
+}
+
 export function suffixCandidates(host: string): string[] {
   const labels = host
     .toLowerCase()
@@ -68,7 +72,7 @@ export async function handleLookup(request: Request, env: Env, tier: Tier): Prom
     return Response.json({ error: "invalid_domain" }, { status: 400 });
   }
   host = host.trim().toLowerCase();
-  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host)) {
+  if (!isValidDomain(host)) {
     return Response.json({ error: "invalid_domain" }, { status: 400 });
   }
 
