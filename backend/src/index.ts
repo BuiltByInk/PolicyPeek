@@ -2,6 +2,7 @@ import { handleLookup } from "./lookup";
 import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
 import { handleListPending, handleApprove, handleReject } from "./admin";
+import { checkStuckPending } from "./cron";
 
 export interface Env {
   DB: D1Database;
@@ -45,5 +46,9 @@ export default {
     }
 
     return Response.json({ error: "not_found" }, { status: 404 });
+  },
+
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(checkStuckPending(env));
   },
 } satisfies ExportedHandler<Env>;
