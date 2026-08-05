@@ -1,3 +1,6 @@
+import { handleLookup } from "./lookup";
+import { resolveTier } from "./auth";
+
 export interface Env {
   DB: D1Database;
   ANTHROPIC_API_KEY?: string;
@@ -10,6 +13,11 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({ ok: true, service: "policypeek-backend" });
+    }
+
+    if (url.pathname === "/v1/lookup" && request.method === "GET") {
+      const tier = await resolveTier(request, env);
+      return handleLookup(request, env, tier);
     }
 
     return Response.json({ error: "not_found" }, { status: 404 });
