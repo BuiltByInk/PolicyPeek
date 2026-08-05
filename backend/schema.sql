@@ -47,6 +47,18 @@ CREATE TABLE IF NOT EXISTS compliance_changelog (
 
 CREATE INDEX IF NOT EXISTS idx_changelog_tool_id ON compliance_changelog (tool_id);
 
+-- api_keys: hashed API keys, resolved to a pricing tier on each request.
+CREATE TABLE IF NOT EXISTS api_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key_hash TEXT NOT NULL UNIQUE, -- SHA-256 hex digest of the raw key; raw key is never stored
+  tier TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'paid')),
+  label TEXT,
+  revoked INTEGER NOT NULL DEFAULT 0 CHECK (revoked IN (0, 1)),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
+
 -- Known bug last build: a trigger scoped to UPDATE OF compliance_status only
 -- silently misses the admin-approval INSERT path (a brand new tool never gets
 -- a changelog row). Both triggers below are required, not just the UPDATE one.
