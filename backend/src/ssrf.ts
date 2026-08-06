@@ -54,7 +54,24 @@ function expandIpv6(hostname: string): number[] | null {
   return [...head, ...Array(missing).fill(0), ...tail];
 }
 
-function isBlockedIpLiteral(hostname: string): boolean {
+// "::ffff:127.0.0.1"-style dotted-quad tails only parse cleanly once a URL
+// object has canonicalized them to pure hex groups (e.g. "::ffff:7f00:1") —
+// relying on that happening upstream is fragile (platform/parser-dependent),
+// so normalize it here too rather than trusting the caller already did.
+function convertTrailingIpv4(hostname: string): string {
+  const m = hostname.match(/^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return hostname;
+  const octets = [m[2], m[3], m[4], m[5]].map(Number);
+  if (octets.some((n) => n > 255)) return hostname;
+  const [a, b, c, d] = octets;
+  const hi = ((a << 8) | b).toString(16);
+  const lo = ((c << 8) | d).toString(16);
+  return `${m[1]}${hi}:${lo}`;
+}
+
+export function isBlockedIpLiteral(rawHostname: string): boolean {
+  const hostname = convertTrailingIpv4(rawHostname);
+
   const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4) {
     return isBlockedIpv4(Number(ipv4[1]), Number(ipv4[2]));

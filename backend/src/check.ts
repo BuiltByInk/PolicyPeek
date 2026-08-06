@@ -9,6 +9,16 @@ interface CheckBody {
   source_url?: string;
 }
 
+// The policy URL has to actually belong to the domain being submitted, not
+// an arbitrary attacker-chosen SSRF target. A plain hostname.endsWith(domain)
+// would let "evil-acme.com" pass for domain "acme.com" — require an exact
+// match or a proper subdomain (dot boundary).
+export function isSourceHostAllowedForDomain(sourceHost: string, domain: string): boolean {
+  const host = sourceHost.toLowerCase();
+  const d = domain.toLowerCase();
+  return host === d || host.endsWith(`.${d}`);
+}
+
 async function runExtraction(env: Env, pendingId: number, rawText: string): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
     await env.DB.prepare(
@@ -64,12 +74,8 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   } catch {
     return Response.json({ error: "invalid_source_url" }, { status: 400 });
   }
-  // Belt-and-suspenders: the policy URL has to actually belong to the domain
-  // being submitted, not an arbitrary attacker-chosen SSRF target. A plain
-  // .endsWith(domain) would let "evil-acme.com" pass for domain "acme.com" —
-  // require an exact match or a proper subdomain (dot boundary).
-  const sourceHost = parsedSource.hostname.toLowerCase();
-  if (sourceHost !== domain && !sourceHost.endsWith(`.${domain}`)) {
+  // Belt-and-suspenders: see isSourceHostAllowedForDomain's comment.
+  if (!isSourceHostAllowedForDomain(parsedSource.hostname, domain)) {
     return Response.json({ error: "source_url_domain_mismatch" }, { status: 400 });
   }
 
