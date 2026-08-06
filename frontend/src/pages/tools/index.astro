@@ -1,0 +1,70 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Badge from "../../components/Badge.astro";
+import type { Tool } from "../../types";
+import toolsData from "../../../data/tools.json";
+
+const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
+---
+<Layout
+  title="Tools"
+  description="Every tool PolicyPeek has checked, with a compliant / not compliant / unrated badge and the one-line reason behind it."
+>
+  <h1>Tools</h1>
+
+  {tools.length === 0 && (
+    <p class="empty">
+      Nothing published yet — checks are reviewed by a human before they show up here.
+      See <a href="/about">how ratings get made</a>.
+    </p>
+  )}
+
+  <ul class="tool-list">
+    {tools.map((tool) => (
+      <li class="tool-card">
+        <a href={`/tools/${tool.domain}`}>
+          <div class="tool-card-head">
+            <span class="tool-name">{tool.name}</span>
+            <Badge status={tool.compliance_status} />
+          </div>
+          {tool.summary && <p class="reason">{tool.summary}</p>}
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
+
+<style>
+  .empty { color: var(--muted); }
+  .tool-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.9rem;
+  }
+  .tool-card a {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 0.65rem;
+    padding: 1rem 1.1rem;
+    text-decoration: none;
+    color: var(--fg);
+    height: 100%;
+  }
+  .tool-card a:hover { border-color: var(--accent); }
+  .tool-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+  }
+  .tool-name { font-weight: 600; }
+  .reason {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>

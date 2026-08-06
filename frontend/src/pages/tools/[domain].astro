@@ -1,0 +1,99 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Badge from "../../components/Badge.astro";
+import type { Tool } from "../../types";
+import toolsData from "../../../data/tools.json";
+
+export async function getStaticPaths() {
+  const tools = toolsData as Tool[];
+  return tools.map((tool) => ({
+    params: { domain: tool.domain },
+    props: { tool },
+  }));
+}
+
+const { tool } = Astro.props as { tool: Tool };
+const reasonClass =
+  tool.compliance_status === "not_compliant" ? "reason prominent red" :
+  tool.compliance_status === "unrated" ? "reason prominent amber" :
+  "reason";
+---
+<Layout
+  title={tool.name}
+  description={tool.summary ?? `Does ${tool.name} train on your data? See PolicyPeek's sourced rating.`}
+>
+  <a class="back" href="/tools">← All tools</a>
+
+  <header class="detail-head">
+    <h1>{tool.name}</h1>
+    <Badge status={tool.compliance_status} />
+  </header>
+  <p class="domain">{tool.domain}</p>
+
+  {tool.summary && <p class={reasonClass}>{tool.summary}</p>}
+
+  <dl class="facts">
+    <div>
+      <dt>Trains on user data</dt>
+      <dd>{tool.trains_on_user_data === null ? "Unclear from policy" : tool.trains_on_user_data ? "Yes" : "No"}</dd>
+    </div>
+    <div>
+      <dt>Data retention</dt>
+      <dd>{tool.data_retention ?? "Not stated"}</dd>
+    </div>
+    <div>
+      <dt>GDPR mentioned</dt>
+      <dd>{tool.gdpr_mentioned === null ? "Unclear from policy" : tool.gdpr_mentioned ? "Yes" : "No"}</dd>
+    </div>
+    <div>
+      <dt>Reviewed by a human</dt>
+      <dd>{tool.verified ? "Yes" : "Not yet"}</dd>
+    </div>
+  </dl>
+
+  {tool.source_urls.length > 0 && (
+    <>
+      <h2>Sources</h2>
+      <ul class="sources">
+        {tool.source_urls.map((url) => (
+          <li><a href={url} rel="nofollow noopener" target="_blank">{url}</a></li>
+        ))}
+      </ul>
+    </>
+  )}
+</Layout>
+
+<style>
+  .back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  .detail-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .detail-head h1 { margin: 0; }
+  .domain { color: var(--muted); margin-top: 0.15rem; }
+  .reason {
+    font-size: 1.05rem;
+    margin: 1.25rem 0;
+  }
+  .reason.prominent {
+    padding: 0.85rem 1rem;
+    border-radius: 0.4rem;
+  }
+  .reason.prominent.red { border-left: 3px solid var(--red-fg); background: var(--red-bg); }
+  .reason.prominent.amber { border-left: 3px solid var(--amber-fg); background: var(--amber-bg); }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .facts dt { color: var(--muted); font-size: 0.85rem; }
+  .facts dd { margin: 0.15rem 0 0; font-weight: 600; }
+  .sources { padding-left: 1.25rem; word-break: break-all; }
+</style>

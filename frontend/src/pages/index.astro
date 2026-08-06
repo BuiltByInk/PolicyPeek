@@ -1,13 +1,79 @@
 ---
-import tools from "../../data/tools.json";
+import Layout from "../layouts/Layout.astro";
+import type { Tool } from "../types";
+import toolsData from "../../data/tools.json";
+
+const tools = toolsData as Tool[];
+const notCompliantCount = tools.filter((t) => t.compliance_status === "not_compliant").length;
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>PolicyPeek</title>
-  </head>
-  <body>
-    <h1>PolicyPeek</h1>
-    <p>{tools.length} tools tracked.</p>
-  </body>
-</html>
+<Layout
+  title="Does it train on your data?"
+  description="PolicyPeek checks AI tools' own privacy policies and tells you, in one line, whether they train on your data — sourced from the policy itself, not a guess."
+>
+  <section class="hero">
+    <h1>Does it train on your data?</h1>
+    <p class="lede">
+      PolicyPeek reads privacy policies so you don't have to, and turns them into a
+      one-line, sourced answer: does this tool train on what you give it, or not.
+    </p>
+    <a class="cta" href="/tools">Browse {tools.length} tool{tools.length === 1 ? "" : "s"}</a>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      <strong>{tools.length}</strong>
+      <span>tools tracked</span>
+    </div>
+    <div class="stat">
+      <strong>{notCompliantCount}</strong>
+      <span>train on your data by default</span>
+    </div>
+  </section>
+
+  <section class="how">
+    <h2>How a rating gets made</h2>
+    <ol>
+      <li>We pull facts from the tool's own published policy — never a guess.</li>
+      <li>A fixed rule (not an AI opinion) turns those facts into compliant / not compliant / unrated.</li>
+      <li>A human reviews it before it's published.</li>
+    </ol>
+    <a href="/about">Read the full methodology →</a>
+  </section>
+</Layout>
+
+<style>
+  .hero { padding: 1rem 0 2rem; }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    margin: 0 0 0.75rem;
+  }
+  .lede {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 40em;
+  }
+  .cta {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.6rem 1.1rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat strong { font-size: 1.8rem; }
+  .stat span { color: var(--muted); font-size: 0.9rem; }
+  .how ol { padding-left: 1.25rem; }
+  .how li { margin-bottom: 0.4rem; }
+</style>

@@ -15,6 +15,12 @@ I did not invent a list of tools or guess plausible-sounding privacy policy URLs
 
 ---
 
+## Placeholder production domain in astro.config.mjs
+
+SEO work (sitemap.xml, canonical URLs, OpenGraph URLs) needs an absolute domain to generate against. I used `https://policypeek.example` as a placeholder in `frontend/astro.config.mjs` (`site:`) and `frontend/public/robots.txt` (`Sitemap:` line) — both need the real production domain swapped in before this ever goes live. Not attempting to guess it since that's your call, and it's adjacent to the deploy decisions you told me not to touch.
+
+---
+
 ## FYI, not urgent: light competitive scan
 
 Three tools doing roughly what PolicyPeek does, for context when you get to pricing (not asking you to decide anything now):
