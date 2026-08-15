@@ -1,8 +1,65 @@
 # Decisions Needed
 
+## Blocked: no ANTHROPIC_API_KEY, so the 21-tool seed batch stops after research (2026-08-15)
+
+Task: run all 21 seed tools through the real `POST /v1/check` submission
+pipeline (SSRF-safe fetch → Haiku extraction → `rules.ts` verdict → pending
+review), same as any external submission. Research is done — see the
+"Resolved" note below. Running the pipeline is not.
+
+**Root cause, confirmed with a real test, not assumed:** `backend/.dev.vars`
+has no `ANTHROPIC_API_KEY`. I seeded a local test API key
+(`api_keys.label = 'local-research-agent-seed-test-key'`, paid tier,
+local D1 only — not a real secret, mirrors the existing
+`local-test-admin-token` pattern) and submitted one real tool
+(Grammarly, `pending_checks.id = 8`) through the live endpoint to see the
+actual failure rather than guess it:
+
+```
+POST /v1/check -> 202 Accepted, pending_check_id 8
+pending_checks.status: still "pending" (never reaches "extracted")
+pending_checks.extraction_error: "ANTHROPIC_API_KEY not configured"
+```
+
+This is the exact same error `extraction.ts` was already known to produce
+per the earlier project notes — this just confirms it's still true today,
+with a real request/response instead of reading the code and assuming.
+
+**Why I stopped instead of running the other 20 anyway:** every one of them
+would hit this identical error — it's a missing credential, not a per-tool
+extraction problem. Looping through 20 more identical, known-in-advance
+failures would just be noise in `pending_checks` and in this file, which
+runs against the spirit of "don't silently retry in a loop."
+
+**What I need from you:** a real `ANTHROPIC_API_KEY` (a low-spend/test key
+is fine) to add to `backend/.dev.vars` — it's gitignored, stays local, never
+touches production. Once it's there, I can pick up exactly where this left
+off: resubmit Grammarly plus the other 20 tools from
+`research/tool_sources.json` through the same pipeline, then write
+`research/seed_review_summary.md` for your review — no auto-publish, same
+as originally scoped.
+
+The stray `pending_checks` row (id 8, Grammarly, stuck on the missing key)
+is left in place as evidence rather than deleted — it'll just get
+re-processed (or you can reject it) once extraction works.
+
+---
+
+
 Written autonomously overnight (2026-08-05/06) while you were offline. Nothing below was acted on — each item either needs your judgment or touches something explicitly off-limits (deploy, admin token, pricing, verdict logic, deleting data). Review top to bottom; items are roughly in the order they came up.
 
-## Blocked: couldn't find the "21 preloaded AI tools" list
+## Resolved (2026-08-15): the 21-tool list now exists
+
+You confirmed via direct task instructions that the list should be created
+from scratch, not recovered. It's done: `research/tool_list.md` (the 21
+tools + categories) and `research/tool_sources.json` (privacy/ToS/DPA/trust
+URLs for each, sourced live via WebSearch this session, not guessed). See
+the new blocker immediately below for why they haven't gone through the
+real submission pipeline yet.
+
+---
+
+## Blocked: couldn't find the "21 preloaded AI tools" list (superseded, kept for history)
 
 The research task asked me to verify privacy-policy/ToS/DPA/security URLs for "the ~21 preloaded AI tools the extension ships with." I searched the whole repo (including git history) and found:
 - No browser extension code anywhere in this repo.
