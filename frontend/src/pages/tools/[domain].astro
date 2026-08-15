@@ -16,6 +16,7 @@ const { tool } = Astro.props as { tool: Tool };
 const reasonClass =
   tool.compliance_status === "not_compliant" ? "reason prominent red" :
   tool.compliance_status === "unrated" ? "reason prominent amber" :
+  tool.compliance_status === "shared_domain_unverified" ? "reason prominent amber-outline" :
   "reason";
 ---
 <Layout
@@ -30,7 +31,13 @@ const reasonClass =
   </header>
   <p class="domain">{tool.domain}</p>
 
-  {tool.summary && <p class={reasonClass}>{tool.summary}</p>}
+  {tool.shared_domain ? (
+    <p class={reasonClass}>
+      Policy text is shared across multiple company products, so this badge doesn't reflect {tool.name}-specific data handling.
+    </p>
+  ) : (
+    tool.summary && <p class={reasonClass}>{tool.summary}</p>
+  )}
 
   <dl class="facts">
     <div>
@@ -84,6 +91,12 @@ const reasonClass =
   }
   .reason.prominent.red { border-left: 3px solid var(--red-fg); background: var(--red-bg); }
   .reason.prominent.amber { border-left: 3px solid var(--amber-fg); background: var(--amber-bg); }
+  .reason.prominent.amber-outline {
+    border: 1.5px dashed var(--amber-fg);
+    border-left: 3px solid var(--amber-fg);
+    background: transparent;
+    color: var(--amber-fg);
+  }
   .facts {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
