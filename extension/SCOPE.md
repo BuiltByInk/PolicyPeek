@@ -119,7 +119,14 @@ link scanning) — explicitly out of MVP scope, not silently deferred.
 submitting the current tab's own URL as `source_url` naturally satisfies
 that check without extra client-side validation.
 
-## Auth model — a real gap, not just a UI simplification
+## Auth model — RESOLVED 2026-08-15, see below
+
+**Update:** this gap is closed. `POST /v1/check` now degrades a
+missing/invalid key to `"free"` via `resolveTier`, same as
+`GET /v1/lookup` — option 1 below, not option 2. No self-service key
+issuance was added or needed. Rest of this section kept as the record of
+what was checked and why; still accurate as history, just no longer an
+open blocker.
 
 The instructions state: *"No account/login required for free tier — API
 key only needed to raise the daily check cap or unlock premium fields."*
@@ -159,7 +166,15 @@ the "Check this site" button in this scope doc can work at all in an MVP
 where "no login required" is a hard requirement. **Flagging, not
 deciding.**
 
-## Daily check cap — flagged, not implemented anywhere yet
+## Daily check cap — RESOLVED 2026-08-15, see below
+
+**Update:** real server-side enforcement now exists —
+`backend/src/rateLimit.ts`, 1 check per rolling 24h window keyed by
+`CF-Connecting-IP` (`anonymous_check_log` table). Paid-tier keys are
+exempt. See `DECISIONS_NEEDED.md` for the shared-IP/CGNAT/VPN tradeoff
+that identity choice carries — flagged there, not silently resolved.
+Rest of this section kept as the record of what was checked; still
+accurate as history, just no longer an open blocker.
 
 The instructions ask the extension to respect "the free tier's 1-new-
 check-per-day cap." I checked for this and **it does not exist in the
@@ -179,21 +194,17 @@ client-side.**
 
 ## Decisions needed before/alongside scaffolding
 
-Three separate items, roughly in order of how blocking they are:
-
-1. **API target**: does the extension call the live Cloudflare Worker
-   (not deployed yet — deployment is deliberately parked per `CLAUDE.md`)
-   or a local dev target (`wrangler dev`, e.g. `localhost:8787`) for now?
-   This determines whether extension work can start in parallel with
-   continued local backend dev, or is blocked on a deploy decision that's
-   explicitly off-limits to every agent without Elliot lifting it.
-2. **Anonymous `/v1/check` access** (Auth model section above) — without
-   this, the "Check this site" button, which is the entire point of the
-   not-in-catalog state, cannot function for a login-free extension.
-3. **Daily-cap enforcement location** (previous section) — lower urgency
-   than #2 since the button can work without a cap at MVP scale (zero
-   users today), but real enforcement is backend work that should be
-   scheduled, not silently skipped forever.
+1. **API target** — still open: does the extension call the live
+   Cloudflare Worker (not deployed yet — deployment is deliberately
+   parked per `CLAUDE.md`) or a local dev target (`wrangler dev`, e.g.
+   `localhost:8787`) for now? This determines whether extension work can
+   start in parallel with continued local backend dev, or is blocked on
+   a deploy decision that's explicitly off-limits to every agent without
+   Elliot lifting it. This is now the only remaining blocker from this
+   doc.
+2. ~~Anonymous `/v1/check` access~~ — resolved, see "Auth model" above.
+3. ~~Daily-cap enforcement location~~ — resolved, see "Daily check cap"
+   above.
 
 ## Target platform
 

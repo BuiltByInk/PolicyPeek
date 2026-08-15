@@ -1,5 +1,63 @@
 # Decisions Needed
 
+## Flagging, not blocking (2026-08-15): IP-based identity for the anonymous daily check cap
+
+`POST /v1/check` now accepts anonymous callers (no more hard 401 on a
+missing/invalid API key — degrades to free tier exactly like
+`GET /v1/lookup` already did) and enforces a real server-side cap: 1
+check per rolling 24h window, keyed by `client_ip`
+(`backend/src/rateLimit.ts`, `anonymous_check_log` table). Registered
+`paid`-tier keys are exempt entirely, matching existing tiering.
+
+I picked IP over a client-generated anonymous token (the other option
+raised in the extension scope doc) because it works for *any* caller —
+extension, curl, a future web client — without needing coordinated
+client-side state, and because a token stored in `chrome.storage` is
+trivially reset (uninstall/reinstall, clear storage), which defeats the
+point of a *server-side authoritative* cap. IP isn't perfect either,
+flagging the tradeoff rather than pretending it's fully solved:
+
+- **Shared IPs under-count generosity, not over-grant it.** Office
+  WiFi, university networks, and CGNAT (common on mobile carriers) put
+  many unrelated people behind one public IP, so they'll collectively
+  exhaust one shared 1/day quota. This is a false-positive-throttle
+  problem (annoys legitimate users), not an abuse problem — the cap
+  fails toward being too strict for those users, not too loose against
+  abusers, which is the safer direction for a cost control but still a
+  real UX cost at scale.
+- **VPN/proxy exit nodes are the opposite failure mode**: many distinct
+  people can appear to come from the same handful of VPN provider IPs,
+  same under-counting effect as CGNAT.
+- **Not spoofable from outside**, unlike `X-Forwarded-For` — Cloudflare
+  sets `CF-Connecting-IP` at the edge from the real TCP connection, so
+  this doesn't create a bypass vector the way trusting a client header
+  would.
+
+Not blocking anything today (zero real users), but worth revisiting once
+usage exists — either a hybrid (IP + optional client token, taking
+whichever is more permissive) or accepting the shared-IP friction as a
+deliberate trade for real enforcement. Your call if/when it matters.
+
+## Resolved (2026-08-15): ICP + monetization model
+
+Elliot's call, logged verbatim into `CLAUDE.md`'s new "Business Model &
+ICP" section so every agent reads it at session start instead of re-asking:
+
+- ICP is the individual/casual checker, not org/vendor due-diligence —
+  zero users yet, this is a bottom-up bet. Don't architect for org/team
+  usage now.
+- Free tier stays unlimited on lookups, and `POST /v1/check` (the catalog
+  growth loop) is explicitly *not* to be gated behind premium. Checked
+  `backend/src/auth.ts::requireApiKey` — it already only requires *a*
+  valid key, not a paid one, so no backend change was needed to match
+  this.
+- Premium is depth (sourced clause detail, change monitoring, exportable
+  reports, maybe instant-vs.-published-queue), not access.
+- Still open, explicitly not decided: whether the 100%-manual review gate
+  moves to auto-publish-on-high-confidence later. Don't build toward that
+  without a separate explicit go-ahead — checked into `CLAUDE.md`'s
+  "Still Manual" list as its own open item.
+
 ## Resolved (2026-08-15): extraction gap fixed, 18/19 re-run with real facts
 
 The HTML-truncation bug (raw HTML truncated before cleaning, so JS-rendered

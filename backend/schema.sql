@@ -67,6 +67,22 @@ CREATE TABLE IF NOT EXISTS api_keys (
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
 
+-- anonymous_check_log: server-side authoritative daily-cap enforcement for
+-- POST /v1/check requests made without a registered API key (or with an
+-- invalid/revoked one -- same "degrade to free" treatment as resolveTier
+-- already applies to GET /v1/lookup, see auth.ts). One row per accepted
+-- (not merely attempted) check. Identity is the caller's IP -- see
+-- DECISIONS_NEEDED.md for the shared-IP/CGNAT/VPN tradeoff that choice
+-- carries; a client-supplied anonymous token was the alternative and is
+-- trivially resettable, which is worse for a real cost control.
+CREATE TABLE IF NOT EXISTS anonymous_check_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_ip TEXT NOT NULL,
+  checked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_anon_check_log_ip_time ON anonymous_check_log (client_ip, checked_at);
+
 -- Known bug last build: a trigger scoped to UPDATE OF compliance_status only
 -- silently misses the admin-approval INSERT path (a brand new tool never gets
 -- a changelog row). Both triggers below are required, not just the UPDATE one.

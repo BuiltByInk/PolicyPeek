@@ -2,8 +2,9 @@ import type { Env } from "./index";
 import { isValidDomain } from "./lookup";
 import { safeFetchText, SsrfBlockedError } from "./ssrf";
 import { extractFacts } from "./extraction";
-import { requireApiKey } from "./auth";
+import { getClientIp, resolveTier } from "./auth";
 import { cleanHtmlToText } from "./htmlClean";
+import { isUnderDailyCap, recordAnonymousCheck } from "./rateLimit";
 
 interface CheckBody {
   domain?: string;
@@ -47,9 +48,26 @@ async function runExtraction(env: Env, pendingId: number, rawText: string): Prom
 }
 
 export async function handleCheck(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-  const tier = await requireApiKey(request, env);
-  if (!tier) {
-    return Response.json({ error: "invalid_or_missing_api_key" }, { status: 401 });
+  // Same "missing/invalid key -> free" degrade resolveTier already applies
+  // to GET /v1/lookup, rather than the old hard 401 on any unregistered
+  // caller -- the daily cap below is what actually protects the costly
+  // path (fetch + LLM extraction) now, not key possession.
+  const tier = await resolveTier(request, env);
+  const clientIp = getClientIp(request);
+
+  if (tier === "free") {
+    const cap = await isUnderDailyCap(env, clientIp);
+    if (!cap.allowed) {
+      const headers = new Headers();
+      if (cap.resetsAt) {
+        const retryAfterSeconds = Math.max(0, Math.round((new Date(cap.resetsAt).getTime() - Date.now()) / 1000));
+        headers.set("Retry-After", String(retryAfterSeconds));
+      }
+      return Response.json(
+        { error: "daily_check_limit_reached", resets_at: cap.resetsAt },
+        { status: 429, headers }
+      );
+    }
   }
 
   let body: CheckBody;
@@ -107,6 +125,10 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
 
   if (!inserted) {
     return Response.json({ error: "insert_failed" }, { status: 500 });
+  }
+
+  if (tier === "free") {
+    await recordAnonymousCheck(env, clientIp);
   }
 
   ctx.waitUntil(runExtraction(env, inserted.id, cleanedText));

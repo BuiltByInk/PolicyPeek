@@ -27,20 +27,28 @@ export async function resolveTier(request: Request, env: Env): Promise<Tier> {
   return row.tier;
 }
 
-// Stricter than resolveTier: for endpoints that cost money to run
-// (POST /v1/check triggers an outbound fetch + LLM call), a missing or
-// invalid key is rejected outright rather than silently downgraded to free.
-export async function requireApiKey(request: Request, env: Env): Promise<Tier | null> {
-  const key = request.headers.get("X-Api-Key");
-  if (!key) return null;
+// POST /v1/check used to reject a missing/invalid key outright instead of
+// degrading to free, on the theory that the endpoint costs money to run
+// (outbound fetch + LLM call). That's superseded by a real server-side
+// daily cap on the free identity instead (see rateLimit.ts) -- /v1/check
+// now resolves tier exactly like /v1/lookup via resolveTier() above, so a
+// missing/invalid key just means "free, rate-limited" rather than a 401.
 
-  const hash = await sha256Hex(key);
-  const row = await env.DB.prepare("SELECT tier, revoked FROM api_keys WHERE key_hash = ?")
-    .bind(hash)
-    .first<ApiKeyRow>();
+// Cloudflare sets CF-Connecting-IP at the edge from the actual TCP
+// connection -- it isn't client-suppliable, unlike X-Forwarded-For, so it's
+// the one header here actually safe to trust for identity. Falls back to
+// X-Forwarded-For's first hop (e.g. local `wrangler dev`, which doesn't
+// set CF-Connecting-IP) and then "unknown" so every un-fingerprintable
+// request doesn't error, it just shares one rate-limit bucket -- see
+// DECISIONS_NEEDED.md for why IP was chosen over a client-supplied token.
+export function getClientIp(request: Request): string {
+  const cfIp = request.headers.get("CF-Connecting-IP");
+  if (cfIp) return cfIp;
 
-  if (!row || row.revoked) return null;
-  return row.tier;
+  const forwardedFor = request.headers.get("X-Forwarded-For");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+
+  return "unknown";
 }
 
 // Constant-time comparison. Hashing both sides first means the byte-compare
