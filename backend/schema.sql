@@ -4,12 +4,17 @@ CREATE TABLE IF NOT EXISTS tools (
   name TEXT NOT NULL,
   domain TEXT NOT NULL UNIQUE,
   compliance_status TEXT NOT NULL DEFAULT 'unrated'
-    CHECK (compliance_status IN ('not_compliant', 'compliant', 'unrated')),
+    CHECK (compliance_status IN ('not_compliant', 'compliant', 'unrated', 'shared_domain_unverified')),
   data_retention TEXT,
   trains_on_user_data INTEGER CHECK (trains_on_user_data IN (0, 1)),
   gdpr_mentioned INTEGER CHECK (gdpr_mentioned IN (0, 1)),
   source_urls TEXT NOT NULL DEFAULT '[]', -- JSON array of strings
   verified INTEGER NOT NULL DEFAULT 0 CHECK (verified IN (0, 1)),
+  -- true when the only public policy for this tool lives on a domain shared
+  -- with unrelated products (e.g. a Google/Microsoft AI feature whose policy
+  -- is on the parent company's apex domain). Hard-overrides compliance_status
+  -- to 'shared_domain_unverified' in rules.ts -- see computeVerdict.
+  shared_domain INTEGER NOT NULL DEFAULT 0 CHECK (shared_domain IN (0, 1)),
   summary TEXT, -- one-line reason shown alongside the badge
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
@@ -25,9 +30,12 @@ CREATE TABLE IF NOT EXISTS pending_checks (
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'extracted', 'approved', 'rejected')),
   source_url TEXT,
-  raw_fetch TEXT, -- raw fetched policy text/HTML, truncated
+  raw_fetch TEXT, -- fetched policy text, HTML chrome stripped (see htmlClean.ts), truncated
   extracted_facts TEXT, -- JSON: facts only, no verdict (see backend agent notes)
   extraction_error TEXT,
+  -- carried into tools.shared_domain on approval; set before approving a
+  -- pending row whose only public policy lives on a shared corporate domain.
+  shared_domain INTEGER NOT NULL DEFAULT 0 CHECK (shared_domain IN (0, 1)),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );

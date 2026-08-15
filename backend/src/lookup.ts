@@ -12,6 +12,7 @@ interface ToolRow {
   source_urls: string;
   verified: number;
   summary: string | null;
+  shared_domain: number;
 }
 
 // Most-specific to least-specific, e.g. "checkout.shop.example.com" ->
@@ -89,6 +90,10 @@ export async function handleLookup(request: Request, env: Env, tier: Tier): Prom
     name: match.name,
     compliance_status: match.compliance_status,
     summary: match.summary,
+    // Explicit boolean, not just the compliance_status string value, so a
+    // client that doesn't know about the "shared_domain_unverified" status
+    // string still can't mistake this for a real product-specific verdict.
+    shared_domain: Boolean(match.shared_domain),
   };
 
   if (tier === "free") {

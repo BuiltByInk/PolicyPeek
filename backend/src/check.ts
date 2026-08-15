@@ -3,6 +3,7 @@ import { isValidDomain } from "./lookup";
 import { safeFetchText, SsrfBlockedError } from "./ssrf";
 import { extractFacts } from "./extraction";
 import { requireApiKey } from "./auth";
+import { cleanHtmlToText } from "./htmlClean";
 
 interface CheckBody {
   domain?: string;
@@ -79,15 +80,20 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
     return Response.json({ error: "source_url_domain_mismatch" }, { status: 400 });
   }
 
-  let rawText: string;
+  let rawHtml: string;
   try {
-    rawText = await safeFetchText(sourceUrl);
+    rawHtml = await safeFetchText(sourceUrl);
   } catch (err) {
     if (err instanceof SsrfBlockedError) {
       return Response.json({ error: "blocked_url", reason: err.message }, { status: 400 });
     }
     return Response.json({ error: "fetch_failed", reason: String(err instanceof Error ? err.message : err) }, { status: 502 });
   }
+
+  // Clean before truncating, not after -- truncating raw HTML first was the
+  // bug: <head>/<script>/<style> chrome ate the whole truncation window on
+  // JS-rendered sites before any real policy prose was reached.
+  const cleanedText = cleanHtmlToText(rawHtml);
 
   const isRecheck = await env.DB.prepare("SELECT 1 FROM tools WHERE domain = ?")
     .bind(domain)
@@ -96,14 +102,14 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   const inserted = await env.DB.prepare(
     "INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status) VALUES (?, ?, ?, ?, 'pending') RETURNING id"
   )
-    .bind(domain, isRecheck ? 1 : 0, sourceUrl, rawText.slice(0, 20_000))
+    .bind(domain, isRecheck ? 1 : 0, sourceUrl, cleanedText.slice(0, 20_000))
     .first<{ id: number }>();
 
   if (!inserted) {
     return Response.json({ error: "insert_failed" }, { status: 500 });
   }
 
-  ctx.waitUntil(runExtraction(env, inserted.id, rawText));
+  ctx.waitUntil(runExtraction(env, inserted.id, cleanedText));
 
   return Response.json(
     {

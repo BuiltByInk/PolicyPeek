@@ -9,6 +9,7 @@ interface PendingCheckRow {
   status: string;
   source_url: string | null;
   extracted_facts: string | null;
+  shared_domain: number;
 }
 
 interface ToolRow {
@@ -18,14 +19,14 @@ interface ToolRow {
 
 export async function handleListPending(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
-    "SELECT id, domain, is_recheck, status, source_url, created_at, updated_at FROM pending_checks ORDER BY created_at DESC"
+    "SELECT id, domain, is_recheck, status, source_url, shared_domain, created_at, updated_at FROM pending_checks ORDER BY created_at DESC"
   ).all();
   return Response.json({ pending_checks: results });
 }
 
 export async function handleApprove(request: Request, env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
-    "SELECT id, domain, is_recheck, status, source_url, extracted_facts FROM pending_checks WHERE id = ?"
+    "SELECT id, domain, is_recheck, status, source_url, extracted_facts, shared_domain FROM pending_checks WHERE id = ?"
   )
     .bind(id)
     .first<PendingCheckRow>();
@@ -38,8 +39,11 @@ export async function handleApprove(request: Request, env: Env, id: number): Pro
   }
 
   const facts = JSON.parse(pending.extracted_facts) as ExtractedFacts;
-  const verdict = computeVerdict(facts);
-  const summary = facts.relevant_clauses[0] ?? null;
+  const sharedDomain = pending.shared_domain === 1;
+  const verdict = computeVerdict(facts, { sharedDomain });
+  const summary = sharedDomain
+    ? "Policy text is shared across multiple company products — not verified as specific to this tool."
+    : facts.relevant_clauses[0] ?? null;
   const sourceUrls = JSON.stringify(pending.source_url ? [pending.source_url] : []);
 
   const existing = await env.DB.prepare("SELECT id, compliance_status FROM tools WHERE domain = ?")
@@ -52,7 +56,7 @@ export async function handleApprove(request: Request, env: Env, id: number): Pro
     // place instead of dead-ending on a duplicate-domain conflict.
     await env.DB.prepare(
       `UPDATE tools SET compliance_status = ?, data_retention = ?, trains_on_user_data = ?, gdpr_mentioned = ?,
-        source_urls = ?, verified = 1, summary = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        source_urls = ?, verified = 1, summary = ?, shared_domain = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
        WHERE id = ?`
     )
       .bind(
@@ -62,14 +66,15 @@ export async function handleApprove(request: Request, env: Env, id: number): Pro
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
         sourceUrls,
         summary,
+        Number(sharedDomain),
         existing.id
       )
       .run();
     toolId = existing.id;
   } else {
     const inserted = await env.DB.prepare(
-      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?) RETURNING id`
+      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary, shared_domain)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?) RETURNING id`
     )
       .bind(
         pending.domain,
@@ -79,7 +84,8 @@ export async function handleApprove(request: Request, env: Env, id: number): Pro
         facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
         sourceUrls,
-        summary
+        summary,
+        Number(sharedDomain)
       )
       .first<{ id: number }>();
     if (!inserted) return Response.json({ error: "insert_failed" }, { status: 500 });
