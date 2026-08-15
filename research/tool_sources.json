@@ -1,0 +1,191 @@
+{
+  "chatgpt": {
+    "name": "ChatGPT",
+    "vendor": "OpenAI",
+    "privacy_policy": "https://openai.com/policies/row-privacy-policy/",
+    "terms_of_service": "https://openai.com/policies/row-terms-of-use/",
+    "dpa": null,
+    "security_trust_page": "https://openai.com/security-and-privacy/",
+    "notes": "Business/API data is covered by separate Business Terms + DPA (openai.com/policies hub lists them) but no single canonical DPA URL surfaced in search; not fabricating one."
+  },
+  "claude": {
+    "name": "Claude",
+    "vendor": "Anthropic",
+    "privacy_policy": "https://privacy.claude.com",
+    "terms_of_service": "https://www.anthropic.com/legal/consumer-terms",
+    "dpa": "https://privacy.claude.com/en/articles/7996862-how-do-i-view-and-sign-your-data-processing-addendum-dpa",
+    "security_trust_page": "https://trust.anthropic.com",
+    "notes": "Consumer terms confirmed via direct fetch. Commercial Terms/DPA differ from consumer; used the consumer-facing set since ChatGPT-equivalent product here is the consumer app."
+  },
+  "gemini": {
+    "name": "Gemini",
+    "vendor": "Google",
+    "privacy_policy": "https://support.google.com/gemini/answer/13594961",
+    "terms_of_service": "https://ai.google.dev/gemini-api/terms",
+    "dpa": null,
+    "security_trust_page": "https://safety.google/intl/en_us/products/gemini/",
+    "notes": "Gemini Apps Privacy Notice supplements the general Google Privacy Policy rather than standing alone; used the Gemini Apps Privacy Hub as the most specific public page."
+  },
+  "microsoft-copilot": {
+    "name": "Microsoft Copilot",
+    "vendor": "Microsoft",
+    "privacy_policy": "https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy",
+    "terms_of_service": "https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/termsofuse",
+    "dpa": null,
+    "security_trust_page": "https://support.microsoft.com/en-us/microsoft-copilot/privacy-faq-for-microsoft-copilot",
+    "notes": "Consumer Copilot (for individuals) product line, distinct from Microsoft 365 Copilot enterprise product which has its own terms."
+  },
+  "perplexity": {
+    "name": "Perplexity AI",
+    "vendor": "Perplexity AI, Inc.",
+    "privacy_policy": "https://www.perplexity.ai/hub/legal/privacy-notice",
+    "terms_of_service": "https://www.perplexity.ai/hub/legal/terms-of-service",
+    "dpa": "https://www.perplexity.ai/hub/legal/dpa",
+    "security_trust_page": null,
+    "notes": null
+  },
+  "github-copilot": {
+    "name": "GitHub Copilot",
+    "vendor": "GitHub (Microsoft)",
+    "privacy_policy": "https://github.com/trust-center/privacy",
+    "terms_of_service": "https://docs.github.com/en/site-policy/github-terms/github-copilot-product-specific-terms",
+    "dpa": null,
+    "security_trust_page": "https://copilot.github.trust.page/",
+    "notes": "Free/Pro/Pro+ vs Business/Enterprise have different data-use terms (Business/Enterprise excluded from AI-training data use per GitHub's own changelog) — worth surfacing to admin reviewer since one product covers two different data postures."
+  },
+  "cursor": {
+    "name": "Cursor",
+    "vendor": "Anysphere",
+    "privacy_policy": "https://cursor.com/privacy",
+    "terms_of_service": "https://cursor.com/terms-of-service",
+    "dpa": null,
+    "security_trust_page": "https://cursor.com/data-use",
+    "notes": null
+  },
+  "windsurf": {
+    "name": "Windsurf",
+    "vendor": "Exafunction (Windsurf) — acquired by OpenAI in 2026",
+    "privacy_policy": "https://windsurf.com/terms-of-service-individual",
+    "terms_of_service": "https://windsurf.com/terms-of-service-individual",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Rebranded from Codeium; search only turned up a combined terms-of-service page (privacy content embedded in it), no standalone privacy-policy URL — not fabricating one. Recent OpenAI acquisition may change data governance; flagged for reviewer awareness, not a reason to exclude."
+  },
+  "replit-ai": {
+    "name": "Replit AI",
+    "vendor": "Replit, Inc.",
+    "privacy_policy": "https://replit.com/privacy-policy",
+    "terms_of_service": "https://replit.com/terms-of-service",
+    "dpa": null,
+    "security_trust_page": "https://docs.replit.com/category/legal-and-security",
+    "notes": null
+  },
+  "sourcegraph-cody": {
+    "name": "Sourcegraph Cody",
+    "vendor": "Sourcegraph",
+    "privacy_policy": "https://sourcegraph.com/terms/privacy",
+    "terms_of_service": "https://sourcegraph.com/terms",
+    "dpa": null,
+    "security_trust_page": "https://sourcegraph.com/security",
+    "notes": "Confirmed still active as of June 2026 privacy policy update; Cody is now bundled under Sourcegraph's broader \"AI Tools\" umbrella rather than a standalone product name."
+  },
+  "midjourney": {
+    "name": "Midjourney",
+    "vendor": "Midjourney, Inc.",
+    "privacy_policy": "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy",
+    "terms_of_service": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": null
+  },
+  "stability-ai": {
+    "name": "Stability AI (DreamStudio)",
+    "vendor": "Stability AI Ltd",
+    "privacy_policy": "https://stability.ai/ds-pp",
+    "terms_of_service": "https://stability.ai/ds-tos",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": null
+  },
+  "adobe-firefly": {
+    "name": "Adobe Firefly",
+    "vendor": "Adobe Inc.",
+    "privacy_policy": "https://www.adobe.com/privacy/policy.html",
+    "terms_of_service": "https://www.adobe.com/legal/terms.html",
+    "dpa": null,
+    "security_trust_page": "https://business.adobe.com/resources/sdk/adobe-firefly-data-and-content-usage.html",
+    "notes": "No Firefly-specific privacy policy URL exists separately — Firefly is covered by Adobe's general Privacy Policy plus a dedicated 'data and content usage' explainer page, used here as the closest thing to a security/trust page."
+  },
+  "runway": {
+    "name": "Runway",
+    "vendor": "Runway AI, Inc.",
+    "privacy_policy": "https://runway.com/privacy-policy",
+    "terms_of_service": "https://runwayml.com/terms-of-use",
+    "dpa": null,
+    "security_trust_page": "https://help.runwayml.com/hc/en-us/articles/24300377879827-Understanding-Runway-s-security-and-privacy-standards",
+    "notes": null
+  },
+  "elevenlabs": {
+    "name": "ElevenLabs",
+    "vendor": "ElevenLabs Inc.",
+    "privacy_policy": "https://elevenlabs.io/privacy-policy",
+    "terms_of_service": "https://elevenlabs.io/terms-of-use",
+    "dpa": "https://elevenlabs.io/dpa",
+    "security_trust_page": null,
+    "notes": null
+  },
+  "grammarly": {
+    "name": "Grammarly",
+    "vendor": "Grammarly, Inc.",
+    "privacy_policy": "https://www.grammarly.com/privacy-policy-november-2024",
+    "terms_of_service": "https://www.grammarly.com/terms",
+    "dpa": "https://www.grammarly.com/terms/customer-business-agreement",
+    "security_trust_page": "https://www.grammarly.com/trust",
+    "notes": "Individual-account privacy policy explicitly does not cover Business/Education/Pro-under-org accounts, which fall under a separate DPA — same two-tier pattern as GitHub Copilot."
+  },
+  "jasper": {
+    "name": "Jasper",
+    "vendor": "Jasper AI, Inc.",
+    "privacy_policy": "https://www.jasper.ai/legal/privacy",
+    "terms_of_service": "https://www.jasper.ai/legal/terms",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "DPA exists but must be separately executed by customers per Jasper's own terms; no public standalone DPA URL found."
+  },
+  "copy-ai": {
+    "name": "Copy.ai",
+    "vendor": "Copy.ai, Inc.",
+    "privacy_policy": "https://www.copy.ai/privacy-notice",
+    "terms_of_service": "https://www.copy.ai/terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": null
+  },
+  "notion-ai": {
+    "name": "Notion AI",
+    "vendor": "Notion Labs, Inc.",
+    "privacy_policy": "https://www.notion.com/trust/privacy-policy",
+    "terms_of_service": "https://www.notion.com/help/notion-ai-security-practices",
+    "dpa": null,
+    "security_trust_page": "https://www.notion.com/security",
+    "notes": "Used the AI-specific security/privacy practices page as the closest thing to AI-scoped terms; general Notion ToS covers the rest of the product."
+  },
+  "otter-ai": {
+    "name": "Otter.ai",
+    "vendor": "Otter.ai, Inc.",
+    "privacy_policy": "https://otter.ai/privacy-policy",
+    "terms_of_service": "https://otter.ai/terms-of-service",
+    "dpa": null,
+    "security_trust_page": "https://help.otter.ai/hc/en-us/articles/360048258953-Data-security-and-privacy-policies",
+    "notes": null
+  },
+  "zoom-ai-companion": {
+    "name": "Zoom AI Companion",
+    "vendor": "Zoom Communications, Inc.",
+    "privacy_policy": "https://www.zoom.com/en/products/ai-assistant/resources/privacy-security/",
+    "terms_of_service": "https://www.zoom.com/en/trust/terms/",
+    "dpa": null,
+    "security_trust_page": "https://www.zoom.com/en/products/ai-assistant/resources/privacy-security/",
+    "notes": "Zoom's general Terms of Service page used since no AI Companion-specific ToS URL surfaced separately from the privacy/security explainer."
+  }
+}
