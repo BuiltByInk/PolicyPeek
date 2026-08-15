@@ -11,11 +11,11 @@
   "claude": {
     "name": "Claude",
     "vendor": "Anthropic",
-    "privacy_policy": "https://privacy.claude.com",
+    "privacy_policy": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
     "terms_of_service": "https://www.anthropic.com/legal/consumer-terms",
     "dpa": "https://privacy.claude.com/en/articles/7996862-how-do-i-view-and-sign-your-data-processing-addendum-dpa",
     "security_trust_page": "https://trust.anthropic.com",
-    "notes": "Consumer terms confirmed via direct fetch. Commercial Terms/DPA differ from consumer; used the consumer-facing set since ChatGPT-equivalent product here is the consumer app."
+    "notes": "Consumer terms confirmed via direct fetch. Commercial Terms/DPA differ from consumer; used the consumer-facing set since ChatGPT-equivalent product here is the consumer app. privacy_policy originally pointed at the privacy.claude.com portal root, which is a nav/index page with no real prose (639 chars of menu text, confirmed empty extraction even after the HTML-cleaning fix) -- swapped to the direct 'Is my data used for model training?' article, which answers the exact fact the pipeline extracts."
   },
   "gemini": {
     "name": "Gemini",

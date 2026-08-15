@@ -6,7 +6,10 @@
 const BLOCKED_HOSTNAMES = new Set(["localhost", "metadata.google.internal"]);
 
 const MAX_REDIRECTS = 5;
-const FETCH_TIMEOUT_MS = 8000;
+// Was 8000 -- too tight for slower policy pages (e.g. adobe.com timed out
+// twice on submission). Redirect hops each get their own fresh timeout, so
+// this only affects per-hop wait, not total request time.
+const FETCH_TIMEOUT_MS = 20_000;
 const MAX_BODY_BYTES = 500_000;
 
 export class SsrfBlockedError extends Error {}

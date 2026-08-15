@@ -1,5 +1,34 @@
 # Decisions Needed
 
+## Resolved (2026-08-15): extraction gap fixed, 18/19 re-run with real facts
+
+The HTML-truncation bug (raw HTML truncated before cleaning, so JS-rendered
+sites' policy prose never reached Haiku) is fixed —
+`backend/src/htmlClean.ts`. Re-ran the 18 affected tools; 17 got real facts
+immediately, Claude needed a source-URL swap (its original URL was a nav
+portal, not policy text — see `research/tool_sources.json`'s note). Full
+verdict table in `research/seed_review_summary.md`. Also applied
+`shared_domain = 1` to the Gemini and Microsoft Copilot pending rows per
+your instruction — they now compute `shared_domain_unverified` instead of
+a normal verdict.
+
+## Still open: 2 of 21 seed tools have no working submission (2026-08-15, 3rd attempt)
+
+- **Windsurf** (`windsurf.com`): `fetch_failed_429` on all 3 attempts,
+  including one after a longer backoff. Doesn't look like transient
+  rate-limiting — reads more like the site's WAF blocking the checker's
+  request pattern specifically. Worth a manual look at what
+  `safeFetchText`'s request actually looks like from Windsurf's side
+  (user-agent, TLS fingerprint) rather than another automated retry.
+- **Adobe Firefly** (`adobe.com`): `"The operation was aborted"` on all 3
+  attempts, including after bumping `FETCH_TIMEOUT_MS` 8s → 20s in
+  `ssrf.ts`. Timeout wasn't the cause, so the abort is coming from
+  somewhere else (TLS handshake, connection reset — unconfirmed). Not
+  retrying further without knowing why it's actually aborting.
+
+---
+
+
 ## Fixed with your go-ahead: extraction.ts JSON parsing (2026-08-15)
 
 Running the 21-tool seed batch (once the API key blocker above was
