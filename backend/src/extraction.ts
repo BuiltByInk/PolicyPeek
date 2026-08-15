@@ -50,7 +50,18 @@ export async function extractFacts(rawText: string, apiKey: string): Promise<Ext
   const text = data.content.find((block) => block.type === "text")?.text;
   if (!text) throw new Error("no_text_content_in_response");
 
-  const parsed = JSON.parse(text) as ExtractedFacts;
+  // Haiku doesn't always respond with pure JSON despite the system prompt
+  // saying to -- markdown fences and trailing prose after the closing brace
+  // both show up in practice. Extract the outermost {...} object rather than
+  // trusting the response to be parseable as-is.
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("no_json_object_in_response");
+  }
+  const jsonSlice = text.slice(start, end + 1);
+
+  const parsed = JSON.parse(jsonSlice) as ExtractedFacts;
   return {
     trains_on_user_data: parsed.trains_on_user_data ?? null,
     data_retention: parsed.data_retention ?? null,

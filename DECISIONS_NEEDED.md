@@ -1,5 +1,70 @@
 # Decisions Needed
 
+## Fixed with your go-ahead: extraction.ts JSON parsing (2026-08-15)
+
+Running the 21-tool seed batch (once the API key blocker above was
+resolved) hit two real bugs in `backend/src/extraction.ts`, both about
+`JSON.parse(text)` being too strict for how Haiku actually responds. You
+approved both fixes live, so they're applied, not just proposed:
+
+1. Haiku sometimes wraps its JSON in a ` ```json ... ``` ` fence despite the
+   system prompt saying not to — `JSON.parse` threw on the leading
+   backtick on all 19 submissions before this fix.
+2. After the fence fix, 4 of 19 still failed with "Unexpected
+   non-whitespace character after JSON" — Haiku occasionally appends
+   trailing text after the closing `}`. Fixed by extracting the substring
+   between the first `{` and last `}` before parsing, rather than trusting
+   the response to be pure JSON.
+
+Both are parsing-robustness changes only — nothing about the facts schema
+or the facts→verdict boundary changed. `npm test` (11 tests) still passes.
+Flagging here per the charter's "log it rather than just doing it"
+instruction, since `extraction.ts` is Backend Agent's file, not mine.
+
+---
+
+## New blocker: raw HTML truncation loses the actual policy text on JS-rendered sites (2026-08-15)
+
+See `research/seed_review_summary.md` for the full writeup — headline: 16
+of 19 seed-batch extractions came back with every fact `null`, and it's
+because `raw_fetch` (20K chars stored, 15K sent to Haiku) is dominated by
+`<head>`/script/CSS boilerplate on JS-framework sites (OpenAI, Cursor,
+Replit, and most of the rest use Next.js or similar), not real policy
+prose. Confirmed by reading `raw_fetch` directly, not assumed. This makes
+most of the current "unrated" verdicts in the pending queue misleading —
+they read as "checked, genuinely unclear" but are actually "never saw real
+content." Did not attempt a fix myself (needs a real design decision about
+how to get to rendered body text — strip tags, target a different fetch
+strategy, or something else — squarely a Backend Agent architecture call,
+bigger than the two one-line JSON-parsing fixes above).
+
+## New blocker: 2 of 21 seed tools failed at the fetch step, not retried further
+
+- **Windsurf** (`windsurf.com`): `fetch_failed_429` on both attempts.
+- **Adobe Firefly** (`adobe.com`): `"The operation was aborted"` (timeout)
+  on both attempts.
+
+Not retried a third time — see `research/seed_review_summary.md`.
+
+---
+
+## New decision needed: domain identity for multi-product-company AI features
+
+Gemini and Microsoft Copilot's only public policy content lives on their
+parent company's shared apex domain (`google.com`, `microsoft.com`) rather
+than a product-specific one. I registered them there since it's what
+actually satisfies the domain-lock check and hosts the real source, but a
+`google.com` compliant/non-compliant badge conflates Gemini with every
+other unrelated Google product. Lower-stakes version of the same question
+for ChatGPT/openai.com, Claude/claude.com, Notion AI/notion.com, and
+Runway/runway.com (all single-product companies, just not the domain their
+marketing site uses). Full detail in `research/seed_review_summary.md`.
+Not blocking — submissions went through either way — but the identity
+scheme itself is your call before any of these get promoted.
+
+---
+
+
 ## Blocked: no ANTHROPIC_API_KEY, so the 21-tool seed batch stops after research (2026-08-15)
 
 Task: run all 21 seed tools through the real `POST /v1/check` submission
