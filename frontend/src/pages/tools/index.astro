@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Badge from "../../components/Badge.astro";
+import SubmitTool from "../../components/SubmitTool.astro";
 import type { Tool } from "../../types";
 import toolsData from "../../../data/tools.json";
 
@@ -11,6 +12,8 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
   description="Every tool PolicyPeek has checked, with a compliant / not compliant / unrated badge and the one-line reason behind it."
 >
   <h1>Tools</h1>
+
+  <SubmitTool />
 
   {tools.length === 0 && (
     <p class="empty">
