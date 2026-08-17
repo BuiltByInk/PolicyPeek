@@ -27,6 +27,16 @@ Use null where the text does not state something. relevant_clauses should be sho
 export async function extractFacts(rawText: string, apiKey: string): Promise<ExtractedFacts> {
   const truncated = rawText.slice(0, 15_000);
 
+  // A client-rendered SPA (confirmed real case: Character.AI) fetches fine
+  // but cleanHtmlToText strips it down to nothing real -- sending that to
+  // Haiku produces "messages.0: user messages must have non-empty content",
+  // an opaque 400 that looks like an API bug rather than what it actually
+  // is: we never had real policy text to extract from. Fail with an honest
+  // reason instead of making the API call at all.
+  if (truncated.trim().length === 0) {
+    throw new Error("empty_extracted_text -- fetched page produced no usable text after HTML cleaning (likely a client-rendered page)");
+  }
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {

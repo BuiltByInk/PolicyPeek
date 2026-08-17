@@ -35,6 +35,12 @@ CREATE INDEX IF NOT EXISTS idx_tools_domain ON tools (domain);
 CREATE TABLE IF NOT EXISTS pending_checks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   domain TEXT NOT NULL,
+  -- optional human-friendly product name ("Kagi", not "kagi.com"). Carried
+  -- into tools.name on approval when present; falls back to domain when
+  -- absent (e.g. the browser extension's check-this-site flow, which has
+  -- no product name to offer). Never overwrites an existing tools.name on
+  -- a recheck -- see approvePendingCheck.
+  name TEXT,
   is_recheck INTEGER NOT NULL DEFAULT 0 CHECK (is_recheck IN (0, 1)),
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'extracted', 'approved', 'rejected')),

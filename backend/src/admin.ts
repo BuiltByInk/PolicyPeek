@@ -6,6 +6,7 @@ import { evaluateAutoPublish } from "./autoPublish";
 interface PendingCheckRow {
   id: number;
   domain: string;
+  name?: string | null;
   is_recheck: number;
   status: string;
   source_url: string | null;
@@ -22,7 +23,7 @@ interface ToolRow {
 
 export async function handleListPending(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT id, domain, is_recheck, status, source_url, extracted_facts, extraction_error, shared_domain,
+    `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, extraction_error, shared_domain,
        sourced_from_archive, archived_source_url, created_at, updated_at
      FROM pending_checks ORDER BY created_at DESC`
   ).all<PendingCheckRow & { extraction_error: string | null }>();
@@ -108,7 +109,7 @@ export async function approvePendingCheck(
        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?) RETURNING id`
     )
       .bind(
-        pending.domain,
+        pending.name || pending.domain,
         pending.domain,
         verdict,
         facts.data_retention,
@@ -148,7 +149,7 @@ export async function approvePendingCheck(
 
 export async function handleApprove(request: Request, env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
-    `SELECT id, domain, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url
+    `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url
      FROM pending_checks WHERE id = ?`
   )
     .bind(id)

@@ -3,6 +3,7 @@ import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
 import { handleListPending, handleApprove, handleReject } from "./admin";
 import { checkStuckPending, runMonthlyRecheck } from "./cron";
+import { withCors, corsPreflightResponse } from "./cors";
 
 export interface Env {
   DB: D1Database;
@@ -18,13 +19,17 @@ export default {
       return Response.json({ ok: true, service: "policypeek-backend" });
     }
 
+    if ((url.pathname === "/v1/lookup" || url.pathname === "/v1/check") && request.method === "OPTIONS") {
+      return corsPreflightResponse();
+    }
+
     if (url.pathname === "/v1/lookup" && request.method === "GET") {
       const tier = await resolveTier(request, env);
-      return handleLookup(request, env, tier);
+      return withCors(await handleLookup(request, env, tier));
     }
 
     if (url.pathname === "/v1/check" && request.method === "POST") {
-      return handleCheck(request, env, ctx);
+      return withCors(await handleCheck(request, env, ctx));
     }
 
     const adminMatch = url.pathname.match(/^\/v1\/admin\/pending(?:\/(\d+)(?:\/(approve|reject))?)?$/);
