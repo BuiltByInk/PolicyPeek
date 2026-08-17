@@ -1,14 +1,14 @@
 [
   {
-    "name": "Midjourney",
-    "domain": "midjourney.com",
-    "compliance_status": "not_compliant",
-    "summary": "data collected through the process of training Midjourney machine learning algorithms",
-    "data_retention": null,
+    "name": "Bolt.new",
+    "domain": "stackblitz.com",
+    "compliance_status": "compliant",
+    "summary": "We may use AI Inputs and AI Outputs to operate, maintain, and improve the Services, including improving AI performance, reliability, and safety. Such use shall be on aggregated, anonymized, or de-identified data.",
+    "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days subject to backup retention and legal obligations. Residual copies may persist in backups/logs for limited period.",
     "trains_on_user_data": true,
-    "gdpr_mentioned": null,
+    "gdpr_mentioned": true,
     "source_urls": [
-      "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy"
+      "https://stackblitz.com/privacy-policy"
     ],
     "verified": true,
     "shared_domain": false
@@ -42,57 +42,15 @@
     "shared_domain": false
   },
   {
-    "name": "Gemini",
-    "domain": "google.com",
-    "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
-    "data_retention": "Default 18 months, changeable to 3 months, 36 months, or indefinite; chats reviewed by human reviewers retained up to three years; some data retained until Google Account deletion; longer retention for security, fraud prevention, or legal purposes",
-    "trains_on_user_data": true,
+    "name": "Copy.ai",
+    "domain": "copy.ai",
+    "compliance_status": "unrated",
+    "summary": "You may opt-out of our mailing lists and terminate your use of our website.",
+    "data_retention": "We retain different types of Personal Data for different periods, depending on the purposes for processing the information, our legitimate business purposes as well as pursuant to legal requirements.",
+    "trains_on_user_data": null,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://support.google.com/gemini/answer/13594961"
-    ],
-    "verified": true,
-    "shared_domain": true
-  },
-  {
-    "name": "Microsoft Copilot",
-    "domain": "microsoft.com",
-    "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
-    "data_retention": "18 months for conversations by default; up to 30 days for uploaded files; screenshots and camera images from Vision not stored after session ends",
-    "trains_on_user_data": true,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy"
-    ],
-    "verified": true,
-    "shared_domain": true
-  },
-  {
-    "name": "Perplexity AI",
-    "domain": "perplexity.ai",
-    "compliance_status": "compliant",
-    "summary": "Improve or create services and products, including our AI models.",
-    "data_retention": null,
-    "trains_on_user_data": true,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://www.perplexity.ai/hub/legal/privacy-notice"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "GitHub Copilot",
-    "domain": "github.com",
-    "compliance_status": "unrated",
-    "summary": "Users can view and update their information directly through their account settings",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://github.com/trust-center/privacy"
+      "https://www.copy.ai/privacy-notice"
     ],
     "verified": true,
     "shared_domain": false
@@ -112,6 +70,244 @@
     "shared_domain": false
   },
   {
+    "name": "ElevenLabs",
+    "domain": "elevenlabs.io",
+    "compliance_status": "compliant",
+    "summary": "we collect publicly available information from third-party sites to enable the training of our models and systems. We may also work with third parties directly to collect information such as to enable the training of our models and systems.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://elevenlabs.io/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Fireflies.ai",
+    "domain": "fireflies.ai",
+    "compliance_status": "compliant",
+    "summary": "We do not use personal information for AI model training and we contractually prohibit our vendors from using this information for their own model training.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://fireflies.ai/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Gemini",
+    "domain": "google.com",
+    "compliance_status": "shared_domain_unverified",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "data_retention": "Default 18 months, changeable to 3 months, 36 months, or indefinite; chats reviewed by human reviewers retained up to three years; some data retained until Google Account deletion; longer retention for security, fraud prevention, or legal purposes",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://support.google.com/gemini/answer/13594961"
+    ],
+    "verified": true,
+    "shared_domain": true
+  },
+  {
+    "name": "GitHub Copilot",
+    "domain": "github.com",
+    "compliance_status": "unrated",
+    "summary": "Users can view and update their information directly through their account settings",
+    "data_retention": null,
+    "trains_on_user_data": null,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://github.com/trust-center/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Grammarly",
+    "domain": "grammarly.com",
+    "compliance_status": "compliant",
+    "summary": "You are in control of whether your user content is used for training and improvement of our models.",
+    "data_retention": "Personal data retained as long as necessary to provide products, complete transactions, comply with legal obligations, and resolve disputes. User content for troubleshooting and product improvement retained no longer than one year, then deleted or de-identified, unless user chooses to retain it longer or requests earlier deletion.",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.grammarly.com/privacy-policy-november-2024"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Granola",
+    "domain": "granola.ai",
+    "compliance_status": "compliant",
+    "summary": "We do not allow third parties such as OpenAI or Anthropic to use your Personal Data to train AI models. We only use de-identified data to train AI models, which you can opt-out of within your Granola account settings.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://docs.granola.ai/help-center/policies/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "HeyGen",
+    "domain": "heygen.com",
+    "compliance_status": "compliant",
+    "summary": "To train and enhance the models that power our products and services, including to make our avatar creation models more accurate. It is necessary for our legitimate interest and subject to appropriate safeguards. You may request to opt-out of this training and enhancement by contacting us at [email protected]",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.heygen.com/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Ideogram",
+    "domain": "ideogram.ai",
+    "compliance_status": "compliant",
+    "summary": "We use User Input and other information you submit to the Services because it is in our legitimate interest to administer and improve the Services and improve and develop our products and technology.",
+    "data_retention": "We retain your information for as long as is reasonably necessary for the purposes specified in this Privacy Policy. When determining the length of time to retain information, we consider various criteria, including whether we need the information to continue to administer your account, provide the Services, resolve a dispute, enforce our contractual agreements, prevent harm, promote safety, security and integrit",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://ideogram.ai/legal/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Jasper",
+    "domain": "jasper.ai",
+    "compliance_status": "unrated",
+    "summary": "For the purpose of the GDPR, the Company is the Data Controller.",
+    "data_retention": null,
+    "trains_on_user_data": null,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.jasper.ai/legal/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "JetBrains AI Assistant",
+    "domain": "jetbrains.com",
+    "compliance_status": "compliant",
+    "summary": "We may use collected data to develop and test products and services.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.jetbrains.com/legal/docs/privacy/privacy/"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Kagi",
+    "domain": "kagi.com",
+    "compliance_status": "compliant",
+    "summary": "For Kagi, user data is only a liability - we do not need or want it.",
+    "data_retention": "Load Balancer Logs: 7 days; Virtual Machine Logs: 7 days; Sentry: 90 days; Kagi Assistant conversation threads: deleted after one day by default; Summaries of public web pages cached not more than one day",
+    "trains_on_user_data": false,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://kagi.com/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Luma AI (Dream Machine)",
+    "domain": "lumalabs.ai",
+    "compliance_status": "compliant",
+    "summary": "Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://lumalabs.ai/legal/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Microsoft Copilot",
+    "domain": "microsoft.com",
+    "compliance_status": "shared_domain_unverified",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "data_retention": "18 months for conversations by default; up to 30 days for uploaded files; screenshots and camera images from Vision not stored after session ends",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy"
+    ],
+    "verified": true,
+    "shared_domain": true
+  },
+  {
+    "name": "Midjourney",
+    "domain": "midjourney.com",
+    "compliance_status": "not_compliant",
+    "summary": "data collected through the process of training Midjourney machine learning algorithms",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Notion AI",
+    "domain": "notion.com",
+    "compliance_status": "compliant",
+    "summary": "We do not process Workspace API user data to develop, improve, or train generalized AI and/or ML models.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://www.notion.com/trust/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Otter.ai",
+    "domain": "otter.ai",
+    "compliance_status": "not_compliant",
+    "summary": "Improve and monitor the Services, including training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://otter.ai/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Perplexity AI",
+    "domain": "perplexity.ai",
+    "compliance_status": "compliant",
+    "summary": "Improve or create services and products, including our AI models.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://www.perplexity.ai/hub/legal/privacy-notice"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
     "name": "Replit AI",
     "domain": "replit.com",
     "compliance_status": "unrated",
@@ -121,6 +317,20 @@
     "gdpr_mentioned": true,
     "source_urls": [
       "https://replit.com/privacy-policy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "Runway",
+    "domain": "runway.com",
+    "compliance_status": "unrated",
+    "summary": "We may create aggregated, de-identified and/or anonymized data from personal data we collect. We make personal data into de-identified or anonymized data by taking steps to remove information that makes the data personally identifiable to you.",
+    "data_retention": null,
+    "trains_on_user_data": null,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://runway.com/privacy-policy"
     ],
     "verified": true,
     "shared_domain": false
@@ -154,99 +364,29 @@
     "shared_domain": false
   },
   {
-    "name": "Runway",
-    "domain": "runway.com",
-    "compliance_status": "unrated",
-    "summary": "We may create aggregated, de-identified and/or anonymized data from personal data we collect. We make personal data into de-identified or anonymized data by taking steps to remove information that makes the data personally identifiable to you.",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://runway.com/privacy-policy"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "ElevenLabs",
-    "domain": "elevenlabs.io",
-    "compliance_status": "compliant",
-    "summary": "we collect publicly available information from third-party sites to enable the training of our models and systems. We may also work with third parties directly to collect information such as to enable the training of our models and systems.",
+    "name": "v0",
+    "domain": "vercel.com",
+    "compliance_status": "shared_domain_unverified",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://elevenlabs.io/privacy-policy"
+      "https://vercel.com/legal/privacy-notice"
     ],
     "verified": true,
-    "shared_domain": false
+    "shared_domain": true
   },
   {
-    "name": "Grammarly",
-    "domain": "grammarly.com",
+    "name": "You.com",
+    "domain": "you.com",
     "compliance_status": "compliant",
-    "summary": "You are in control of whether your user content is used for training and improvement of our models.",
-    "data_retention": "Personal data retained as long as necessary to provide products, complete transactions, comply with legal obligations, and resolve disputes. User content for troubleshooting and product improvement retained no longer than one year, then deleted or de-identified, unless user chooses to retain it longer or requests earlier deletion.",
-    "trains_on_user_data": true,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://www.grammarly.com/privacy-policy-november-2024"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "Jasper",
-    "domain": "jasper.ai",
-    "compliance_status": "unrated",
-    "summary": "For the purpose of the GDPR, the Company is the Data Controller.",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://www.jasper.ai/legal/privacy"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "Copy.ai",
-    "domain": "copy.ai",
-    "compliance_status": "unrated",
-    "summary": "You may opt-out of our mailing lists and terminate your use of our website.",
-    "data_retention": "We retain different types of Personal Data for different periods, depending on the purposes for processing the information, our legitimate business purposes as well as pursuant to legal requirements.",
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://www.copy.ai/privacy-notice"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "Notion AI",
-    "domain": "notion.com",
-    "compliance_status": "compliant",
-    "summary": "We do not process Workspace API user data to develop, improve, or train generalized AI and/or ML models.",
+    "summary": "This data will not be used for developing, improving, or training third party AI and/or ML models.",
     "data_retention": null,
     "trains_on_user_data": false,
-    "gdpr_mentioned": null,
+    "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.notion.com/trust/privacy-policy"
-    ],
-    "verified": true,
-    "shared_domain": false
-  },
-  {
-    "name": "Otter.ai",
-    "domain": "otter.ai",
-    "compliance_status": "not_compliant",
-    "summary": "Improve and monitor the Services, including training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)",
-    "data_retention": null,
-    "trains_on_user_data": true,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://otter.ai/privacy-policy"
+      "https://you.com/privacy"
     ],
     "verified": true,
     "shared_domain": false

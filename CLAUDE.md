@@ -46,11 +46,16 @@ files.
 - **Free tier: unlimited badge lookups against the public catalog.**
   Checking a NEW site (`POST /v1/check`) is the growth loop — every check
   is a potential catalog contribution via the existing submission →
-  extraction → human review → publish pipeline. **Do not gate the check
-  itself behind premium** — that throttles catalog growth. (Confirmed
-  already true in code: `requireApiKey` in `backend/src/auth.ts` accepts
-  any valid, non-revoked key regardless of `tier` — free-tier keys can
-  call `/v1/check`, only a missing/invalid key is rejected.)
+  extraction → auto-publish-or-human-review → publish pipeline (see
+  `backend/src/autoPublish.ts`). **Do not gate the check itself behind
+  premium** — that throttles catalog growth. (Confirmed already true in
+  code: `requireApiKey` in `backend/src/auth.ts` accepts any valid,
+  non-revoked key regardless of `tier` — free-tier keys can call
+  `/v1/check`, only a missing/invalid key is rejected.) The growth loop
+  now has a real front door on the website itself (`SubmitTool.astro` on
+  `/tools`), not just the API/extension — see `DECISIONS_NEEDED.md`'s
+  2026-08-17 night entry for the `PUBLIC_API_BASE_URL` wiring it still
+  needs before a real deploy.
 - **Premium: depth, not access** — sourced clause detail, change
   monitoring, exportable reports. Possibly: instant personal-use result
   vs. waiting for the reviewed-and-published public entry.

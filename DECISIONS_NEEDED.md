@@ -1,5 +1,73 @@
 # Decisions Needed
 
+## Ran overnight (2026-08-17 night): the second batch went through the real pipeline, 10 now live
+
+Approved go-ahead on all three: pushed the deny-rule relaxation, built the
+Wayback fallback, then actually ran the 23 sourced-but-unpublished tools
+(21 new batch + Windsurf + Adobe Firefly) through the live check ->
+extract -> auto-publish pipeline locally (`wrangler dev --local`, fresh
+D1). Not simulated -- real fetches, real Haiku calls, real verdicts.
+
+**Result: 10 auto-published, live in `frontend/data/tools.json` right
+now** (catalog is 29 tools, up from 19): Bolt.new, Fireflies.ai, Granola,
+HeyGen, Ideogram, JetBrains AI Assistant, Kagi, Luma AI, v0, You.com.
+
+**11 need your review** (queued with a stated reason each, in the local
+admin queue -- `cd backend && npm run dev`, then `GET /v1/admin/pending`
+with header `X-Admin-Token: local-test-admin-token`):
+- 9 came back with a genuinely null critical fact (trains_on_user_data or
+  opt_out_available) -- Amazon Q Developer, Tabnine, DeepL, Poe, Speechify,
+  Rev, Sudowrite, Wordtune, Synthesia. Correctly queued, not a bug -- the
+  source pages just don't clearly answer the question.
+- **Suno**: extraction failed on a JSON parse error from Haiku's response
+  (`Expected ',' or ']' after array element`) -- same class of flakiness
+  as the two bugs already fixed in the seed batch, but a new variant.
+  Not fixed tonight (didn't want to hack the parser under time pressure
+  without you around to sanity-check) -- worth a look next session.
+- **Character.AI**: confirmed the SPA-extraction risk flagged in the
+  research summary was real -- `cleanHtmlToText` was stripping the page
+  down to nothing, which crashed the Haiku call with an opaque 400. Fixed
+  the actual bug (`extraction.ts` now fails fast with an honest
+  "empty_extracted_text" reason instead of sending garbage to the API) --
+  but Character.AI itself still needs a non-SPA source (their legal pages
+  don't render without JS) before it can ever get real facts.
+
+**Windsurf and Adobe Firefly are still unpublished.** Built and unit-tested
+the Wayback Machine fallback (`waybackFallback.ts`) as agreed, but
+archive.org itself rate-limited this session's outbound IP tonight (429 on
+its own availability API, confirmed with a direct test, unrelated to our
+code) -- so live verification against these two specific domains is still
+outstanding. The fallback is wired in and will trigger automatically next
+time either is submitted; no action needed, just flagging that "built" and
+"proven against the real target" aren't the same thing yet here.
+
+**Two domain-identity quirks found while running real data, both handled:**
+- Granola's sourced privacy policy lives on `docs.granola.ai`, not the
+  product's real apex `granola.ai` -- registering it under the subdomain
+  would mean a visitor on granola.ai itself never gets a badge match.
+  Corrected to `granola.ai`.
+- Same underlying issue exists for **Bolt.new**: its privacy policy is
+  hosted on `stackblitz.com` (a genuinely different domain, not a
+  subdomain), so it's currently registered there -- a visitor on
+  `bolt.new` itself won't match. Left as-is rather than hacked around
+  (the domain-match validation correctly rejects a source URL that isn't
+  actually under the claimed domain) -- this is a new class of gap
+  ("one product, disjoint domains") distinct from the shared-domain case,
+  worth a real design decision rather than a quick patch.
+
+**Website self-submission is now live** (`SubmitTool.astro` on `/tools`,
+posts straight to `POST /v1/check` from the browser -- had to add CORS
+support to the backend, `cors.ts`, since the static site and the Worker
+are different origins). Tested end-to-end with a real headless-browser
+form submission against the local backend, not just eyeballed. **Needs
+`PUBLIC_API_BASE_URL` set at build time before this goes live** -- it's
+unset in the actual build, so right now the form shows "Submissions
+aren't connected yet" rather than silently failing. Wire it to wherever
+the Worker ends up deployed.
+
+All of the above is committed and pushed. Full diff is readable, nothing
+force-pushed or squashed.
+
 ## For review whenever convenient (2026-08-17): 4 items from the second research batch
 
 Full detail in `research/second_batch_summary.md`. Not blocking anything —
