@@ -1,5 +1,36 @@
 # Decisions Needed
 
+## For review whenever convenient (2026-08-17): 4 items from the second research batch
+
+Full detail in `research/second_batch_summary.md`. Not blocking anything —
+sourcing is done, these just need your eyes before/while the batch goes
+through the actual check/extraction pipeline:
+
+- **Amazon Q Developer** (`aws.amazon.com`) and **v0** (`vercel.com`) sit on
+  shared apex domains — the `shared_domain` heuristic (`sharedDomains.ts`)
+  will fire on these automatically once submitted, same as Gemini/Copilot.
+  No action needed unless you disagree they're shared.
+- **Character.AI** — legal pages are a client-rendered SPA; the fetcher may
+  only get an empty shell instead of real policy text on submission. Worth
+  a manual look if it comes back `unrated` with null facts.
+- **DeepL** and **Suno** have genuinely different data-training answers for
+  free vs. paid tiers — not an extraction bug, needs a decision on which
+  tier PolicyPeek rates (same "which product line" question as GitHub
+  Copilot's Free/Pro vs Business/Enterprise split, already noted in
+  `tool_sources.json`).
+
+## Needs a decision before build (2026-08-17): visual direction picked, ship it
+
+Built and shipped the "Compliance Label" direction (see `Layout.astro`,
+`Badge.astro`) — literal nutrition-facts/energy-rating look: black
+keylines, condensed headline type, tabular monospace data, badges as
+bordered disclosure tags instead of soft pills. Chosen over a "Redacted
+Dossier" (case-file/redaction motif) and "Audit Terminal" (dark,
+monospace-only, log-stream) direction because it's the most literal fit
+for an individual/casual-checker product — trust signal doesn't depend on
+the visitor being technical, unlike the terminal direction. Flag if it's
+wrong; easy to swap since it's all CSS custom properties in one file.
+
 ## Confirmed, not just suspected (2026-08-17): Windsurf and Adobe Firefly are blocked by vendor-side anti-bot, not fixable by retrying
 
 Elliot asked for a real look instead of another blind retry. Tested both live, with two different fetchers (not just PolicyPeek's checker), to isolate whether it was our request pattern specifically or something broader:

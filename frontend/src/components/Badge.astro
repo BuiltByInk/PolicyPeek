@@ -25,14 +25,19 @@ const { label, cls } = copy[status];
 <span class={cls}>{label}</span>
 
 <style>
+  /* Rendered as a literal disclosure tag -- sharp corners, a full border,
+     uppercase tracked type -- rather than a soft pill, to match the rest
+     of the site's "regulatory label" language (see Layout.astro). */
   .badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.2rem 0.65rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
+    padding: 0.22rem 0.6rem;
+    border: 1.5px solid currentColor;
+    font-family: var(--font-head);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   .badge.green { background: var(--green-bg); color: var(--green-fg); }
   .badge.amber { background: var(--amber-bg); color: var(--amber-fg); }
@@ -40,7 +45,6 @@ const { label, cls } = copy[status];
   .badge.amber-outline {
     background: transparent;
     color: var(--amber-fg);
-    border: 1.5px solid var(--amber-fg);
-    padding: calc(0.2rem - 1.5px) calc(0.65rem - 1.5px);
+    border-style: dashed;
   }
 </style>
