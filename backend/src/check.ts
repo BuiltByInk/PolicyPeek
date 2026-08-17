@@ -1,10 +1,13 @@
 import type { Env } from "./index";
 import { isValidDomain } from "./lookup";
 import { safeFetchText, SsrfBlockedError } from "./ssrf";
-import { extractFacts } from "./extraction";
+import { extractFacts, type ExtractedFacts } from "./extraction";
 import { getClientIp, resolveTier } from "./auth";
 import { cleanHtmlToText } from "./htmlClean";
 import { isUnderDailyCap, recordAnonymousCheck } from "./rateLimit";
+import { isKnownSharedDomain } from "./sharedDomains";
+import { evaluateAutoPublish } from "./autoPublish";
+import { approvePendingCheck } from "./admin";
 
 interface CheckBody {
   domain?: string;
@@ -21,7 +24,15 @@ export function isSourceHostAllowedForDomain(sourceHost: string, domain: string)
   return host === d || host.endsWith(`.${d}`);
 }
 
-async function runExtraction(env: Env, pendingId: number, rawText: string): Promise<void> {
+export async function runExtraction(
+  env: Env,
+  pendingId: number,
+  domain: string,
+  sourceUrl: string,
+  isRecheck: boolean,
+  sharedDomain: boolean,
+  rawText: string
+): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
     await env.DB.prepare(
       "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
@@ -31,8 +42,9 @@ async function runExtraction(env: Env, pendingId: number, rawText: string): Prom
     return;
   }
 
+  let facts: ExtractedFacts;
   try {
-    const facts = await extractFacts(rawText, env.ANTHROPIC_API_KEY);
+    facts = await extractFacts(rawText, env.ANTHROPIC_API_KEY);
     await env.DB.prepare(
       "UPDATE pending_checks SET extracted_facts = ?, status = 'extracted', extraction_error = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
     )
@@ -44,6 +56,38 @@ async function runExtraction(env: Env, pendingId: number, rawText: string): Prom
     )
       .bind(String(err instanceof Error ? err.message : err), pendingId)
       .run();
+    return;
+  }
+
+  // Tier A of the three-tier publish model (see autoPublish.ts): a clean,
+  // unambiguous extraction publishes itself immediately. Anything else
+  // (null critical fact, or a recheck whose verdict would flip) stays
+  // 'extracted' for the admin queue -- handleListPending explains why.
+  const existing = isRecheck
+    ? await env.DB.prepare("SELECT compliance_status FROM tools WHERE domain = ?")
+        .bind(domain)
+        .first<{ compliance_status: string }>()
+    : null;
+  const decision = evaluateAutoPublish(facts, {
+    sharedDomain,
+    isRecheck,
+    existingStatus: existing?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
+  });
+
+  if (decision.eligible) {
+    await approvePendingCheck(
+      env,
+      {
+        id: pendingId,
+        domain,
+        is_recheck: Number(isRecheck),
+        status: "extracted",
+        source_url: sourceUrl,
+        extracted_facts: JSON.stringify(facts),
+        shared_domain: Number(sharedDomain),
+      },
+      { autoPublished: true }
+    );
   }
 }
 
@@ -116,11 +160,12 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   const isRecheck = await env.DB.prepare("SELECT 1 FROM tools WHERE domain = ?")
     .bind(domain)
     .first();
+  const sharedDomain = isKnownSharedDomain(domain);
 
   const inserted = await env.DB.prepare(
-    "INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status) VALUES (?, ?, ?, ?, 'pending') RETURNING id"
+    "INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain) VALUES (?, ?, ?, ?, 'pending', ?) RETURNING id"
   )
-    .bind(domain, isRecheck ? 1 : 0, sourceUrl, cleanedText.slice(0, 20_000))
+    .bind(domain, isRecheck ? 1 : 0, sourceUrl, cleanedText.slice(0, 20_000), Number(sharedDomain))
     .first<{ id: number }>();
 
   if (!inserted) {
@@ -131,7 +176,9 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
     await recordAnonymousCheck(env, clientIp);
   }
 
-  ctx.waitUntil(runExtraction(env, inserted.id, cleanedText));
+  ctx.waitUntil(
+    runExtraction(env, inserted.id, domain, sourceUrl, Boolean(isRecheck), sharedDomain, cleanedText)
+  );
 
   return Response.json(
     {

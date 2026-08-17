@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS tools (
   -- is on the parent company's apex domain). Hard-overrides compliance_status
   -- to 'shared_domain_unverified' in rules.ts -- see computeVerdict.
   shared_domain INTEGER NOT NULL DEFAULT 0 CHECK (shared_domain IN (0, 1)),
+  -- true when this row was published by evaluateAutoPublish (autoPublish.ts)
+  -- rather than a human hitting the admin approve endpoint. Purely
+  -- observability -- doesn't change how the row is served or verified.
+  auto_published INTEGER NOT NULL DEFAULT 0 CHECK (auto_published IN (0, 1)),
   summary TEXT, -- one-line reason shown alongside the badge
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
