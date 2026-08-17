@@ -83,6 +83,7 @@ export async function runMonthlyRecheck(env: Env): Promise<void> {
         env,
         inserted.id,
         tool.domain,
+        null, // recheck of an existing tool: approvePendingCheck's UPDATE path never touches tools.name
         sourceUrl,
         true,
         sharedDomain,

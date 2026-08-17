@@ -13,6 +13,7 @@ import { tryWaybackFallback } from "./waybackFallback";
 interface CheckBody {
   domain?: string;
   source_url?: string;
+  name?: string;
 }
 
 // The policy URL has to actually belong to the domain being submitted, not
@@ -52,6 +53,7 @@ export async function runExtraction(
   env: Env,
   pendingId: number,
   domain: string,
+  name: string | null,
   sourceUrl: string,
   isRecheck: boolean,
   sharedDomain: boolean,
@@ -106,6 +108,7 @@ export async function runExtraction(
       {
         id: pendingId,
         domain,
+        name,
         is_recheck: Number(isRecheck),
         status: "extracted",
         source_url: sourceUrl,
@@ -150,6 +153,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
 
   const domain = body.domain?.trim().toLowerCase();
   const sourceUrl = body.source_url?.trim();
+  const name = body.name?.trim() || null;
 
   if (!domain || !isValidDomain(domain)) {
     return Response.json({ error: "invalid_domain" }, { status: 400 });
@@ -190,11 +194,12 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   const sharedDomain = isKnownSharedDomain(domain);
 
   const inserted = await env.DB.prepare(
-    `INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain, sourced_from_archive, archived_source_url)
-     VALUES (?, ?, ?, ?, 'pending', ?, ?, ?) RETURNING id`
+    `INSERT INTO pending_checks (domain, name, is_recheck, source_url, raw_fetch, status, shared_domain, sourced_from_archive, archived_source_url)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?) RETURNING id`
   )
     .bind(
       domain,
+      name,
       isRecheck ? 1 : 0,
       sourceUrl,
       cleanedText.slice(0, 20_000),
@@ -217,6 +222,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
       env,
       inserted.id,
       domain,
+      name,
       sourceUrl,
       Boolean(isRecheck),
       sharedDomain,
