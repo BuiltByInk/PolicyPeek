@@ -187,5 +187,194 @@
     "dpa": null,
     "security_trust_page": "https://www.zoom.com/en/products/ai-assistant/resources/privacy-security/",
     "notes": "Zoom's general Terms of Service page used since no AI Companion-specific ToS URL surfaced separately from the privacy/security explainer."
+  },
+  "tabnine": {
+    "name": "Tabnine",
+    "vendor": "Tabnine Ltd",
+    "privacy_policy": "https://www.tabnine.com/privacy-policy/",
+    "terms_of_service": "https://www.tabnine.com/terms-of-use/",
+    "dpa": null,
+    "security_trust_page": "https://trust.tabnine.com/",
+    "notes": "Privacy policy is thin on whether code is used for training -- the concrete 'zero data retention' claim lives on a separate marketing page (tabnine.com/code-privacy) that isn't a legal document, so not substituted in as the source of record. Trust center is SafeBase-hosted (third-party), same pattern as other vendor trust portals in this batch -- confirmed genuine, not a spoof."
+  },
+  "amazon-q-developer": {
+    "name": "Amazon Q Developer",
+    "vendor": "Amazon Web Services, Inc.",
+    "privacy_policy": "https://aws.amazon.com/privacy/",
+    "terms_of_service": "https://aws.amazon.com/service-terms/",
+    "dpa": null,
+    "security_trust_page": "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/data-protection.html",
+    "notes": "SHARED APEX DOMAIN (aws.amazon.com covers all AWS services) -- flag for shared_domain like Gemini/Microsoft Copilot in the first batch; the general AWS Privacy Notice and Service Terms are not Q-Developer-specific. Used the AWS docs data-protection page as security_trust_page since it's the most product-scoped source and links onward to the real opt-out mechanism (docs.aws.amazon.com/.../opt-out-IDE.html) and the service-improvement page explaining how content may be used. Confirmed via direct fetch (not a search summary) -- got real AWS doc markdown, not a nav shell."
+  },
+  "jetbrains-ai-assistant": {
+    "name": "JetBrains AI Assistant",
+    "vendor": "JetBrains s.r.o.",
+    "privacy_policy": "https://www.jetbrains.com/legal/docs/privacy/privacy/",
+    "terms_of_service": "https://www.jetbrains.com/legal/docs/terms/jetbrains-ai-service/",
+    "dpa": "https://www.jetbrains.com/legal/dpa/",
+    "security_trust_page": null,
+    "notes": "AI-specific ToS states inputs/outputs will NOT be used to train language models without express permission -- a clearer no-default-training stance than most tools in this batch. DPA page is dated Version 1.3 / April 27, 2022 -- old relative to the 2025-dated AI ToS it's linked from; flagging staleness, not swapping it for a guess."
+  },
+  "bolt-new": {
+    "name": "Bolt.new",
+    "vendor": "StackBlitz, Inc.",
+    "privacy_policy": "https://stackblitz.com/privacy-policy",
+    "terms_of_service": "https://stackblitz.com/terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Bolt.new has no standalone legal docs -- StackBlitz (the parent company/IDE product) is the entity and its Privacy Policy/ToS explicitly cover Bolt. Confirmed the privacy policy addresses AI-input training use directly (tiered opt-out by plan). A separate merch-shop ToS at shop.bolt.new/pages/terms-of-service exists but is irrelevant (covers t-shirt purchases, not the product) -- not used."
+  },
+  "v0": {
+    "name": "v0",
+    "vendor": "Vercel Inc.",
+    "privacy_policy": "https://vercel.com/legal/privacy-notice",
+    "terms_of_service": "https://vercel.com/legal/terms",
+    "dpa": "https://vercel.com/legal/dpa",
+    "security_trust_page": "https://v0.app/policy",
+    "notes": "SHARED APEX DOMAIN for the privacy/terms/DPA docs (vercel.com covers Vercel's whole hosting platform, not just v0) -- same flag as Amazon Q Developer. Used v0.app/policy (confirmed genuine, product-specific) as the security_trust_page slot since it's the one v0-scoped legal doc and covers the actual fact this pipeline extracts: tiered model-training opt-in/opt-out by plan tier."
+  },
+  "ideogram": {
+    "name": "Ideogram",
+    "vendor": "Ideogram AI, Inc.",
+    "privacy_policy": "https://ideogram.ai/legal/privacy",
+    "terms_of_service": "https://ideogram.ai/legal/tos",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Privacy policy confirms user data is used to 'train the models that power our Services' with no opt-out mechanism found, and no GDPR-specific section (policy leans CCPA/state-law framing). Worth a clear-eyed read before publishing as compliant on anything."
+  },
+  "luma-ai": {
+    "name": "Luma AI (Dream Machine)",
+    "vendor": "Luma AI, Inc.",
+    "privacy_policy": "https://lumalabs.ai/legal/privacy-policy",
+    "terms_of_service": "https://lumalabs.ai/legal/terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Confirms data used to 'train, develop, and improve' its AI/ML models; no explicit training opt-out found (only marketing-email opt-out), despite an otherwise thorough GDPR rights section. Enterprise customers are carved out as controllers under their own terms."
+  },
+  "suno": {
+    "name": "Suno",
+    "vendor": "Suno, Inc.",
+    "privacy_policy": "https://www.suno.ai/privacy",
+    "terms_of_service": "https://suno.com/terms",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "ToS grants Suno a broad perpetual license over submissions/outputs 'in connection with...improvement of our products and services, including...artificial intelligence and machine learning models' -- confirmed via direct fetch. Free vs. paid tiers have different output-ownership terms, similar two-tier pattern to GitHub Copilot/Grammarly in the first batch."
+  },
+  "heygen": {
+    "name": "HeyGen",
+    "vendor": "HeyGen Technology Inc.",
+    "privacy_policy": "https://www.heygen.com/privacy",
+    "terms_of_service": "https://www.heygen.com/terms",
+    "dpa": "https://www.heygen.com/data-processing-addendum",
+    "security_trust_page": "https://security.heygen.com/",
+    "notes": "One of the few tools in this batch with an explicit AI-training opt-out reachable by contacting privacy@heygen.com (Section 4 of the privacy policy) rather than just a settings toggle. security.heygen.com is a Drata-hosted trust portal (third-party-hosted, same pattern as Tabnine's SafeBase portal) -- confirmed genuine, not mistaken for an unrelated org's trust center."
+  },
+  "synthesia": {
+    "name": "Synthesia",
+    "vendor": "Synthesia Limited",
+    "privacy_policy": "https://www.synthesia.io/legal/privacy-policy",
+    "terms_of_service": "https://www.synthesia.io/legal/user-terms-of-service",
+    "dpa": "https://www.synthesia.io/terms/data-processing-agreement",
+    "security_trust_page": "https://www.synthesia.io/legal/security-practices",
+    "notes": "Used the consumer-facing User Terms of Service (not Customer Terms of Service, which is the B2B contract) to match this batch's individual-checker ICP, same distinction made for ChatGPT/GitHub Copilot in the first batch. Privacy policy does not clearly state whether personal data (as opposed to video/avatar content generally) is used for model training -- flagging the gap rather than guessing."
+  },
+  "wordtune": {
+    "name": "Wordtune",
+    "vendor": "AI21 Labs Ltd",
+    "privacy_policy": "https://www.wordtune.com/privacy-policy",
+    "terms_of_service": "https://www.wordtune.com/terms-of-use",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Privacy policy says content is used to 'improve, enhance and develop the Services' but doesn't clearly say whether that includes AI model training specifically -- ambiguous rather than silent. Confirmed strong GDPR section otherwise."
+  },
+  "sudowrite": {
+    "name": "Sudowrite",
+    "vendor": "Sudowrite (Sponge Bill LLC)",
+    "privacy_policy": "https://sudowrite.com/privacy-policy",
+    "terms_of_service": "https://sudowrite.com/terms-and-conditions",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "FLAG FOR REVIEWER: privacy policy is dated October 6, 2020 and never mentions AI, model training, or generative features at all, despite Sudowrite being an AI fiction-writing tool today -- reads as a stale template the company hasn't updated to cover its actual product. Confirmed genuine (not fabricated), just outdated; extraction will likely come back with null training-related facts, which is an honest reflection of the source, not a pipeline bug."
+  },
+  "you-com": {
+    "name": "You.com",
+    "vendor": "You.com, Inc.",
+    "privacy_policy": "https://you.com/privacy",
+    "terms_of_service": "https://you.com/terms",
+    "dpa": null,
+    "security_trust_page": "https://home.you.com/security",
+    "notes": "Privacy policy explicitly states uploaded/prompt data 'will not be used for developing, improving, or training third party AI and/or ML models' -- one of the clearer no-third-party-training statements in this batch (says nothing about You.com's own first-party models, worth noting)."
+  },
+  "kagi": {
+    "name": "Kagi",
+    "vendor": "Kagi Inc.",
+    "privacy_policy": "https://kagi.com/privacy",
+    "terms_of_service": "https://kagi.com/privacy",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "No separate terms-of-service URL surfaced distinct from the privacy policy -- Kagi's site structures both under /privacy plus a linked 'Privacy Rights Addendum' for GDPR/CCPA specifics; used the same URL for both fields rather than fabricate a separate ToS link. Policy states Kagi does not use personal data or prompts to train AI models and does not sell data -- a genuinely privacy-first stance consistent with its no-ads subscription business model."
+  },
+  "fireflies-ai": {
+    "name": "Fireflies.ai",
+    "vendor": "Fireflies.ai, Inc.",
+    "privacy_policy": "https://fireflies.ai/privacy-policy",
+    "terms_of_service": "https://fireflies.ai/terms-of-service",
+    "dpa": "https://fireflies.ai/data-processing-agreement",
+    "security_trust_page": null,
+    "notes": "Explicit statement that meeting content/personal data is not used to train AI models and vendors are contractually barred from training on it -- one of the strongest no-training claims found in this batch."
+  },
+  "rev": {
+    "name": "Rev",
+    "vendor": "Rev.com, Inc.",
+    "privacy_policy": "https://www.rev.com/legal/privacy",
+    "terms_of_service": "https://www.rev.com/legal/terms",
+    "dpa": null,
+    "security_trust_page": "https://www.rev.com/security",
+    "notes": "Policy doesn't explicitly address AI-model-training use of transcripts/audio, a notable gap for a company whose product is AI-assisted transcription -- flagging rather than inferring an answer from marketing copy that says 'never uses customer content to train external AI models' (that claim wasn't confirmed inside the legal document itself)."
+  },
+  "speechify": {
+    "name": "Speechify",
+    "vendor": "Speechify Inc.",
+    "privacy_policy": "https://speechify.com/privacy/",
+    "terms_of_service": "https://speechify.com/terms/",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Speechify also runs separate Studio-specific privacy/terms pages (speechify.com/studio-privacy, speechify.com/studio-terms) for its voice-cloning/dubbing product line -- used the main consumer text-to-speech app's policy since that's the product a casual checker would have installed, not the Studio B2B tool."
+  },
+  "character-ai": {
+    "name": "Character.AI",
+    "vendor": "Character Technologies, Inc.",
+    "privacy_policy": "https://character.ai/privacy",
+    "terms_of_service": "https://character.ai/tos",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "FLAG FOR REVIEWER: both URLs are confirmed genuine and resolve on the real character.ai domain (via 308 redirects from policies.character.ai, which is the canonical link Character.AI itself publishes) -- but the site is a client-rendered SPA, so WebFetch only received the page shell/tagline, not policy prose, on every attempt. This is the same failure mode as Claude's original nav-page issue in the first batch, except here it's a rendering limitation, not a wrong URL -- the backend's own fetcher may hit the same wall depending on whether it executes JS. Also checked and explicitly rejected a lookalike domain, characterai.cc, which appeared in search results claiming to host Character.AI's terms -- it is not Character.AI's domain and was not used anywhere in this record."
+  },
+  "poe": {
+    "name": "Poe",
+    "vendor": "Quora, Inc.",
+    "privacy_policy": "https://poe.com/privacy",
+    "terms_of_service": "https://poe.com/tos",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Poe's privacy policy is a supplement to the main Quora Privacy Policy (incorporated by reference) rather than fully standalone -- confirmed it explicitly discloses that third-party AI model providers and bot creators can receive full chat contents/uploaded files. No clear opt-out mechanism for that sharing found within the Poe-specific document itself."
+  },
+  "granola": {
+    "name": "Granola",
+    "vendor": "Granola, Inc.",
+    "privacy_policy": "https://docs.granola.ai/help-center/policies/privacy-policy",
+    "terms_of_service": "https://www.granola.ai/docs/policies/terms/tos",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Confirms Granola does not allow OpenAI/Anthropic/other third-party model providers to train on customer data, only uses de-identified/aggregated data for its own model improvement, and that's opt-outable in account settings (opt-out is default-off for Enterprise). Newer, smaller consumer-facing tool -- exactly the category the founder asked this batch to cover."
+  },
+  "deepl": {
+    "name": "DeepL",
+    "vendor": "DeepL SE",
+    "privacy_policy": "https://www.deepl.com/en/privacy",
+    "terms_of_service": "https://www.deepl.com/en/terms-of-use",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Clean two-tier compliance story confirmed directly in both the privacy policy and this free-service ToS: free-tier submissions ARE used to train/improve DeepL's models (temporary retention), Pro/paid submissions explicitly are NOT. This is a genuinely different compliance answer depending on which tier a user is on -- worth surfacing to the reviewer the same way the free-vs-paid GitHub Copilot split was flagged in the first batch. Used the free-service Terms of Use (matches this batch's individual/casual ICP) rather than the Pro/Enterprise license variants, which are separate documents."
   }
 }
