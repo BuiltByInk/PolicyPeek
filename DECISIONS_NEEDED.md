@@ -1,5 +1,22 @@
 # Decisions Needed
 
+## Confirmed, not just suspected (2026-08-17): Windsurf and Adobe Firefly are blocked by vendor-side anti-bot, not fixable by retrying
+
+Elliot asked for a real look instead of another blind retry. Tested both live, with two different fetchers (not just PolicyPeek's checker), to isolate whether it was our request pattern specifically or something broader:
+
+- **Windsurf**: `windsurf.com/terms-of-service-individual` now permanently redirects (308) to `devin.ai/windsurf/terms-of-service-individual` — Windsurf's terms moved off their own domain entirely. Side finding: this confirms Windsurf was acquired by **Cognition** (maker of Devin), not OpenAI as an earlier research note said — corrected in `tool_sources.json`. The redirect target itself (`devin.ai`) returned `429` to a *second, unrelated* fetcher in addition to our checker, so this isn't our user-agent being singled out — devin.ai is broadly rate-limiting/blocking automated traffic at the edge (Cloudflare bot-fight-mode is the likely mechanism).
+- **Adobe Firefly**: `adobe.com/privacy/policy.html` and `business.adobe.com` both hang with zero response — no block page, nothing — past 60 seconds, confirmed with two different fetchers. Not a slow page: this reads as Akamai-style bot detection stalling the connection for non-browser clients rather than a clean 403. Raising `FETCH_TIMEOUT_MS` further (already bumped 8s→20s) cannot fix an indefinite hang.
+
+**Decision, not further diagnosis needed:** treat both as structurally unreachable to any automated fetcher, not a bug in `safeFetchText`. Neither has a `tools` row — they stay absent from the catalog (openly "not yet checked," not silently missing or mis-rated) until a fallback source exists. Proposed fallback, not yet built: pull the last Wayback Machine snapshot for cases like this, and mark the resulting `tools` row's summary as "sourced from archive, not live" rather than presenting it as a live check. Flagging the fallback as a real backlog item, not implementing it speculatively.
+
+## Resolved (2026-08-17): three-tier auto-publish is live
+
+`autoPublish.ts` (`evaluateAutoPublish`) now runs automatically at the end of every extraction (`check.ts::runExtraction`), including cron rechecks. Tier A (clean facts, deterministic verdict, and — for a recheck — no status flip) auto-publishes via `admin.ts::approvePendingCheck({ autoPublished: true })`, logged to `compliance_changelog` and flagged `tools.auto_published = 1`. Tier B (a critical fact came back null, or a recheck's verdict would flip the existing badge) stays in the pending queue; `handleListPending` now returns a `queue_reason` computed by the same `evaluateAutoPublish` call, so admin approval is confirming a specific stated reason instead of re-deriving it. Tier C is `cron.ts::runMonthlyRecheck`, wired to a new `0 3 1 * *` cron trigger in `wrangler.toml` — re-fetches every published tool monthly and runs it through the identical pipeline; unchanged verdicts silently re-confirm, changed ones always land in the human queue via the tier-B path, never auto-overwrite a live badge.
+
+Multi-product apex domains (`google.com`, `microsoft.com`, etc.) are now auto-flagged `shared_domain` at submission time via a curated list in `sharedDomains.ts`, rather than requiring a human to set the flag by hand per `DECISIONS_NEEDED.md`'s "domain identity" note below — that note's underlying question (apex domain + name identifier, `shared_domain_unverified` as the honest verdict) is Elliot's confirmed answer, so this is wiring the decision into the pipeline, not making a new one.
+
+Needs a schema refresh on any existing local D1 (`tools.auto_published` is a new column, `IF NOT EXISTS` won't add it to an already-created local table) — `npm run db:migrate:local` after dropping the local D1 file, since nothing is deployed and there's no real data yet.
+
 ## Flagging, not blocking (2026-08-15): IP-based identity for the anonymous daily check cap
 
 `POST /v1/check` now accepts anonymous callers (no more hard 401 on a

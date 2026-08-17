@@ -54,14 +54,15 @@ files.
 - **Premium: depth, not access** — sourced clause detail, change
   monitoring, exportable reports. Possibly: instant personal-use result
   vs. waiting for the reviewed-and-published public entry.
-- **Open question, not yet decided:** the review gate is currently 100%
-  manual (Elliot). This becomes the growth bottleneck once real usage
-  shows up. Future direction to revisit: high-confidence extractions (no
-  ambiguity flags) may eventually auto-publish, low-confidence stays
-  gated for manual review — consistent with how the Research Agent
-  already self-triaged the seed batch. Not decided — don't build
-  auto-publish without an explicit go-ahead, it's adjacent to the
-  "publish without human review gate" line on the deny list below.
+- **Resolved (2026-08-17): review gate is no longer 100% manual.** Elliot
+  approved the three-tier auto-publish design — see `DECISIONS_NEEDED.md`'s
+  "three-tier auto-publish is live" entry and `backend/src/autoPublish.ts`.
+  High-confidence extractions (no null critical facts, deterministic
+  verdict, no recheck status-flip) auto-publish; anything else queues for
+  Elliot with a stated reason. The "publish without human review gate" deny
+  item below now means *no bypass of this evaluation*, not *no automation
+  at all* — a wrongly-published verdict is still the failure mode every
+  agent must design against.
 
 ---
 
@@ -129,8 +130,7 @@ next run — by this agent or another — starts smarter than the last.
 - [ ] Decide the first agent to promote past ask-every-time
 - [x] Resolve the ICP question (individual vs. org due diligence) — see
       "Business Model & ICP" above (decided 2026-08-15)
-- [ ] Decide whether/how to move the review gate past 100% manual
-      (auto-publish for high-confidence extractions) — flagged as open in
-      "Business Model & ICP" above, needs explicit sign-off before any
-      agent builds toward it
+- [x] Decide whether/how to move the review gate past 100% manual — three-tier
+      auto-publish approved and built 2026-08-17, see "Business Model & ICP"
+      above and `backend/src/autoPublish.ts`
 </content>

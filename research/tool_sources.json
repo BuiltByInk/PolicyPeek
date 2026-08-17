@@ -69,7 +69,7 @@
     "terms_of_service": "https://windsurf.com/terms-of-service-individual",
     "dpa": null,
     "security_trust_page": null,
-    "notes": "Rebranded from Codeium; search only turned up a combined terms-of-service page (privacy content embedded in it), no standalone privacy-policy URL — not fabricating one. Recent OpenAI acquisition may change data governance; flagged for reviewer awareness, not a reason to exclude."
+    "notes": "Rebranded from Codeium; search only turned up a combined terms-of-service page (privacy content embedded in it), no standalone privacy-policy URL — not fabricating one. CORRECTION (2026-08-17): earlier note said 'acquired by OpenAI' — wrong. Confirmed live: windsurf.com/terms-of-service-individual now 308-redirects permanently to devin.ai/windsurf/terms-of-service-individual, i.e. Windsurf was acquired by Cognition (maker of Devin), not OpenAI. See DECISIONS_NEEDED.md for why this domain still can't be fetched."
   },
   "replit-ai": {
     "name": "Replit AI",
