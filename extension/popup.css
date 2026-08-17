@@ -1,0 +1,91 @@
+/* Color tokens ported from frontend/src/layouts/Layout.astro -- keep in
+   sync by hand. gray-bg/gray-fg have no site equivalent (extension-only
+   states: not_in_catalog, loading), chosen to sit visually alongside the
+   ported green/amber/red without implying a compliance verdict. */
+:root {
+  --green-bg: #e6f4ea; --green-fg: #1e7a34;
+  --amber-bg: #fef3e2; --amber-fg: #92600a;
+  --red-bg: #fce8e6; --red-fg: #b3261e;
+  --gray-bg: #eceef1; --gray-fg: #4b5563;
+  --text: #1a1a1a;
+  --bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green-bg: #123821; --green-fg: #6fe39a;
+    --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
+    --red-bg: #3a1414; --red-fg: #f28b82;
+    --gray-bg: #2a2e35; --gray-fg: #b0b8c1;
+    --text: #f0f0f0;
+    --bg: #1e1e1e;
+  }
+}
+
+body {
+  width: 280px;
+  margin: 0;
+  padding: 0.75rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+header {
+  margin-bottom: 0.5rem;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-bottom: 0.5rem;
+}
+.badge.green { background: var(--green-bg); color: var(--green-fg); }
+.badge.amber { background: var(--amber-bg); color: var(--amber-fg); }
+.badge.red { background: var(--red-bg); color: var(--red-fg); }
+.badge.gray { background: var(--gray-bg); color: var(--gray-fg); }
+
+/* Same "solid vs outline" accessibility rule as Badge.astro's
+   amber-outline -- shape carries the distinction, not color alone. */
+.badge.ring {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  padding: calc(0.2rem - 1.5px) calc(0.65rem - 1.5px);
+}
+
+#status {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+#actions button {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: var(--amber-fg);
+  color: var(--bg);
+  cursor: pointer;
+}
+#actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--gray-fg);
+  margin: 0.5rem 0 0;
+}

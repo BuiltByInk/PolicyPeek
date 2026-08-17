@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "PolicyPeek",
+  "short_name": "PolicyPeek",
+  "version": "0.1.0",
+  "description": "Instant green/amber/red data-privacy badges for AI and SaaS tools.",
+
+  "permissions": ["activeTab", "storage"],
+
+  "host_permissions": [
+    "http://localhost:8787/*"
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PolicyPeek",
+    "default_icon": {
+      "16": "icons/loading-16.png",
+      "32": "icons/loading-32.png",
+      "48": "icons/loading-48.png",
+      "128": "icons/loading-128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/loading-16.png",
+    "32": "icons/loading-32.png",
+    "48": "icons/loading-48.png",
+    "128": "icons/loading-128.png"
+  }
+}
