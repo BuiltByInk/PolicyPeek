@@ -13,4 +13,8 @@ export interface Tool {
   // hosted on the parent company's apex domain) -- badge shows a distinct
   // "not product-verified" state instead of a normal compliant/amber/red one.
   shared_domain: boolean;
+  // true when source_urls[0] is a Wayback Machine snapshot rather than the
+  // live page (the live page blocks automated checks) -- already folded
+  // into `summary`'s trailing note, this is here for completeness/future use.
+  sourced_from_archive?: boolean;
 }

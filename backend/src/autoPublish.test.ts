@@ -61,6 +61,12 @@ describe("evaluateAutoPublish", () => {
     expect(result.eligible).toBe(true);
   });
 
+  it("is NOT eligible when sourced from a Wayback Machine snapshot, even with otherwise-clean facts", () => {
+    const result = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: false, sourcedFromArchive: true });
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toMatch(/Wayback Machine/);
+  });
+
   it("is NOT eligible on a recheck when the verdict would flip the existing published status", () => {
     const result = evaluateAutoPublish(clean, {
       sharedDomain: false,

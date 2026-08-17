@@ -28,10 +28,17 @@ export interface AutoPublishResult {
 //     the "static source, but verify periodically" design.
 export function evaluateAutoPublish(
   facts: ExtractedFacts,
-  opts: { sharedDomain: boolean; isRecheck: boolean; existingStatus?: ComplianceStatus }
+  opts: { sharedDomain: boolean; isRecheck: boolean; existingStatus?: ComplianceStatus; sourcedFromArchive?: boolean }
 ): AutoPublishResult {
   const verdict = computeVerdict(facts, { sharedDomain: opts.sharedDomain });
 
+  if (opts.sourcedFromArchive) {
+    return {
+      eligible: false,
+      verdict,
+      reason: "sourced from a Wayback Machine snapshot, not the live page -- always gets a human look",
+    };
+  }
   if (facts.trains_on_user_data === null) {
     return { eligible: false, verdict, reason: "trains_on_user_data is null -- source page didn't answer the key question" };
   }

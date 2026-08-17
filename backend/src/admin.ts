@@ -11,6 +11,8 @@ interface PendingCheckRow {
   source_url: string | null;
   extracted_facts: string | null;
   shared_domain: number;
+  sourced_from_archive: number;
+  archived_source_url?: string | null;
 }
 
 interface ToolRow {
@@ -20,7 +22,9 @@ interface ToolRow {
 
 export async function handleListPending(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
-    "SELECT id, domain, is_recheck, status, source_url, extracted_facts, extraction_error, shared_domain, created_at, updated_at FROM pending_checks ORDER BY created_at DESC"
+    `SELECT id, domain, is_recheck, status, source_url, extracted_facts, extraction_error, shared_domain,
+       sourced_from_archive, archived_source_url, created_at, updated_at
+     FROM pending_checks ORDER BY created_at DESC`
   ).all<PendingCheckRow & { extraction_error: string | null }>();
 
   // Annotate every still-queued, already-extracted row with *why* it wasn't
@@ -39,6 +43,7 @@ export async function handleListPending(env: Env): Promise<Response> {
         sharedDomain: row.shared_domain === 1,
         isRecheck: row.is_recheck === 1,
         existingStatus: existing?.compliance_status as ReturnType<typeof computeVerdict> | undefined,
+        sourcedFromArchive: row.sourced_from_archive === 1,
       });
       return { ...row, queue_reason: result.reason };
     })
@@ -58,11 +63,17 @@ export async function approvePendingCheck(
 ): Promise<{ toolId: number; verdict: string }> {
   const facts = JSON.parse(pending.extracted_facts as string) as ExtractedFacts;
   const sharedDomain = pending.shared_domain === 1;
+  const sourcedFromArchive = pending.sourced_from_archive === 1;
   const verdict = computeVerdict(facts, { sharedDomain });
+  const archiveNote = sourcedFromArchive
+    ? " (sourced from an archived snapshot, not the live page — the live page blocks automated checks)"
+    : "";
   const summary = sharedDomain
     ? "Policy text is shared across multiple company products — not verified as specific to this tool."
-    : facts.relevant_clauses[0] ?? null;
-  const sourceUrls = JSON.stringify(pending.source_url ? [pending.source_url] : []);
+    : (facts.relevant_clauses[0] ?? null) && `${facts.relevant_clauses[0]}${archiveNote}`;
+  const sourceUrls = JSON.stringify(
+    [pending.source_url, sourcedFromArchive ? pending.archived_source_url : null].filter((u): u is string => Boolean(u))
+  );
 
   const existing = await env.DB.prepare("SELECT id, compliance_status FROM tools WHERE domain = ?")
     .bind(pending.domain)
@@ -74,7 +85,7 @@ export async function approvePendingCheck(
     // place instead of dead-ending on a duplicate-domain conflict.
     await env.DB.prepare(
       `UPDATE tools SET compliance_status = ?, data_retention = ?, trains_on_user_data = ?, gdpr_mentioned = ?,
-        source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = ?, sourced_from_archive = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
        WHERE id = ?`
     )
       .bind(
@@ -86,14 +97,15 @@ export async function approvePendingCheck(
         summary,
         Number(sharedDomain),
         Number(opts.autoPublished),
+        Number(sourcedFromArchive),
         existing.id
       )
       .run();
     toolId = existing.id;
   } else {
     const inserted = await env.DB.prepare(
-      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary, shared_domain, auto_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?) RETURNING id`
+      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary, shared_domain, auto_published, sourced_from_archive)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?) RETURNING id`
     )
       .bind(
         pending.domain,
@@ -105,7 +117,8 @@ export async function approvePendingCheck(
         sourceUrls,
         summary,
         Number(sharedDomain),
-        Number(opts.autoPublished)
+        Number(opts.autoPublished),
+        Number(sourcedFromArchive)
       )
       .first<{ id: number }>();
     if (!inserted) throw new Error("insert_failed");
@@ -135,7 +148,8 @@ export async function approvePendingCheck(
 
 export async function handleApprove(request: Request, env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
-    "SELECT id, domain, is_recheck, status, source_url, extracted_facts, shared_domain FROM pending_checks WHERE id = ?"
+    `SELECT id, domain, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url
+     FROM pending_checks WHERE id = ?`
   )
     .bind(id)
     .first<PendingCheckRow>();

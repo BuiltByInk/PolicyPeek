@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS tools (
   -- rather than a human hitting the admin approve endpoint. Purely
   -- observability -- doesn't change how the row is served or verified.
   auto_published INTEGER NOT NULL DEFAULT 0 CHECK (auto_published IN (0, 1)),
+  -- true when source_urls was fetched via the Wayback Machine fallback
+  -- (waybackFallback.ts) because the vendor's live page actively blocks
+  -- automated fetchers, not because the vendor doesn't exist. Always
+  -- forces a human-queue result in evaluateAutoPublish, never auto-publishes.
+  sourced_from_archive INTEGER NOT NULL DEFAULT 0 CHECK (sourced_from_archive IN (0, 1)),
   summary TEXT, -- one-line reason shown alongside the badge
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
@@ -40,6 +45,10 @@ CREATE TABLE IF NOT EXISTS pending_checks (
   -- carried into tools.shared_domain on approval; set before approving a
   -- pending row whose only public policy lives on a shared corporate domain.
   shared_domain INTEGER NOT NULL DEFAULT 0 CHECK (shared_domain IN (0, 1)),
+  -- see tools.sourced_from_archive above; archived_source_url is the actual
+  -- web.archive.org snapshot URL fetched, for citation on the tool page.
+  sourced_from_archive INTEGER NOT NULL DEFAULT 0 CHECK (sourced_from_archive IN (0, 1)),
+  archived_source_url TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );

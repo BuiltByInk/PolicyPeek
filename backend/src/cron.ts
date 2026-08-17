@@ -1,8 +1,8 @@
 import type { Env } from "./index";
-import { safeFetchText, SsrfBlockedError } from "./ssrf";
+import { SsrfBlockedError } from "./ssrf";
 import { cleanHtmlToText } from "./htmlClean";
 import { isKnownSharedDomain } from "./sharedDomains";
-import { runExtraction } from "./check";
+import { runExtraction, fetchPolicyText } from "./check";
 
 const STUCK_THRESHOLD_MINUTES = 30;
 
@@ -60,18 +60,35 @@ export async function runMonthlyRecheck(env: Env): Promise<void> {
     if (!sourceUrl) continue;
 
     try {
-      const rawHtml = await safeFetchText(sourceUrl);
-      const cleanedText = cleanHtmlToText(rawHtml);
+      const fetched = await fetchPolicyText(sourceUrl);
+      const cleanedText = cleanHtmlToText(fetched.rawHtml);
       const sharedDomain = isKnownSharedDomain(tool.domain);
 
       const inserted = await env.DB.prepare(
-        "INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain) VALUES (?, 1, ?, ?, 'pending', ?) RETURNING id"
+        `INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain, sourced_from_archive, archived_source_url)
+         VALUES (?, 1, ?, ?, 'pending', ?, ?, ?) RETURNING id`
       )
-        .bind(tool.domain, sourceUrl, cleanedText.slice(0, 20_000), Number(sharedDomain))
+        .bind(
+          tool.domain,
+          sourceUrl,
+          cleanedText.slice(0, 20_000),
+          Number(sharedDomain),
+          Number(fetched.sourcedFromArchive),
+          fetched.archivedUrl
+        )
         .first<{ id: number }>();
       if (!inserted) throw new Error("insert_failed");
 
-      await runExtraction(env, inserted.id, tool.domain, sourceUrl, true, sharedDomain, cleanedText);
+      await runExtraction(
+        env,
+        inserted.id,
+        tool.domain,
+        sourceUrl,
+        true,
+        sharedDomain,
+        fetched.sourcedFromArchive,
+        cleanedText
+      );
       ok++;
     } catch (err) {
       failed++;

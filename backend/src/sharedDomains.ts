@@ -19,6 +19,7 @@ const KNOWN_SHARED_DOMAINS = new Set([
   "salesforce.com",
   "oracle.com",
   "ibm.com",
+  "vercel.com",
 ]);
 
 export function isKnownSharedDomain(domain: string): boolean {

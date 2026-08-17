@@ -8,6 +8,7 @@ import { isUnderDailyCap, recordAnonymousCheck } from "./rateLimit";
 import { isKnownSharedDomain } from "./sharedDomains";
 import { evaluateAutoPublish } from "./autoPublish";
 import { approvePendingCheck } from "./admin";
+import { tryWaybackFallback } from "./waybackFallback";
 
 interface CheckBody {
   domain?: string;
@@ -24,6 +25,29 @@ export function isSourceHostAllowedForDomain(sourceHost: string, domain: string)
   return host === d || host.endsWith(`.${d}`);
 }
 
+export interface FetchedPolicy {
+  rawHtml: string;
+  sourcedFromArchive: boolean;
+  archivedUrl: string | null;
+}
+
+// Shared by handleCheck and cron.ts's monthly recheck: try a live fetch
+// first, and only fall back to the last Wayback Machine snapshot when the
+// live fetch genuinely fails to connect/respond (see waybackFallback.ts).
+// A SsrfBlockedError means the URL itself is illegitimate, not merely
+// unreachable -- that never falls back, it's a real rejection.
+export async function fetchPolicyText(sourceUrl: string): Promise<FetchedPolicy> {
+  try {
+    const rawHtml = await safeFetchText(sourceUrl);
+    return { rawHtml, sourcedFromArchive: false, archivedUrl: null };
+  } catch (err) {
+    if (err instanceof SsrfBlockedError) throw err;
+    const fallback = await tryWaybackFallback(sourceUrl);
+    if (!fallback) throw err;
+    return { rawHtml: fallback.text, sourcedFromArchive: true, archivedUrl: fallback.archivedUrl };
+  }
+}
+
 export async function runExtraction(
   env: Env,
   pendingId: number,
@@ -31,6 +55,7 @@ export async function runExtraction(
   sourceUrl: string,
   isRecheck: boolean,
   sharedDomain: boolean,
+  sourcedFromArchive: boolean,
   rawText: string
 ): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
@@ -72,6 +97,7 @@ export async function runExtraction(
     sharedDomain,
     isRecheck,
     existingStatus: existing?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
+    sourcedFromArchive,
   });
 
   if (decision.eligible) {
@@ -85,6 +111,7 @@ export async function runExtraction(
         source_url: sourceUrl,
         extracted_facts: JSON.stringify(facts),
         shared_domain: Number(sharedDomain),
+        sourced_from_archive: Number(sourcedFromArchive),
       },
       { autoPublished: true }
     );
@@ -142,9 +169,9 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
     return Response.json({ error: "source_url_domain_mismatch" }, { status: 400 });
   }
 
-  let rawHtml: string;
+  let fetched: FetchedPolicy;
   try {
-    rawHtml = await safeFetchText(sourceUrl);
+    fetched = await fetchPolicyText(sourceUrl);
   } catch (err) {
     if (err instanceof SsrfBlockedError) {
       return Response.json({ error: "blocked_url", reason: err.message }, { status: 400 });
@@ -155,7 +182,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   // Clean before truncating, not after -- truncating raw HTML first was the
   // bug: <head>/<script>/<style> chrome ate the whole truncation window on
   // JS-rendered sites before any real policy prose was reached.
-  const cleanedText = cleanHtmlToText(rawHtml);
+  const cleanedText = cleanHtmlToText(fetched.rawHtml);
 
   const isRecheck = await env.DB.prepare("SELECT 1 FROM tools WHERE domain = ?")
     .bind(domain)
@@ -163,9 +190,18 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   const sharedDomain = isKnownSharedDomain(domain);
 
   const inserted = await env.DB.prepare(
-    "INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain) VALUES (?, ?, ?, ?, 'pending', ?) RETURNING id"
+    `INSERT INTO pending_checks (domain, is_recheck, source_url, raw_fetch, status, shared_domain, sourced_from_archive, archived_source_url)
+     VALUES (?, ?, ?, ?, 'pending', ?, ?, ?) RETURNING id`
   )
-    .bind(domain, isRecheck ? 1 : 0, sourceUrl, cleanedText.slice(0, 20_000), Number(sharedDomain))
+    .bind(
+      domain,
+      isRecheck ? 1 : 0,
+      sourceUrl,
+      cleanedText.slice(0, 20_000),
+      Number(sharedDomain),
+      Number(fetched.sourcedFromArchive),
+      fetched.archivedUrl
+    )
     .first<{ id: number }>();
 
   if (!inserted) {
@@ -177,7 +213,16 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   }
 
   ctx.waitUntil(
-    runExtraction(env, inserted.id, domain, sourceUrl, Boolean(isRecheck), sharedDomain, cleanedText)
+    runExtraction(
+      env,
+      inserted.id,
+      domain,
+      sourceUrl,
+      Boolean(isRecheck),
+      sharedDomain,
+      fetched.sourcedFromArchive,
+      cleanedText
+    )
   );
 
   return Response.json(
@@ -186,6 +231,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
       domain,
       status: "pending",
       is_recheck: Boolean(isRecheck),
+      sourced_from_archive: fetched.sourcedFromArchive,
     },
     { status: 202 }
   );
