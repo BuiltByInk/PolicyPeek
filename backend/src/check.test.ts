@@ -27,4 +27,30 @@ describe("isSourceHostAllowedForDomain", () => {
   it("is case-insensitive", () => {
     expect(isSourceHostAllowedForDomain("SUB.ACME.COM", "acme.com")).toBe(true);
   });
+
+  // Curated cross-domain exception (crossDomainSources.ts): Bolt.new's real
+  // policy lives on stackblitz.com, a verified-legitimate different domain
+  // owned by the same company, not a spoof target.
+  it("allows the curated cross-domain source for bolt.new", () => {
+    expect(isSourceHostAllowedForDomain("stackblitz.com", "bolt.new")).toBe(true);
+  });
+
+  it("allows a subdomain of the curated cross-domain source", () => {
+    expect(isSourceHostAllowedForDomain("docs.stackblitz.com", "bolt.new")).toBe(true);
+  });
+
+  // Proves the exception is narrow, not a general loosening: an unrelated
+  // domain substituted in place of the curated one must still be rejected,
+  // even for a domain that does have a legitimate cross-domain entry.
+  it("still rejects an unrelated domain substituted for bolt.new's real source", () => {
+    expect(isSourceHostAllowedForDomain("evil.com", "bolt.new")).toBe(false);
+  });
+
+  // Same lookalike-suffix boundary bug as the primary check (line 18 above),
+  // but for the cross-domain branch specifically: a naive `.includes()` or
+  // `.endsWith(cd)` without the dot-boundary check would let these through.
+  it("rejects lookalike/suffix-spoofed variants of the curated cross-domain source", () => {
+    expect(isSourceHostAllowedForDomain("evilstackblitz.com", "bolt.new")).toBe(false);
+    expect(isSourceHostAllowedForDomain("stackblitz.com.evil.com", "bolt.new")).toBe(false);
+  });
 });

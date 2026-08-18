@@ -6,6 +6,7 @@ import { getClientIp, resolveTier } from "./auth";
 import { cleanHtmlToText } from "./htmlClean";
 import { isUnderDailyCap, recordAnonymousCheck } from "./rateLimit";
 import { isKnownSharedDomain } from "./sharedDomains";
+import { allowedCrossDomainSource } from "./crossDomainSources";
 import { evaluateAutoPublish } from "./autoPublish";
 import { approvePendingCheck } from "./admin";
 import { tryWaybackFallback } from "./waybackFallback";
@@ -20,10 +21,25 @@ interface CheckBody {
 // an arbitrary attacker-chosen SSRF target. A plain hostname.endsWith(domain)
 // would let "evil-acme.com" pass for domain "acme.com" — require an exact
 // match or a proper subdomain (dot boundary).
+//
+// One additional allowed case: a curated, hand-verified cross-domain source
+// (crossDomainSources.ts) for products whose genuine policy is published on
+// a different domain owned by the same company (e.g. Bolt.new's policy
+// lives on stackblitz.com). This is strictly additive to the exact-match/
+// subdomain check above, not a loosening of it -- an unrelated domain that
+// isn't in that curated map still fails here exactly as before.
 export function isSourceHostAllowedForDomain(sourceHost: string, domain: string): boolean {
   const host = sourceHost.toLowerCase();
   const d = domain.toLowerCase();
-  return host === d || host.endsWith(`.${d}`);
+  if (host === d || host.endsWith(`.${d}`)) return true;
+
+  const crossDomain = allowedCrossDomainSource(d);
+  if (crossDomain) {
+    const cd = crossDomain.toLowerCase();
+    if (host === cd || host.endsWith(`.${cd}`)) return true;
+  }
+
+  return false;
 }
 
 export interface FetchedPolicy {
