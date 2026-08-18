@@ -19,6 +19,39 @@ A separate deterministic rules layer (`backend/src/rules.ts`) converts facts
 into verdicts. No agent may let the LLM step emit a legal-sounding badge
 directly.
 
+### The five verdict buckets (`ComplianceStatus`)
+
+The only five values `computeVerdict()` in `backend/src/rules.ts` can
+return — this is the canonical description; if a doc elsewhere disagrees
+with this list, `rules.ts` is the source of truth, fix the doc:
+
+- **`compliant`** — doesn't train on user data, or training is opt-in /
+  off-by-default.
+- **`compliant_with_caveats`** — trains on user data *by default*, but a
+  real opt-out exists. Deliberately its own bucket, not folded into plain
+  `compliant`: GDPR generally expects affirmative opt-in consent, and an
+  opt-out the user has to find and exercise themselves is a materially
+  weaker guarantee than genuine opt-in or off-by-default. Ruling: Elliot,
+  2026-08-18 (closes the gap flagged in `DECISIONS_NEEDED.md` since
+  milestone 6, where this case had been silently folded into `compliant`).
+  Rendered as a distinct solid teal double-bordered badge, never a shade of
+  green or amber — see `frontend/src/components/Badge.astro` and the
+  methodology writeup in `frontend/src/pages/about.astro`.
+- **`not_compliant`** — trains on user data by default, with no opt-out.
+- **`unrated`** — genuinely unclear from the source policy whether it
+  trains on user data at all. Not a middle grade — it means "we don't
+  know," not "somewhere in between" (that's what `compliant_with_caveats`
+  is for).
+- **`shared_domain_unverified`** — the tool's only public policy lives on a
+  domain shared with unrelated products (e.g. a Google/Microsoft AI
+  feature policy hosted on the parent company's apex domain,
+  `sharedDomains.ts`). A hard override in `computeVerdict()`: no amount of
+  clear, well-sourced facts makes a shared-domain policy specific to one
+  product, so this branch short-circuits before the facts are even read. A
+  product-specific *source page* on that same shared domain does not
+  resolve this — see the Amazon Q Developer precedent in
+  `DECISIONS_NEEDED.md`.
+
 ---
 
 ## Org Chart

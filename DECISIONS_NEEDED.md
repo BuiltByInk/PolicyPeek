@@ -1,5 +1,187 @@
 # Decisions Needed
 
+## Fixed (2026-08-18): DNS-resolution SSRF bypass in `ssrf.ts` (security review finding #1) — DoH pre-check landed, full IP-pinning not achievable in this runtime, logging the residual gap rather than leaving it silent
+
+Security Agent's `security/review-2026-08-18.md` High finding: `assertSafeUrl`
+only ever inspected the literal hostname/IP string in a submitted URL, never
+the address DNS actually resolves it to. A wildcard-DNS hostname like
+`169-254-169-254.nip.io` isn't itself a blocked literal, so it sailed
+straight through and resolved to the cloud metadata address
+(`169.254.169.254`) at `fetch()`-time — full SSRF bypass, and the same gap
+applied to every redirect-hop revalidation (classic DNS-rebinding TOCTOU).
+
+**Fix applied, in my own lane per the charter (SSRF wrapper is Backend
+Agent's ownership, this is a bug fix not a scope change):** `ssrf.ts` now
+resolves every non-literal hostname via DNS-over-HTTPS (Cloudflare's
+`cloudflare-dns.com/dns-query` JSON endpoint — a fixed, hardcoded host, not
+attacker-influenced input, so it's called via plain `fetch()`, not routed
+back through this same wrapper) before every connection attempt — the
+initial URL and every redirect hop, not just the first — and rejects if
+*any* returned A or AAAA answer is private/link-local/loopback/metadata
+(reject-if-any-bad, not reject-if-first-bad, since a multi-answer response
+can rebind on a later answer). DNS resolution failing/erroring is treated as
+blocked (fail closed), not silently skipped.
+
+**Residual risk, explicitly accepted rather than left undocumented:**
+Cloudflare Workers' `fetch()` gives no hook to pin the exact IP a request
+actually connects to — there's no way, from inside a Worker, to force the
+runtime's own subsequent DNS resolution inside `fetch()` to reuse the
+address our DoH pre-check just validated. This closes the primary attack the
+finding describes (a submitted hostname that resolves to a blocked address
+via ordinary/attacker-controlled-but-static DNS), but it cannot fully close
+classic DNS-rebinding TOCTOU: a malicious authoritative zone with a very low
+TTL could in principle return a safe IP to the DoH pre-check and a different,
+blocked IP microseconds later when `fetch()` does its own resolution. True
+IP-pinning isn't achievable in the Workers runtime today as far as I can
+tell — flagging this here per the review's own proposed framing ("or
+explicitly log this as an accepted residual risk") rather than silently
+shipping a fix that looks complete but isn't. If a future Workers runtime
+feature exposes a connect-time IP hook, this should be revisited.
+
+Also added: a lookalike-suffix regression test for the cross-domain
+allowlist (`check.test.ts` — `evilstackblitz.com` / `stackblitz.com.evil.com`
+vs. `bolt.new`, confirming the existing dot-boundary logic already rejects
+both, per the review's low-severity finding #3) and 8 new `ssrf.test.ts`
+cases covering the DoH pre-check itself (safe resolution, blocked-via-DNS,
+multi-answer reject-if-any-bad, AAAA-only block, fail-closed on resolver
+error, redirect-hop re-resolution, and literal-IP hostnames correctly
+skipping DNS entirely). Full suite: 59/59 passing (was 51 before this
+change), `tsc --noEmit` clean. Did not touch `crossDomainSources.ts` or any
+of the other uncommitted working-tree changes the review's finding #2 flags
+as a separate process item — that's not mine to resolve.
+
+---
+
+## Published (2026-08-18): Amazon Q Developer and DeepL, per Elliot's live go-ahead on `research/deep_dive_amazonq_speechify_deepl.md`
+
+Elliot reviewed the research pass live and approved publishing 2 of the 3
+tools it unblocked. Both had existing `pending_checks` rows from the second
+batch (id 2 for Amazon Q / amazon.com, id 21 for DeepL / deepl.com) — updated
+`extracted_facts`, `source_url`, and `name` on those rows with the research
+file's exact facts/quotes/sources, then ran them through the real
+`POST /v1/admin/pending/:id/approve` endpoint against a local `wrangler dev`
+instance (not a direct DB write for the verdict step) so `computeVerdict`
+and both `compliance_changelog` triggers (insert + update) actually executed
+rather than being assumed correct. `npm test` (48 tests, 12 files) passes
+after.
+
+**DeepL**: `trains_on_user_data: true`, `opt_out_available: false` -> 
+`not_compliant` (confirmed via the live approve call, matches
+`rules.ts::computeVerdict`'s `not_compliant` branch — trains by default, no
+opt-out). Sources: deepl.com/en/privacy + deepl.com/en/terms-of-use, both now
+in `tools.source_urls`. Set `tools.summary` directly to the exact tier-caveat
+sentence from the research file's "Suggested badge summary" section — this
+is the one entry in the catalog whose `summary` is a composed sentence
+rather than a raw `relevant_clauses[0]` quote (every other tool's summary is
+literally the first extracted quote — see `admin.ts::approvePendingCheck`).
+Diverging here was an explicit instruction from Elliot (via the research
+file) because no single quote captures the free/Pro tier contrast cleanly;
+flagging the inconsistency rather than pretending `approvePendingCheck`
+grew a new summary-override feature — it didn't, this was one direct
+follow-up `UPDATE` after the normal approve call, not a code change.
+
+**Amazon Q Developer**: `trains_on_user_data: true`, `opt_out_available: true`
+(Free tier; Pro/Q Business never trains, noted in the underlying facts but
+not in the public summary — see below). Sources: the two dedicated AWS docs
+pages from the research file (`.../service-improvement.html` and
+`.../opt-out-IDE.html`), replacing the old generic AWS Privacy Notice URL
+that was too broad to answer either fact.
+
+**Shared-domain call, made explicitly rather than left ambiguous**: kept
+`shared_domain = 1` on the amazon.com row, so it published as
+`shared_domain_unverified` (verdict confirmed via the live approve call),
+*not* `compliant_with_caveats` as the task's tentative framing suggested it
+might. Reasoning: `sharedDomains.ts`'s flag is about whether the apex domain
+(`amazon.com`, matched via `suffixCandidates` against every `*.amazon.com`
+subdomain a visitor might be on) hosts more than one company's products —
+it's a domain-identity question, not a source-quality one. Finding a
+dedicated, well-sourced Amazon Q Developer docs page answers "are the facts
+good" but not "is amazon.com exclusively Amazon Q Developer's." Direct
+precedent already in the catalog: Gemini (`google.com`) and Microsoft
+Copilot (`microsoft.com`) both have dedicated, product-specific source pages
+(`support.google.com/gemini/...`, `microsoft.com/.../microsoft-copilot/...`)
+and are still correctly flagged `shared_domain_unverified` — a
+product-specific *source page* has never been treated as resolving the
+apex-domain-sharing concern anywhere else in the pipeline, so making an
+exception for Amazon Q Developer would have been inventing new logic on the
+fly rather than applying the existing rule. Facts are still updated
+accurately in `tools.trains_on_user_data`/`opt_out_available` for the
+record (matches the Gemini/Copilot/v0 pattern of real facts + overridden
+summary), but the public `summary` field is the standard shared-domain
+canned sentence, not the free/Pro tier-caveat text drafted for the
+(not-taken) `compliant_with_caveats` outcome — same as every other
+shared-domain entry, no exception invented.
+
+Both now live in `frontend/data/tools.json` (catalog is 31 tools, up from
+29), inserted in alphabetical position to match the file's existing sort
+order.
+
+**Speechify** — left untouched exactly as instructed: still `extracted`
+status in `pending_checks` (id 17), `trains_on_user_data`/`opt_out_available`
+still `null`, not published. No natural admin-facing note field exists on
+`pending_checks` (schema has no notes/comment column, and adding one for a
+single one-off case felt like overreach for this task) — this entry in
+`DECISIONS_NEEDED.md` is that note. Anyone reviewing pending id 17 should
+read `research/deep_dive_amazonq_speechify_deepl.md`'s Speechify section
+before re-litigating why it's null: the ambiguity is real (the operative
+"improve the features/algorithms... commercially benefit" language in
+Speechify's ToS is broad enough to cover AI training but never actually
+says "train"/"AI"/"model" the way the one clause that does use that
+language — the Google Workspace carve-out — does), not a research gap.
+
+## Update (2026-08-18): third research batch sourced, 17 tools, not yet piped
+
+Research Agent's weekly pass (`CLAUDE.md`'s Growth Loop cadence). Full
+writeup in `research/third_batch_summary.md`, URLs in `research/tool_list.md`
+and `research/tool_sources.json`. Sourcing only — nothing here has touched
+`POST /v1/check`, the extraction pipeline, or `frontend/data/tools.json`.
+
+Worth your eyes before it's run through the pipeline, roughly in order of
+how much judgment they need:
+
+- **Devin (Cognition) is a sharper version of the still-open Bolt.new-style
+  "disjoint domain" question.** Product is at `devin.ai`; the governing
+  Privacy Policy/ToS/DPA all live on `cognition.ai`/`cognition.com`. Worse
+  than Bolt.new/StackBlitz: Cognition's single privacy policy explicitly
+  names *both* "Devin and Windsurf" as covered products — so one legal
+  document spans two differently-branded, differently-domained consumer
+  products. The `crossDomainSources.ts` mechanism (see the entry below)
+  could technically point one or both at `cognition.com`, but which
+  domain(s) get the product-facing `tools` row, and whether one shared
+  policy covering two products is even the right shape for that mechanism,
+  is a real design call, not a mechanical add — not resolved tonight,
+  flagging as the likely next candidate for that allowlist.
+- **Perplexity Comet** — same-vendor, same-apex-domain (`perplexity.ai`)
+  multi-product case, genuinely different from the AWS/Vercel
+  "unrelated products crammed onto one company's domain" shape the
+  `shared_domain` heuristic was built for. Worth deciding whether the
+  heuristic should treat "two products, same company, same domain,
+  different privacy notices" differently before this one goes through.
+  Direct fetch to its privacy notice 403'd twice — sourced from a
+  WebSearch summary, not an independently confirmed fetch.
+- **Tier-scoped answers, same pattern as DeepL**: Gamma (free tier trains
+  by default, Team/Business don't; DeepL precedent from the deep-dive above
+  argues for rating the free tier with an explicit summary caveat) and
+  Recraft (a different axis — content ownership/visibility by tier, not
+  training, which does have a tier-independent opt-out).
+- **Pika** — client-rendered SPA, same failure mode already fixed for
+  Character.AI (`extraction.ts`'s fail-fast on empty extracted text); expect
+  null training facts unless the fetcher clears the JS wall.
+- **Kling AI** — lowest-confidence entry in the batch: every direct fetch
+  attempt returned HTTP 446 (unusual, possibly geo/bot-block), so facts are
+  WebSearch-summary-only, not fetch-confirmed. China-based parent
+  (Kuaishou) also raises an international-transfer/GDPR-adequacy question
+  beyond what sourcing alone can answer. Recommend a follow-up fetch
+  attempt before this one goes through extraction with any confidence.
+- Also flagged, lower stakes: Continue.dev's possible (unconfirmed)
+  acquisition by Cursor/Anysphere — would eventually mirror the
+  Devin/Windsurf shape if confirmed; Gamma/Teal/Perplexity Comet all had at
+  least one 403'd direct-fetch source, WebSearch-summary-only for those
+  specific claims.
+- Two tools were skipped outright, not guessed: Cleo AI (privacy pages
+  403 across every domain variant tried) and Sora (would just duplicate
+  OpenAI's already-sourced ChatGPT policy, not real new coverage).
+
 ## Ran overnight (2026-08-17 night): the second batch went through the real pipeline, 10 now live
 
 Approved go-ahead on all three: pushed the deny-rule relaxation, built the
@@ -68,24 +250,75 @@ the Worker ends up deployed.
 All of the above is committed and pushed. Full diff is readable, nothing
 force-pushed or squashed.
 
-## For review whenever convenient (2026-08-17): 4 items from the second research batch
+## For review whenever convenient (2026-08-17): 4 items from the second research batch — 3 of 4 now resolved, see status notes
 
-Full detail in `research/second_batch_summary.md`. Not blocking anything —
-sourcing is done, these just need your eyes before/while the batch goes
-through the actual check/extraction pipeline:
+Full detail in `research/second_batch_summary.md`. Original text kept below
+for context; status notes added 2026-08-18 rather than deleting history.
 
 - **Amazon Q Developer** (`aws.amazon.com`) and **v0** (`vercel.com`) sit on
   shared apex domains — the `shared_domain` heuristic (`sharedDomains.ts`)
   will fire on these automatically once submitted, same as Gemini/Copilot.
   No action needed unless you disagree they're shared.
+  **Status: resolved.** Both published. v0 auto-published in the overnight
+  run (see "Ran overnight" above). Amazon Q Developer was published
+  2026-08-18 per Elliot's live go-ahead, correctly still flagged
+  `shared_domain_unverified` — see the "Published (2026-08-18)" entry above
+  for the reasoning on why a good product-specific source page didn't
+  change that call.
 - **Character.AI** — legal pages are a client-rendered SPA; the fetcher may
   only get an empty shell instead of real policy text on submission. Worth
   a manual look if it comes back `unrated` with null facts.
+  **Status: partially resolved.** The suspected extraction crash was
+  confirmed real and fixed (`extraction.ts` now fails fast with an honest
+  `empty_extracted_text` reason instead of sending garbage to Haiku) — see
+  "Ran overnight" above. Character.AI itself is still not published; its
+  legal pages still don't render without JS, so it still needs a non-SPA
+  source before it can get real facts. Left alone tonight per Elliot's
+  explicit instruction.
 - **DeepL** and **Suno** have genuinely different data-training answers for
   free vs. paid tiers — not an extraction bug, needs a decision on which
   tier PolicyPeek rates (same "which product line" question as GitHub
   Copilot's Free/Pro vs Business/Enterprise split, already noted in
   `tool_sources.json`).
+  **Status: DeepL resolved, Suno still open.** DeepL published 2026-08-18,
+  rated on the free tier with an explicit tier-caveat summary sentence
+  noting Pro/API differs — see "Published (2026-08-18)" above. Suno is
+  still blocked on the JSON-parse extraction bug noted in "Ran overnight"
+  above (unrelated to the tier question itself) and hasn't reached the
+  point where the tier decision is even needed yet. Left alone tonight per
+  Elliot's explicit instruction.
+
+## Update (2026-08-18): Windsurf's Wayback fallback worked live; Adobe Firefly's diagnosis has changed — revises the "Confirmed" entry below
+
+Follow-up to the "Confirmed, not just suspected (2026-08-17)" entry
+immediately below and the "Ran overnight" entry above (which noted
+archive.org itself rate-limited last session's outbound IP, so the Wayback
+fallback was built and unit-tested but not yet proven against these two
+specific domains).
+
+**Windsurf: resolved, sitting in review.** The Wayback fallback
+(`waybackFallback.ts`) found a real archive.org snapshot for Windsurf's
+terms and correctly ran it through the pipeline — `sourced_from_archive`
+forces a human-queue result rather than auto-publishing (per
+`evaluateAutoPublish`'s own rule), so it's sitting in `pending_checks` as
+id 23, not live. Needs your review, not further engineering.
+
+**Adobe Firefly: diagnosis revised, not fixed.** Last session's belief was
+a transient IP-based rate-limit on archive.org's availability API. Tonight's
+interleaved control test says otherwise: hitting archive.org for Windsurf's
+URL from the same outbound IP in the same session succeeded, while every
+Adobe URL variant tried against archive.org got a 429. That rules out "our
+IP is generically rate-limited right now" — it looks like archive.org
+itself specifically throttles or blocks requests for adobe.com content
+(plausible reasons not confirmed: a robots.txt exclusion Adobe has asked
+archive.org to honor, or Adobe's own edge blocking archive.org's crawler
+historically, leaving few/rate-limited snapshots to begin with). **This
+changes the recommendation from "retry later" to "needs a different
+strategy, or Adobe Firefly stays absent from the catalog."** No further
+retries planned without a new approach (a different archive source, or
+accepting the gap) — repeating the same 429 isn't new information.
+
+---
 
 ## Needs a decision before build (2026-08-17): visual direction picked, ship it
 
@@ -100,6 +333,14 @@ the visitor being technical, unlike the terminal direction. Flag if it's
 wrong; easy to swap since it's all CSS custom properties in one file.
 
 ## Confirmed, not just suspected (2026-08-17): Windsurf and Adobe Firefly are blocked by vendor-side anti-bot, not fixable by retrying
+
+**Superseded in part — see the "Update (2026-08-18)" entry above.** The
+proposed-fallback idea below (pull the last Wayback Machine snapshot) was
+built and has now worked live for Windsurf (`pending_checks` id 23, awaiting
+your review). Adobe Firefly's underlying cause has also since been narrowed
+further (archive.org itself throttling/blocking `adobe.com` specifically,
+not our checker or a generic rate limit) — read the 2026-08-18 entry above
+before treating either line below as still the latest word.
 
 Elliot asked for a real look instead of another blind retry. Tested both live, with two different fetchers (not just PolicyPeek's checker), to isolate whether it was our request pattern specifically or something broader:
 
@@ -253,6 +494,18 @@ Not retried a third time — see `research/seed_review_summary.md`.
 
 ## New decision needed: domain identity for multi-product-company AI features
 
+**Status: resolved (2026-08-17), see "Resolved (2026-08-17): three-tier
+auto-publish is live" above.** Elliot's confirmed answer was apex domain +
+`shared_domain_unverified` as the honest verdict, now wired into the
+pipeline automatically via the curated list in `sharedDomains.ts` rather
+than requiring a human to set the flag by hand. A related but distinct
+follow-up question — products whose real policy lives on a genuinely
+*different* domain than the product itself, not a shared corporate domain —
+got its own mechanism 2026-08-18 (`crossDomainSources.ts`, used for
+Bolt.new/StackBlitz); Devin/Cognition/Windsurf is a fresh, harder instance
+of that second question, not yet resolved — see the "third research batch"
+entry near the top of this file.
+
 Gemini and Microsoft Copilot's only public policy content lives on their
 parent company's shared apex domain (`google.com`, `microsoft.com`) rather
 than a product-specific one. I registered them there since it's what
@@ -341,6 +594,16 @@ I did not invent a list of tools or guess plausible-sounding privacy policy URLs
 ---
 
 ## rules.ts has a gap the original spec never covered — I filled it in myself back at milestone 6, flagging it now instead of changing it further
+
+**Status: resolved (2026-08-18).** Elliot ruled this case gets its own
+bucket, `compliant_with_caveats`, rather than folding into plain
+`compliant` as milestone 6's silent interpretation had done — GDPR
+generally wants opt-in, not opt-out-if-you-find-it. Implemented in
+`rules.ts::computeVerdict`, `schema.sql`'s `compliance_status` CHECK
+constraint, the badge UI (`Badge.astro`), the methodology page
+(`about.astro`), and now documented as one of the five canonical verdict
+buckets in `CLAUDE.md`. See the "Fixed"/"Published" entries dated
+2026-08-18 near the top of this file for what shipped alongside it.
 
 `memory/CLAUDE.md` doesn't exist (see Docs section below — I created a root-level `CLAUDE.md` tonight to start closing that gap), so I reviewed `backend/src/rules.ts` against `schema.sql` and the original verdict spec you gave me instead. Found one real gap, not a bug exactly, but a decision that was made silently and should be visible to you:
 
