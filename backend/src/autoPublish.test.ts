@@ -26,6 +26,14 @@ const trainsWithNoOptOutAnswer: ExtractedFacts = {
   relevant_clauses: [],
 };
 
+const trainsWithOptOut: ExtractedFacts = {
+  trains_on_user_data: true,
+  data_retention: null,
+  gdpr_mentioned: null,
+  opt_out_available: true,
+  relevant_clauses: ["You can opt out of training in account settings."],
+};
+
 describe("evaluateAutoPublish", () => {
   it("is eligible for a clean, non-training extraction on a fresh domain", () => {
     const result = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: false });
@@ -65,6 +73,12 @@ describe("evaluateAutoPublish", () => {
     const result = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: false, sourcedFromArchive: true });
     expect(result.eligible).toBe(false);
     expect(result.reason).toMatch(/Wayback Machine/);
+  });
+
+  it("is eligible for compliant_with_caveats on the same terms as compliant/not_compliant -- eligibility isn't verdict-favorability-gated", () => {
+    const result = evaluateAutoPublish(trainsWithOptOut, { sharedDomain: false, isRecheck: false });
+    expect(result.eligible).toBe(true);
+    expect(result.verdict).toBe("compliant_with_caveats");
   });
 
   it("is NOT eligible on a recheck when the verdict would flip the existing published status", () => {

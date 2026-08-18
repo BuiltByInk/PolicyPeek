@@ -15,6 +15,7 @@ export async function getStaticPaths() {
 const { tool } = Astro.props as { tool: Tool };
 const reasonClass =
   tool.compliance_status === "not_compliant" ? "reason prominent red" :
+  tool.compliance_status === "compliant_with_caveats" ? "reason prominent caveat" :
   tool.compliance_status === "unrated" ? "reason prominent amber" :
   tool.compliance_status === "shared_domain_unverified" ? "reason prominent amber-outline" :
   "reason";
@@ -93,6 +94,7 @@ const reasonClass =
     border-radius: 0.4rem;
   }
   .reason.prominent.red { border-left: 3px solid var(--red-fg); background: var(--red-bg); }
+  .reason.prominent.caveat { border-left: 3px double var(--caveat-fg); border-left-width: 6px; background: var(--caveat-bg); }
   .reason.prominent.amber { border-left: 3px solid var(--amber-fg); background: var(--amber-bg); }
   .reason.prominent.amber-outline {
     border: 1.5px dashed var(--amber-fg);

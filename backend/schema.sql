@@ -3,8 +3,17 @@ CREATE TABLE IF NOT EXISTS tools (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   domain TEXT NOT NULL UNIQUE,
+  -- 'compliant_with_caveats' added 2026-08-18 (Elliot's ruling): trains on
+  -- user data by default with an opt-out is a materially weaker guarantee
+  -- than opt-in/off-by-default, so it's split out of plain 'compliant' --
+  -- see rules.ts::computeVerdict. SQLite has no `ALTER TABLE ... ADD CHECK`
+  -- / can't alter an existing CHECK constraint in place, so any local D1
+  -- created before this change needs a fresh migration, same as the
+  -- auto_published column note below: drop the local D1 file and re-run
+  -- `npm run db:migrate:local`. Do not run this against any real/deployed
+  -- database.
   compliance_status TEXT NOT NULL DEFAULT 'unrated'
-    CHECK (compliance_status IN ('not_compliant', 'compliant', 'unrated', 'shared_domain_unverified')),
+    CHECK (compliance_status IN ('not_compliant', 'compliant', 'compliant_with_caveats', 'unrated', 'shared_domain_unverified')),
   data_retention TEXT,
   trains_on_user_data INTEGER CHECK (trains_on_user_data IN (0, 1)),
   gdpr_mentioned INTEGER CHECK (gdpr_mentioned IN (0, 1)),

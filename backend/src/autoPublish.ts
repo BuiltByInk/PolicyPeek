@@ -26,6 +26,15 @@ export interface AutoPublishResult {
 //     *change* the existing badge always queues for review, however clean
 //     the facts are -- a flip is exactly the event a human should see, per
 //     the "static source, but verify periodically" design.
+//   - Eligibility never branches on *which* verdict computeVerdict landed on
+//     (deliberately -- this function is about extraction confidence, not
+//     verdict favorability). 'compliant_with_caveats' (trains_on_user_data
+//     === true, opt_out_available === true) is therefore auto-publish
+//     eligible under exactly the same conditions as 'compliant' or
+//     'not_compliant': both facts are non-null, so it clears the two null
+//     checks above like any other determinate combination. It gets no
+//     extra scrutiny tier of its own -- if a case ever needs one, that's a
+//     verdict-generosity judgment call for rules.ts, not this function.
 export function evaluateAutoPublish(
   facts: ExtractedFacts,
   opts: { sharedDomain: boolean; isRecheck: boolean; existingStatus?: ComplianceStatus; sourcedFromArchive?: boolean }

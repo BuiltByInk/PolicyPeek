@@ -43,6 +43,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         --green-bg: #e6f4ea; --green-fg: #1e7a34;
         --amber-bg: #fef3e2; --amber-fg: #92600a;
         --red-bg: #fce8e6; --red-fg: #b3261e;
+        /* caveat = a genuinely separate hue (teal), not a green/amber blend --
+           this is "we DO know, and it's conditional," a different epistemic
+           state than amber's "we don't know." Never reuse green/amber/red
+           here or it reads as a rounding of one of those states. */
+        --caveat-bg: #e2eef4; --caveat-fg: #12586f;
         --font-head: "Helvetica Neue Condensed", "Arial Narrow", Arial, sans-serif;
         --font-body: Arial, Helvetica, sans-serif;
         --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
@@ -59,6 +64,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           --green-bg: #123821; --green-fg: #6fe39a;
           --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
           --red-bg: #3a1414; --red-fg: #f28b82;
+          --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
         }
       }
       :root[data-theme="dark"] {
@@ -72,6 +78,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         --green-bg: #123821; --green-fg: #6fe39a;
         --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
         --red-bg: #3a1414; --red-fg: #f28b82;
+        --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
       }
       * { box-sizing: border-box; }
       body {
