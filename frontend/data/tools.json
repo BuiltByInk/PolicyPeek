@@ -1,7 +1,22 @@
 [
   {
+    "name": "Amazon Q Developer",
+    "domain": "amazon.com",
+    "compliance_status": "shared_domain_unverified",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/service-improvement.html",
+      "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html"
+    ],
+    "verified": true,
+    "shared_domain": true
+  },
+  {
     "name": "Bolt.new",
-    "domain": "stackblitz.com",
+    "domain": "bolt.new",
     "compliance_status": "compliant",
     "summary": "We may use AI Inputs and AI Outputs to operate, maintain, and improve the Services, including improving AI performance, reliability, and safety. Such use shall be on aggregated, anonymized, or de-identified data.",
     "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days subject to backup retention and legal obligations. Residual copies may persist in backups/logs for limited period.",
@@ -65,6 +80,21 @@
     "gdpr_mentioned": true,
     "source_urls": [
       "https://cursor.com/privacy"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
+    "name": "DeepL",
+    "domain": "deepl.com",
+    "compliance_status": "not_compliant",
+    "summary": "Rated on DeepL's free tier: free-tier submissions are used to train and improve DeepL's models with no opt-out available. DeepL Pro / API tier uses a different policy \u2014 Pro/API submissions are explicitly excluded from model training and improvement.",
+    "data_retention": "Free version: texts processed for limited period to train neural networks; Pro version: texts kept temporarily only as necessary for service delivery, then deleted after contractual performance; Voice: audio data deleted after service completion",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.deepl.com/en/privacy",
+      "https://www.deepl.com/en/terms-of-use"
     ],
     "verified": true,
     "shared_domain": false
