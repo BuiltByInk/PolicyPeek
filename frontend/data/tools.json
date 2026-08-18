@@ -408,6 +408,21 @@
     "shared_domain": true
   },
   {
+    "name": "Windsurf",
+    "domain": "windsurf.com",
+    "compliance_status": "not_compliant",
+    "summary": "By Posting User Content to or via the Service, you authorize us to use it to provide the Service and Suggestions to you. (sourced from an archived snapshot, not the live page \u2014 the live page blocks automated checks)",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://windsurf.com/terms-of-service-individual",
+      "http://web.archive.org/web/20260511113517/https://windsurf.com/terms-of-service-individual"
+    ],
+    "verified": true,
+    "shared_domain": false
+  },
+  {
     "name": "You.com",
     "domain": "you.com",
     "compliance_status": "compliant",
