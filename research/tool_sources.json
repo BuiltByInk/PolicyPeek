@@ -69,7 +69,7 @@
     "terms_of_service": "https://windsurf.com/terms-of-service-individual",
     "dpa": null,
     "security_trust_page": null,
-    "notes": "Rebranded from Codeium; search only turned up a combined terms-of-service page (privacy content embedded in it), no standalone privacy-policy URL — not fabricating one. CORRECTION (2026-08-17): earlier note said 'acquired by OpenAI' — wrong. Confirmed live: windsurf.com/terms-of-service-individual now 308-redirects permanently to devin.ai/windsurf/terms-of-service-individual, i.e. Windsurf was acquired by Cognition (maker of Devin), not OpenAI. See DECISIONS_NEEDED.md for why this domain still can't be fetched."
+    "notes": "Rebranded from Codeium; search only turned up a combined terms-of-service page (privacy content embedded in it), no standalone privacy-policy URL — not fabricating one. CORRECTION (2026-08-17): earlier note said 'acquired by OpenAI' — wrong. Confirmed live: windsurf.com/terms-of-service-individual now 308-redirects permanently to devin.ai/windsurf/terms-of-service-individual, i.e. Windsurf was acquired by Cognition (maker of Devin), not OpenAI. See DECISIONS_NEEDED.md for why this domain still can't be fetched. UPDATE (third batch, 2026-08-18): confirmed directly this time via Cognition's own privacy policy — Cognition's single privacy policy explicitly covers 'Devin and Windsurf' together. See the new 'devin' entry below for the disjoint-domain detail (devin.ai / windsurf.com product domains vs. cognition.com legal domain)."
   },
   "replit-ai": {
     "name": "Replit AI",
@@ -204,7 +204,7 @@
     "terms_of_service": "https://aws.amazon.com/service-terms/",
     "dpa": null,
     "security_trust_page": "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/data-protection.html",
-    "notes": "SHARED APEX DOMAIN (aws.amazon.com covers all AWS services) -- flag for shared_domain like Gemini/Microsoft Copilot in the first batch; the general AWS Privacy Notice and Service Terms are not Q-Developer-specific. Used the AWS docs data-protection page as security_trust_page since it's the most product-scoped source and links onward to the real opt-out mechanism (docs.aws.amazon.com/.../opt-out-IDE.html) and the service-improvement page explaining how content may be used. Confirmed via direct fetch (not a search summary) -- got real AWS doc markdown, not a nav shell."
+    "notes": "SHARED APEX DOMAIN (aws.amazon.com covers all AWS services) -- flag for shared_domain like Gemini/Microsoft Copilot in the first batch; the general AWS Privacy Notice and Service Terms are not Q-Developer-specific. Used the AWS docs data-protection page as security_trust_page since it's the most product-scoped source and links onward to the real opt-out mechanism (docs.aws.amazon.com/.../opt-out-IDE.html) and the service-improvement page explaining how content may be used. Confirmed via direct fetch (not a search summary) -- got real AWS doc markdown, not a nav shell. UPDATE (2026-08-18 deep dive, see research/deep_dive_amazonq_speechify_deepl.md): the two facts previously left null resolve cleanly via dedicated AWS docs pages -- Free tier content (incl. code/prompts) may be used for service improvement/model training with a working per-IDE opt-out toggle ('Amazon Q: Share Content'); Pro tier never collects content at all. Recommend rating on Free tier per the same ICP precedent set for DeepL."
   },
   "jetbrains-ai-assistant": {
     "name": "JetBrains AI Assistant",
@@ -339,7 +339,7 @@
     "terms_of_service": "https://speechify.com/terms/",
     "dpa": null,
     "security_trust_page": null,
-    "notes": "Speechify also runs separate Studio-specific privacy/terms pages (speechify.com/studio-privacy, speechify.com/studio-terms) for its voice-cloning/dubbing product line -- used the main consumer text-to-speech app's policy since that's the product a casual checker would have installed, not the Studio B2B tool."
+    "notes": "Speechify also runs separate Studio-specific privacy/terms pages (speechify.com/studio-privacy, speechify.com/studio-terms) for its voice-cloning/dubbing product line -- used the main consumer text-to-speech app's policy since that's the product a casual checker would have installed, not the Studio B2B tool. UPDATE (2026-08-18 deep dive, see research/deep_dive_amazonq_speechify_deepl.md): trains_on_user_data and opt_out_available should stay null -- genuinely unresolved. The operative clause ('improve the features, algorithms...of our Services' / ToS Section 7 'internal business purposes...commercially benefit') is broad enough to cover AI training but never uses the words 'train,' 'AI,' 'machine learning,' or 'model' -- unlike the Google Workspace carve-out, which explicitly says AI/ML training does NOT happen for that one data source, leaving ordinary app data unstated rather than confirmed either way. No opt-out mechanism for AI training found anywhere. Also flagged: speechify.ai (a distinct 'SpeechifyAI' enterprise/API entity, copyright '© 2026 SpeechifyAI') and speechify-app.com both surfaced in search claiming Speechify-adjacent privacy claims -- neither used as a source of record, relationship to Speechify Inc. unconfirmed."
   },
   "character-ai": {
     "name": "Character.AI",
@@ -348,7 +348,7 @@
     "terms_of_service": "https://character.ai/tos",
     "dpa": null,
     "security_trust_page": null,
-    "notes": "FLAG FOR REVIEWER: both URLs are confirmed genuine and resolve on the real character.ai domain (via 308 redirects from policies.character.ai, which is the canonical link Character.AI itself publishes) -- but the site is a client-rendered SPA, so WebFetch only received the page shell/tagline, not policy prose, on every attempt. This is the same failure mode as Claude's original nav-page issue in the first batch, except here it's a rendering limitation, not a wrong URL -- the backend's own fetcher may hit the same wall depending on whether it executes JS. Also checked and explicitly rejected a lookalike domain, characterai.cc, which appeared in search results claiming to host Character.AI's terms -- it is not Character.AI's domain and was not used anywhere in this record."
+    "notes": "FLAG FOR REVIEWER: both URLs are confirmed genuine and resolve on the real character.ai domain (via 308 redirects from policies.character.ai, which is the canonical link Character.AI itself publishes) -- but the site is a client-rendered SPA, so WebFetch only received the page shell/tagline, not policy prose, on every attempt. This is the same failure mode as Claude's nav-page issue in the first batch, except here it's a rendering limitation, not a wrong URL -- the backend's own fetcher may hit the same wall depending on whether it executes JS. Also checked and explicitly rejected a lookalike domain, characterai.cc, which appeared in search results claiming to host Character.AI's terms -- it is not Character.AI's domain and was not used anywhere in this record."
   },
   "poe": {
     "name": "Poe",
@@ -375,6 +375,159 @@
     "terms_of_service": "https://www.deepl.com/en/terms-of-use",
     "dpa": null,
     "security_trust_page": null,
-    "notes": "Clean two-tier compliance story confirmed directly in both the privacy policy and this free-service ToS: free-tier submissions ARE used to train/improve DeepL's models (temporary retention), Pro/paid submissions explicitly are NOT. This is a genuinely different compliance answer depending on which tier a user is on -- worth surfacing to the reviewer the same way the free-vs-paid GitHub Copilot split was flagged in the first batch. Used the free-service Terms of Use (matches this batch's individual/casual ICP) rather than the Pro/Enterprise license variants, which are separate documents."
+    "notes": "Clean two-tier compliance story confirmed directly in both the privacy policy and this free-service ToS: free-tier submissions ARE used to train/improve DeepL's models (temporary retention), Pro/paid submissions explicitly are NOT. This is a genuinely different compliance answer depending on which tier a user is on -- worth surfacing to the reviewer the same way the free-vs-paid GitHub Copilot split was flagged in the first batch. Used the free-service Terms of Use (matches this batch's individual/casual ICP) rather than the Pro/Enterprise license variants, which are separate documents. UPDATE (2026-08-18 deep dive, see research/deep_dive_amazonq_speechify_deepl.md): per Elliot's 2026-08-18 confirmation, rate on the free tier for ICP-consistency -- trains_on_user_data: true, opt_out_available: false (no opt-out mechanism exists for free-tier users; switching to Pro is a tier change, not an opt-out setting). Pro tier's 'not used to improve our services' statement (Privacy Policy Section 4) independently corroborated by the Pro License Agreement -- keep as caveat text on the badge, not the rated value."
+  },
+  "devin": {
+    "name": "Devin",
+    "vendor": "Cognition AI, Inc.",
+    "privacy_policy": "https://cognition.com/privacy-policy",
+    "terms_of_service": "https://cognition.ai/terms-of-service",
+    "dpa": "https://cognition.ai/dpa",
+    "security_trust_page": "https://trust.cognition.ai/",
+    "notes": "DISJOINT DOMAIN, flagging per the founder's Bolt.new/StackBlitz precedent rather than resolving it myself: the product lives at devin.ai, but the governing Privacy Policy/ToS/DPA all live on cognition.ai / cognition.com (cognition.ai/privacy-policy 301-redirects to cognition.com/privacy-policy -- confirmed via direct fetch, used the redirected URL as source of record). It's a three-way version of the pattern too: Cognition's single privacy policy explicitly covers both 'Devin and Windsurf' by name (Cognition acquired Windsurf -- see the updated windsurf entry above), so one legal document spans two differently-branded, differently-domained consumer products (devin.ai and windsurf.com). Training-use language: 'using User Content to train, fine tune and improve the models that power our Services' under 'Legitimate Interests,' but the policy adds this 'depends on the terms that apply to your use of the Services' -- implies a plan/tier split similar to GitHub Copilot's, without spelling out the tiers in the privacy policy itself. No self-serve opt-out found in the privacy policy; contact is privacy@cognition.ai. security_trust_page is a SafeBase-hosted trust center (same third-party-hosted pattern as Tabnine/HeyGen in the second batch) -- confirmed genuine."
+  },
+  "warp": {
+    "name": "Warp",
+    "vendor": "Warp.dev, Inc.",
+    "privacy_policy": "https://www.warp.dev/legal/privacy-policy",
+    "terms_of_service": "https://www.warp.dev/legal/terms-of-service",
+    "dpa": null,
+    "security_trust_page": "https://www.warp.dev/legal/security",
+    "notes": "AI terminal / agentic dev environment. Confirmed via direct fetch: policy discloses using data to train/fine-tune/improve AI-feature models, but the specific language is vague on whether that covers terminal/code content vs. just AI prompts. Separately, terminal-session content storage and AI prompt/output collection are each independently opt-out-able in Settings ('Active AI'/'Agent Mode' prompts, and general terminal-data sharing). Zero Data Retention is Enterprise-plan-only, not available on the free/individual tier -- worth a reviewer's eye, similar tier-gated-privacy-feature pattern as other tools in this batch, though not a full training-use tier split like DeepL's."
+  },
+  "zed": {
+    "name": "Zed",
+    "vendor": "Zed Industries, Inc.",
+    "privacy_policy": "https://zed.dev/privacy",
+    "terms_of_service": "https://zed.dev/terms",
+    "dpa": null,
+    "security_trust_page": "https://zed.dev/docs/ai/privacy-and-security",
+    "notes": "AI code editor. Confirmed via direct fetch: code/prompts sent through Zed's hosted AI models are discarded after each request and never used for training, backed by Zero Data Retention agreements with Anthropic, Google, OpenAI, and xAI (one named exception: certain Anthropic 'Covered Models' require short-term provider-side retention for safety). Explicitly opt-in (not opt-out) by design for any data sharing, e.g. Edit Prediction training-data sharing is off by default and, when turned on, limited to open-source code under permissive licenses. One of the stronger privacy postures found across all three batches so far."
+  },
+  "continue-dev": {
+    "name": "Continue.dev",
+    "vendor": "Continue Dev, Inc.",
+    "privacy_policy": "https://www.continue.dev/privacy",
+    "terms_of_service": "https://www.continue.dev/terms-conditions",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Open-source-first coding assistant (works with local/self-hosted models). Confirmed via direct fetch: privacy notice (last updated Feb 5, 2026) does not discuss AI training use of code/prompts one way or the other -- a real gap, not inferred. FLAG FOR REVIEWER: a WebSearch result title read 'Continue (acquired by Cursor)' (via Y Combinator's company page), suggesting a recent acquisition by Anysphere/Cursor (already a separate catalog entry) -- not confirmed inside Continue's own privacy policy or terms, and not independently verified beyond that one search-result label. If confirmed, this would eventually make Continue.dev and Cursor commonly-owned products on separate domains, similar in shape to the Devin/Windsurf/Cognition situation above -- flagging now rather than waiting for it to surface as a surprise later."
+  },
+  "perplexity-comet": {
+    "name": "Perplexity Comet",
+    "vendor": "Perplexity AI, Inc.",
+    "privacy_policy": "https://www.perplexity.ai/hub/legal/comet-privacy-notice",
+    "terms_of_service": "https://www.perplexity.ai/hub/legal/comet-terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "AI browser, same vendor as the already-catalogued 'Perplexity AI' entry but a materially different product with its own dedicated privacy notice (not just the main Perplexity Privacy Notice) covering local/on-device browsing data specifically. FLAG: same apex domain (perplexity.ai) as the existing Perplexity AI catalog entry -- expect the shared_domain heuristic to fire even though, unlike the AWS/Vercel cases, this is genuinely the same company/product family rather than unrelated products sharing infrastructure; still worth a reviewer's eye on how the heuristic should treat same-vendor multi-product cases differently from true shared-apex-domain cases. FLAG: direct WebFetch verification failed with HTTP 403 on two separate attempts; the specific facts above (on-device-by-default storage, opt-in/opt-out for site/service integrations, 30-day auto-deletion of queries Comet classifies as personal) are sourced from WebSearch's summary of the live page, not independently confirmed via a raw fetch -- treat as secondary-sourced pending a successful direct fetch."
+  },
+  "fathom": {
+    "name": "Fathom",
+    "vendor": "Fathom Video Inc.",
+    "privacy_policy": "https://www.fathom.ai/privacy",
+    "terms_of_service": "https://www.fathom.ai/terms",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "AI meeting notetaker. Confirmed via direct fetch. Fathom uses de-identified meeting-content data to train/improve its own in-house AI models, with a self-serve opt-out in account settings; explicitly does NOT authorize third-party model providers (OpenAI, Anthropic, Google, etc.) to train on personal information or meeting content. Note for future sourcing passes: several similarly-named domains exist (fathomhq.com, fathomthat.ai, fathom.video) -- fathom.ai was the one confirmed via direct fetch to be Fathom Video Inc.'s real domain; the others were not checked in enough depth to rule in or out, not used as sources here."
+  },
+  "krisp": {
+    "name": "Krisp",
+    "vendor": "Krisp Technologies, Inc.",
+    "privacy_policy": "https://krisp.ai/privacy-policy/",
+    "terms_of_service": "https://krisp.ai/terms-of-use/",
+    "dpa": null,
+    "security_trust_page": "https://krisp.ai/security-for-ai-meeting-assistant/",
+    "notes": "AI meeting assistant / noise-cancellation. Confirmed via direct fetch: third-party app/service data (e.g. Google Workspace) explicitly excluded from generalized AI/ML training. For Krisp's own proprietary models, the policy lists 'Improving our proprietary AI models and providing more accurate services' as a consent-based purpose -- i.e. framed as requiring affirmative consent rather than default-on-with-opt-out, but no dedicated settings-level opt-out toggle was found distinct from that initial consent choice. Noise-cancellation-only usage keeps audio entirely on-device (never reaches Krisp's servers); the training/data-sharing questions above apply to the transcription/meeting-assistant features specifically."
+  },
+  "tldv": {
+    "name": "tl;dv",
+    "vendor": "Tldx Solutions GmbH",
+    "privacy_policy": "https://tldv.io/privacy/",
+    "terms_of_service": "https://tldv.io/terms/",
+    "dpa": null,
+    "security_trust_page": "https://tldv.io/features/security-commitment/",
+    "notes": "AI meeting recorder/notetaker. Confirmed via direct fetch, Section 9: 'Customer Content is processed solely to provide the requested functionality and is not used by tldx Solutions GmbH or such providers to train or improve their general-purpose AI models' -- one of the clearest categorical no-training statements found across all three batches. No opt-out mechanism is specified, but the policy frames this as unnecessary since the practice doesn't happen in the first place rather than as a gap. Germany-based data controller."
+  },
+  "donotpay": {
+    "name": "DoNotPay",
+    "vendor": "DoNotPay, Inc.",
+    "privacy_policy": "https://donotpay.com/learn/privacy-policy/",
+    "terms_of_service": "https://donotpay.com/learn/terms-of-service/",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "AI legal-assistant / consumer-rights automation tool. Confirmed via direct fetch. Privacy policy is dated August 22, 2023 and does not address AI model training, machine learning, or any AI-specific data use anywhere in the document -- a real gap, not an extraction miss, for a product whose entire premise is AI-generated legal correspondence and negotiation. Worth noting for reviewer context (not a compliance fact, just background): DoNotPay has prior FTC enforcement history over AI-related marketing claims, which a search result surfaced but which is not itself part of the privacy policy."
+  },
+  "gamma": {
+    "name": "Gamma",
+    "vendor": "Gamma Tech, Inc.",
+    "privacy_policy": "https://gamma.app/privacy",
+    "terms_of_service": "https://gamma.app/terms",
+    "dpa": null,
+    "security_trust_page": "https://gamma.app/docs/Privacy-and-Data-Governance-oiel9gmtci4njdn",
+    "notes": "AI presentation/document generator. TIER SPLIT, same pattern as DeepL/GitHub Copilot: on plans without privacy controls enabled (i.e. default/Free), Gamma may use content to train/improve/refine its models; Team and Business plans do not train on content and Business/Enterprise specifically guarantee zero data retention for training. FLAG: direct WebFetch verification failed with HTTP 403 on two separate attempts (both gamma.app/privacy); the tier-split language above is sourced from WebSearch's summary of the live page, not independently confirmed via raw fetch -- treat as secondary-sourced pending a successful direct fetch, same caveat as Perplexity Comet above."
+  },
+  "recraft": {
+    "name": "Recraft",
+    "vendor": "Recraft (entity name not independently confirmed beyond 'Recraft')",
+    "privacy_policy": "https://www.recraft.ai/legal/privacy",
+    "terms_of_service": "https://recraft.ai/terms",
+    "dpa": null,
+    "security_trust_page": "https://www.recraft.ai/docs/trust-and-security/data-protection-and-privacy",
+    "notes": "Newer AI image-generation model. Confirmed via direct fetch: third-party AI providers are contractually barred from training on user prompts/outputs without affirmative authorization; Recraft's own proprietary models may train on that data by default, but with a self-serve opt-out in account profile settings. Separately (content-ownership axis, not a training-tier split): on the Free plan, generated/uploaded images are public and owned by Recraft (may appear in the community gallery); on paid plans, assets are private and user-owned -- worth a reviewer's eye as a different flavor of tier-dependent privacy posture than DeepL's, since it's about content visibility/ownership rather than model training. Checked and did not use a lookalike domain, recraftv3.org, that surfaced in search results."
+  },
+  "black-forest-labs": {
+    "name": "Black Forest Labs (FLUX)",
+    "vendor": "Black Forest Labs, Inc.",
+    "privacy_policy": "https://bfl.ai/legal/privacy-policy",
+    "terms_of_service": "https://bfl.ai/legal/terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Newer AI image-generation model (FLUX). Confirmed via direct fetch: inputs and outputs are used by default 'to train and improve our AI models' and content-moderation tooling. Opt-out exists but is manual/friction-y rather than a settings toggle -- users must email legal@blackforestlabs.ai with subject line 'Training Opt Out' and account details, similar manual-opt-out pattern to Fireflies.ai/HeyGen in the second batch rather than the cleaner self-serve toggles seen elsewhere in this batch (Fathom, Recraft)."
+  },
+  "pika": {
+    "name": "Pika",
+    "vendor": "Mellis, Inc.",
+    "privacy_policy": "https://pika.art/privacy-policy",
+    "terms_of_service": "https://launch.pika.art/terms-of-service",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Newer AI video-generation model/app (text-to-video, 'AI Selves' digital-representation feature). FLAG FOR REVIEWER: URLs confirmed genuine (pika.art is the real product domain per multiple independent search results, and launch.pika.art / dev.pika.art are Pika's own subdomains, not lookalikes) but the privacy policy page is a client-rendered SPA -- WebFetch received only an accordion table-of-contents and page footer, never the expanded clause text, across two separate attempts (pika.art/privacy-policy and launch.pika.art/privacy-policy). Same failure mode as Character.AI in the second batch. Could not confirm or deny AI-training-use language or an opt-out mechanism as a result -- both facts should extract as null if the backend's fetcher hits the same JS wall, and that would be an honest reflection of an extraction gap, not a thin source. Also checked and explicitly rejected a lookalike domain, pika-art.net ('Pika AI: Free AI Video Generator'), which is not Mellis, Inc.'s site -- not used anywhere in this record."
+  },
+  "kling-ai": {
+    "name": "Kling AI",
+    "vendor": "Kling AI Pte. Ltd (Kuaishou)",
+    "privacy_policy": "https://kling.ai/docs/privacy-policy",
+    "terms_of_service": "https://kling.ai/docs/user-policy",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "Newer AI video-generation model, backed by Kuaishou (China-based parent). FLAG FOR REVIEWER, low-confidence sourcing: both URLs are the ones Kling AI's own docs site publishes and match the entity name 'Kling AI Pte. Ltd' seen in search results, but direct WebFetch returned HTTP 446 (an unusual, non-standard status code -- possibly a geo-block or bot-block) on every attempt to both the privacy policy and terms pages, so nothing here was independently confirmed via raw fetch, only via WebSearch's summary of the live pages. That summary describes broad ToS license language ('worldwide, non-exclusive, royalty-free, and sublicensable license... often allows use of videos to train future AI models') and a paid-tier-only 'Private Mode' that hides generations from the public community gallery. Given the China-based parent company, international data-transfer/GDPR-adequacy questions are also worth a reviewer's attention beyond what this pass could confirm. Do not treat this entry's facts as verified to the same standard as the rest of this batch -- flag for a follow-up direct-fetch attempt or a different access path before it goes through extraction."
+  },
+  "teal": {
+    "name": "Teal",
+    "vendor": "Teal (TealHQ) -- exact legal entity name not independently confirmed",
+    "privacy_policy": "https://www.tealhq.com/privacy-policy",
+    "terms_of_service": "https://www.tealhq.com/terms",
+    "dpa": null,
+    "security_trust_page": null,
+    "notes": "AI resume-builder / job-search companion -- sourced to cover the HR/recruiting-adjacent gap from the individual job-seeker's side, since actual HR/recruiting-AI vendors (Workday AI, Greenhouse AI, etc.) are enterprise-only B2B infrastructure out of scope for this catalog's ICP. FLAG: direct WebFetch verification failed with HTTP 403 on two separate attempts; the summary above (resume/career content collected, no sale of personal information, user-controlled export/delete) is sourced from WebSearch's summary only. Notably, that summary surfaced no explicit statement either way on whether resume/career content is used to train Teal's AI features -- a real gap worth flagging for a reviewer even accounting for the lower-confidence sourcing here, since it's the exact fact this pipeline needs and no page text was found addressing it."
+  },
+  "elicit": {
+    "name": "Elicit",
+    "vendor": "Elicit Research, PBC",
+    "privacy_policy": "https://elicit.com/operations/privacy",
+    "terms_of_service": "https://elicit.com/operations/terms",
+    "dpa": "https://elicit.com/operations/dpa",
+    "security_trust_page": "https://trust.elicit.com",
+    "notes": "AI research-paper assistant. Confirmed via direct fetch on the privacy policy and DPA. FLAG FOR REVIEWER: the privacy policy (dated September 12, 2023) never discusses whether uploaded documents/research queries are used to train AI models, in either direction -- a notable silence for a product whose whole premise is AI analysis of user-supplied papers, and stale relative to the DPA it sits alongside (dated April 1, 2025), similar staleness pattern to JetBrains AI Assistant in the second batch. security_trust_page (trust.elicit.com) is referenced inside Elicit's own DPA text but was not independently fetched to confirm its contents in this pass."
+  },
+  "superhuman": {
+    "name": "Superhuman",
+    "vendor": "Superhuman, Inc.",
+    "privacy_policy": "https://superhuman.com/legal/privacy-policy",
+    "terms_of_service": "https://superhuman.com/legal/terms",
+    "dpa": "https://superhuman.com/legal/dpa",
+    "security_trust_page": null,
+    "notes": "AI email client -- new category for the catalog (AI email assistant). Confirmed via direct fetch: explicit statement that Superhuman uses collected information to train its AI models, paired with a genuine self-serve opt-out via account-settings 'training control(s)' -- one of the cleanest opt-out mechanisms found across all three batches. If used under an organization's management, an org's own contract/DPA governs instead of this consumer privacy policy (same org-vs-individual carve-out pattern as several other tools in this catalog). Search also surfaced joinsuperhuman.io as a possibly-related domain; not confirmed as affiliated and not used as a source here."
   }
 }
