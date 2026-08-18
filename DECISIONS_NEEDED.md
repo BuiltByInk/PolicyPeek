@@ -1,5 +1,40 @@
 # Decisions Needed
 
+## Open, blocks further catalog growth (2026-08-18 night): `/about`'s "a human reviews it" claim doesn't match actual practice
+
+Elliot flagged this himself, unprompted, after tonight's publishes: he
+approved Amazon Q Developer, DeepL, and Windsurf by reading a chat summary
+and saying "go ahead" — not by opening the source docs and checking the
+extracted facts against them himself, which is what `/about` explicitly
+promises ("Nothing reaches the tools list without someone checking the
+extracted facts against the actual source before approving it").
+
+Two distinct gaps, not one:
+
+1. **Auto-publish (tier A) bypasses human review entirely, by design** —
+   this was Elliot's own approved three-tier design (see the "three-tier
+   auto-publish is live" entry below), but `/about`'s copy was never
+   updated to reflect it and still makes a blanket "a human always
+   reviews it" claim. `tools.auto_published` exists in the schema but
+   isn't surfaced anywhere on the public site — a visitor has no way to
+   tell which tools got which treatment.
+2. **"Admin approval" in practice has meant trusting an agent's chat
+   summary**, not independently checking extracted facts against the
+   linked source the way the copy describes.
+
+**Elliot's decision (2026-08-18 night): fix both** — tighten the actual
+review practice (surface `auto_published` publicly; for anything routed
+through manual approval, hand Elliot the real `relevant_clauses` quotes +
+source links directly instead of a paraphrase, so approval means actually
+looking at primary text) *and* rewrite `/about`'s methodology copy to
+honestly describe the two-track system as it actually works. Neither has
+been implemented yet — this is the plan, not the fix.
+
+**The third research batch (17 tools, `research/third_batch_summary.md`)
+is explicitly paused** — do not run it through the check/extraction
+pipeline until this is sorted. Don't resume it on your own judgment; wait
+for Elliot to confirm the review-integrity fix is in place first.
+
 ## Fixed (2026-08-18): DNS-resolution SSRF bypass in `ssrf.ts` (security review finding #1) — DoH pre-check landed, full IP-pinning not achievable in this runtime, logging the residual gap rather than leaving it silent
 
 Security Agent's `security/review-2026-08-18.md` High finding: `assertSafeUrl`
