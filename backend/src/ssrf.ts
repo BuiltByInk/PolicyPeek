@@ -2,6 +2,25 @@
 // this blocks fetches into the private network (including the cloud metadata
 // endpoint) and re-validates on every redirect hop rather than trusting fetch's
 // automatic redirect handling.
+//
+// DNS-resolution-based bypass (fixed 2026-08-18, see security/review-2026-08-18.md
+// finding #1): the checks above only ever inspected the *literal* hostname/IP
+// string in the submitted URL. A hostname like "169-254-169-254.nip.io"
+// (real wildcard-DNS service) isn't itself a blocked literal, but resolves at
+// fetch()-time straight to the cloud metadata address -- full bypass. Fixed by
+// resolving every non-literal hostname ourselves via DNS-over-HTTPS (Cloudflare's
+// 1.1.1.1 resolver, reachable from a Worker like any other fetch target) before
+// each connection attempt -- initial URL and every redirect hop -- and rejecting
+// if ANY returned A/AAAA answer is private/link-local/loopback/metadata.
+//
+// Residual risk, accepted and documented rather than silently left open:
+// Cloudflare Workers' fetch() gives no hook to pin the exact IP a request
+// connects to, so this closes the primary "submit a hostname that resolves to
+// a blocked address" attack, but cannot fully close classic DNS-rebinding
+// TOCTOU (a malicious authoritative zone returning a safe IP to our DoH
+// pre-check and a different, blocked IP microseconds later to the runtime's
+// own resolution inside fetch()). True IP-pinning isn't achievable in this
+// runtime today. Logged in DECISIONS_NEEDED.md per the review's instruction.
 
 const BLOCKED_HOSTNAMES = new Set(["localhost", "metadata.google.internal"]);
 
@@ -11,6 +30,14 @@ const MAX_REDIRECTS = 5;
 // this only affects per-hop wait, not total request time.
 const FETCH_TIMEOUT_MS = 20_000;
 const MAX_BODY_BYTES = 500_000;
+
+// Cloudflare's own DoH JSON endpoint -- a fixed, hardcoded host, not
+// attacker-influenced input (same rationale as archive.org in
+// waybackFallback.ts), so this is called via plain fetch(), not through this
+// very wrapper (that would be circular).
+const DOH_ENDPOINT = "https://cloudflare-dns.com/dns-query";
+const DOH_TIMEOUT_MS = 5_000;
+const DOH_RECORD_TYPES = ["A", "AAAA"] as const;
 
 export class SsrfBlockedError extends Error {}
 
@@ -99,7 +126,69 @@ export function isBlockedIpLiteral(rawHostname: string): boolean {
   return false;
 }
 
-function assertSafeUrl(rawUrl: string): URL {
+// A hostname that is already a literal IP (or bracketed IPv6 literal) needs
+// no DNS resolution -- isBlockedIpLiteral above already ruled on it directly.
+// Domain names never contain a colon, so this is a safe/cheap discriminator.
+function isIpLiteralHostname(hostname: string): boolean {
+  return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) || hostname.includes(":");
+}
+
+interface DohAnswer {
+  type: number;
+  data: string;
+}
+interface DohResponse {
+  Answer?: DohAnswer[];
+}
+
+// DNS record type numbers per RFC 1035 / RFC 3596.
+const DOH_TYPE_NUM: Record<(typeof DOH_RECORD_TYPES)[number], number> = { A: 1, AAAA: 28 };
+
+async function resolveViaDoh(hostname: string, type: (typeof DOH_RECORD_TYPES)[number]): Promise<string[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DOH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${DOH_ENDPOINT}?name=${encodeURIComponent(hostname)}&type=${type}`, {
+      headers: { accept: "application/dns-json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new SsrfBlockedError("dns_resolution_failed");
+    const body = (await res.json()) as DohResponse;
+    const wantType = DOH_TYPE_NUM[type];
+    return (body.Answer ?? []).filter((a) => a.type === wantType).map((a) => a.data);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Resolves hostname via DoH (both A and AAAA) and rejects if ANY returned
+// address is private/link-local/loopback/metadata -- reject-if-any-bad, not
+// reject-if-first-bad, since a multi-answer response can rebind on a later
+// answer. Fails closed: if DNS resolution itself errors out (resolver down,
+// network blip, timeout), that's treated as blocked rather than silently
+// skipping the safety check. A genuinely empty answer set (NXDOMAIN, no
+// records) is not itself unsafe -- fetch() will simply fail to connect, so
+// that's let through rather than blocked.
+async function assertResolvedAddressesSafe(hostname: string): Promise<void> {
+  if (isIpLiteralHostname(hostname)) return;
+
+  let addresses: string[];
+  try {
+    const results = await Promise.all(DOH_RECORD_TYPES.map((type) => resolveViaDoh(hostname, type)));
+    addresses = results.flat();
+  } catch (err) {
+    if (err instanceof SsrfBlockedError) throw err;
+    throw new SsrfBlockedError("dns_resolution_failed");
+  }
+
+  for (const ip of addresses) {
+    if (isBlockedIpLiteral(ip)) {
+      throw new SsrfBlockedError("blocked_target_resolved_ip");
+    }
+  }
+}
+
+async function assertSafeUrl(rawUrl: string): Promise<URL> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -113,11 +202,17 @@ function assertSafeUrl(rawUrl: string): URL {
   if (BLOCKED_HOSTNAMES.has(hostname.toLowerCase()) || isBlockedIpLiteral(hostname)) {
     throw new SsrfBlockedError("blocked_target");
   }
+  // Literal-string checks above only catch a submitted hostname that IS
+  // itself a blocked IP. Resolve it ourselves and check every answer to
+  // catch a hostname that resolves TO a blocked IP (wildcard-DNS bypass /
+  // DNS rebinding) -- see the file-header comment for what this does and
+  // doesn't close.
+  await assertResolvedAddressesSafe(hostname);
   return url;
 }
 
 export async function safeFetchText(rawUrl: string): Promise<string> {
-  let currentUrl = assertSafeUrl(rawUrl);
+  let currentUrl = await assertSafeUrl(rawUrl);
 
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
     const controller = new AbortController();
@@ -137,7 +232,7 @@ export async function safeFetchText(rawUrl: string): Promise<string> {
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) throw new SsrfBlockedError("redirect_without_location");
-      currentUrl = assertSafeUrl(new URL(location, currentUrl).toString());
+      currentUrl = await assertSafeUrl(new URL(location, currentUrl).toString());
       continue;
     }
 
