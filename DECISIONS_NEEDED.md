@@ -1,5 +1,100 @@
 # Decisions Needed
 
+## Open, STOPPED the batch run for this (2026-09-01): local dev D1 has a stale CHECK constraint that silently swallows every `compliant_with_caveats` auto-publish
+
+Phase 2's bulk pipeline run, batch 1 of ~4 (5 tools: ChatGPT, Claude,
+Copy.ai, Cursor, ElevenLabs) via the real `POST /v1/check` → extraction →
+`evaluateAutoPublish` → `approvePendingCheck` path, using a temporary
+local-only `paid`-tier API key (see below) to get past the anonymous
+daily cap for batch volume.
+
+**What happened:** ChatGPT and ElevenLabs both extracted clean facts
+(`trains_on_user_data: true`, `opt_out_available: true` — no null critical
+fields) and `evaluateAutoPublish` correctly returned `eligible: true,
+reason: "clean extraction, deterministic verdict"` for both — confirmed
+by querying `GET /v1/admin/pending` directly, which recomputes and shows
+that exact reason string. But **neither actually got published** —
+both are stuck at `pending_checks.status = 'extracted'`, looking exactly
+like a normal tier-B queue item from the outside.
+
+**Root cause, found in `wrangler dev`'s own log, not guessed:**
+```
+D1_ERROR: CHECK constraint failed: compliance_status IN
+('not_compliant', 'compliant', 'unrated', 'shared_domain_unverified'):
+SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_CHECK)
+```
+Note what's missing from that list: **`compliant_with_caveats`**. Local
+dev D1's `tools` table was created before Elliot's 2026-08-18
+`compliant_with_caveats` ruling and never re-migrated — `schema.sql`
+already has a comment warning about exactly this ("SQLite... can't alter
+an existing CHECK constraint in place, so any local D1 created before
+this change needs a fresh migration... Do not run this against any
+real/deployed database"), but this local instance apparently predates
+that warning being heeded. ChatGPT and ElevenLabs are the first two
+tools in this whole project's history to actually compute
+`compliant_with_caveats` through the real pipeline (Cursor and Claude
+both came back `compliant` outright — `trains_on_user_data: false` — so
+they never hit this bucket, and everything published before 2026-08-18
+predates the bucket existing at all) — that's why this has never surfaced
+until now.
+
+**A second, worse thing this exposed:** the failure was completely
+silent. `check.ts::runExtraction`'s `try/catch` only wraps the
+`extractFacts` call — the `evaluateAutoPublish`/`approvePendingCheck`
+call after it has no error handling at all. When `approvePendingCheck`'s
+INSERT throws, it's an unhandled rejection inside `ctx.waitUntil()`,
+logged only to the Worker's own console (invisible to `GET
+/v1/admin/pending`, which just shows the stuck row as if it were a normal
+tier-B queue item) and never recorded anywhere in `pending_checks` itself
+— `extraction_error` stays `NULL`. A tool stuck this way is
+indistinguishable from a genuinely-queued one without reading raw Worker
+logs. Worth Backend's attention independent of the schema fix: any future
+exception in the auto-publish path (not just this one) fails the exact
+same silent way.
+
+**Stopped here rather than continuing batches 2-4**, since any tool that
+computes to `compliant_with_caveats` will hit the same wall, and piling
+up more silently-stuck rows against a local D1 I already know is stale
+isn't useful work — all of it needs redoing once real D1 exists anyway.
+
+**Options, not deciding for you:**
+1. Fix local dev D1 now (drop and re-migrate from current `schema.sql`,
+   per its own instructions) and resume the batch locally. No data loss
+   risk for the existing 13 tools — none of them use
+   `compliant_with_caveats`, confirmed by direct query, so re-migrating
+   loses nothing meaningful.
+2. Hold Task 2 entirely until the real D1 (Task 1, waiting on your
+   `wrangler login`) exists, since it'll be freshly migrated from current
+   `schema.sql` and won't have this bug — redo the whole bulk run there
+   instead of doing it twice.
+3. Separately: decide whether `runExtraction`'s auto-publish path should
+   catch exceptions and write to `extraction_error` (so a future version
+   of this exact failure is visible in the admin queue instead of only in
+   Worker logs) — flagging as a Backend robustness item, not fixing it
+   myself since it's error-handling *behavior*, adjacent to but not the
+   same as the immediate schema fix.
+
+**Also created:** a temporary local-only `paid`-tier API key
+(`api_keys.id = 1`, label `phase2-bulk-run-internal (local dev only,
+temporary)`) so batch submissions bypass the 1-per-24h anonymous cap
+without touching rate-limiting logic itself. Local D1 only, not a
+secret, not committed anywhere (D1 rows aren't tracked in git). Should be
+revoked (`UPDATE api_keys SET revoked = 1 WHERE id = 1`) once this phase's
+bulk run is done, so it doesn't linger as an unused live credential.
+
+**Batch 1 results so far** (for the record, since 2 of 5 are stuck):
+- Claude → `compliant` (`trains_on_user_data: false`), auto-published,
+  matches `tools.json`'s existing entry.
+- Cursor → `compliant` (`trains_on_user_data: false`), auto-published,
+  matches `tools.json`'s existing entry.
+- Copy.ai → `trains_on_user_data: null`, correctly queued (tier B, null
+  critical fact) — no bug here, this is the auto-publish gate working
+  as designed.
+- ChatGPT, ElevenLabs → stuck per above, not actually published despite
+  clean facts.
+
+
+
 ## Open (2026-09-01): Copilot's D1 summary can't be synced — no D1 row exists for it at all
 
 Follow-up to the entry below: asked to sync D1's `summary` field for

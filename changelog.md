@@ -14,6 +14,20 @@ real record, not an empty log.
 
 ## 2026-09-01
 
+- **Phase 2 bulk pipeline run, batch 1 of ~4, STOPPED after batch 1** —
+  found a schema bug (local D1 predates the `compliant_with_caveats`
+  CHECK constraint, silently failing any auto-publish that lands on that
+  verdict), see `DECISIONS_NEEDED.md`. Cost so far (estimates — this HTTP
+  path doesn't expose actual token usage, see the note in
+  `DECISIONS_NEEDED.md`): ChatGPT ~$0.0053, Claude ~$0.0023, Copy.ai
+  ~$0.0053, Cursor ~$0.0053, ElevenLabs ~$0.0053 — **running total ~$0.024
+  for 5 tools**, all Haiku extraction calls (real spend, regardless of
+  which then got published vs. stuck). 2 of 5 auto-published (Claude,
+  Cursor — both `compliant`), 1 correctly queued for a null fact
+  (Copy.ai), 2 silently stuck on the schema bug (ChatGPT, ElevenLabs —
+  both would-be `compliant_with_caveats`). Spot-checked Claude and
+  Cursor's facts against what's publicly known about each product's
+  training policy — both plausible, no red flags.
 - **Local dev D1: synced v0's `summary` to match the website's new text**
   (direct two-row-scoped `wrangler d1 execute --local` write, confirmed via
   both a direct query and a live `/v1/lookup` call). Copilot's D1 row
