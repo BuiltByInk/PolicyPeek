@@ -12,6 +12,32 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-01
+
+- **Firefox extension: fixed a real manifest defect blocking clean installs.**
+  `extension/manifest.json` was missing `browser_specific_settings.gecko.id`
+  and `data_collection_permissions` — both required by Firefox for MV3
+  add-ons (`web-ext lint` flagged this as an `ADDON_ID_REQUIRED` error, not
+  a warning). Added `policypeek@builtbyink.com` as the stable id and
+  `data_collection_permissions: { required: ["none"] }` (accurate — the
+  extension collects nothing). Verified: `web-ext lint` now reports 0
+  errors/warnings, and `web-ext run` installs the extension cleanly as a
+  temporary add-on in real Firefox 140.13.0esr with no install-time errors.
+- Verified backend reachability/CORS independently of the extension:
+  `GET /v1/lookup?domain=example.com` against local `wrangler dev` returns
+  the expected `404 not_found` with `Access-Control-Allow-Origin: *` and
+  the other `cors.ts` headers present — rules out the backend or CORS
+  config as the cause of the reported "stuck on Checking…" symptom.
+- **Manual click-through verification not completed** — see
+  `DECISIONS_NEEDED.md`'s 2026-09-01 entry. This environment has no GUI
+  input-automation for Firefox (no `xdotool`, no root/pip access to install
+  one, no Puppeteer/Playwright), so I could not click the toolbar icon and
+  watch the badge resolve myself. Flagged for Elliot to do the ~30-second
+  manual check rather than claiming this done on the strength of static
+  analysis alone.
+
+---
+
 ## 2026-08-18
 
 - **New verdict bucket: `compliant_with_caveats`.** Elliot's ruling: "trains

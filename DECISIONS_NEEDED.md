@@ -1,5 +1,74 @@
 # Decisions Needed
 
+## Open (2026-09-01): Firefox badge bug — real manifest defect fixed, but full manual verification is blocked on a tooling gap, not a code gap
+
+Phase 1 kickoff asked me to diagnose "popup shows Checking… indefinitely,
+badge never resolves" in Firefox, following a specific order: read the
+actual background/popup console error, check whether the network request
+even fires, check permission scope, check CORS/wrangler reachability, and
+only then consider a structural Firefox MV3 incompatibility.
+
+**What I could verify by automated means, and did fix:**
+
+- `extension/manifest.json` was missing `browser_specific_settings.gecko.id`
+  and `data_collection_permissions` — both now mandatory for Firefox MV3
+  add-ons. `web-ext lint` flagged this as an `ADDON_ID_REQUIRED` **error**
+  (not a warning). Added a stable id (`policypeek@builtbyink.com`) and
+  `data_collection_permissions: { required: ["none"] }` (accurate — nothing
+  is collected). Re-ran `web-ext lint`: 0 errors/warnings.
+- Used `web-ext run` to actually launch real Firefox (140.13.0esr, this
+  machine's installed version) with the extension loaded via Firefox's
+  remote debugger protocol: it installs cleanly as a temporary add-on, no
+  errors at install time. Before the fix, I can't say whether this
+  particular defect alone would have blocked a temporary install (Firefox
+  has historically auto-generated an id for temporary/dev installs; this
+  requirement reads more like an AMO-submission/signing gate) — so I'm not
+  claiming this was necessarily *the* cause of the reported hang, just that
+  it's a real, now-fixed defect either way.
+- Verified the backend independently of the extension: `GET /v1/lookup` on
+  local `wrangler dev` returns a correct `404 not_found` with proper
+  `cors.ts` headers (`Access-Control-Allow-Origin: *`, etc.). This rules
+  out "request fires but backend/CORS rejects it" and "wrangler dev isn't
+  reachable" as the cause.
+- Read `popup.js`/`config.js`/`badgeCopy.js`/`manifest.json` line by line
+  for Chrome-only API usage (the usual Firefox MV3 gap). Nothing jumped
+  out: `chrome.action.setIcon/setTitle`, `chrome.storage.local`,
+  `chrome.tabs.query`, and ES-module popup scripts are all supported in
+  current Firefox MV3. No background script exists in this extension at
+  all (SCOPE.md describes one; the actual scaffold doesn't have one — see
+  note below), so service-worker-lifecycle divergence isn't in play either.
+
+**What I could not do, and why:** the instructions ask me to open
+`about:debugging`, read the real console error, and manually click through
+two test sites. This needs clicking a real browser toolbar icon and reading
+a real console. This environment has a working X display (`DISPLAY=:0`,
+confirmed via `xset q`) but no input-automation tool for it — no
+`xdotool`/`xte`, no root or working `pip`/`apt` to install one, and no
+Puppeteer/Playwright/geckodriver already present. I did not fabricate a
+"verified working" result to satisfy the done-criteria — I'm flagging the
+gap instead, per the charter's instruction to log a hit permission/tooling
+wall rather than wait for a rubber stamp.
+
+**Ask:** either (a) do the ~30-second manual check yourself — load
+`extension/` as a temporary add-on in `about:debugging`, click the toolbar
+icon on a real site, confirm the badge resolves, and paste back whatever
+error you see in the console if it still hangs — or (b) tell me to spend
+more time scripting Firefox's Remote Debugging Protocol directly (the same
+protocol `web-ext run` used above) to try to drive the popup without GUI
+input, which is possible but nontrivial and I haven't attempted it yet.
+
+**Side note, not blocking:** `extension/SCOPE.md` describes a passive
+background-service-worker design (listens to `tabs.onUpdated`/`onActivated`,
+broad `<all_urls>` host permission) that was never built — the actual
+`manifest.json`/`popup.js` scaffold is a simpler popup-only, click-triggered
+design (`activeTab` + a single `localhost:8787` host permission). That's a
+reasonable, smaller-permission-footprint choice, but it's a real divergence
+from the written scope doc that nobody seems to have logged — flagging so
+it doesn't look like an oversight later. Not treating it as in-scope for
+this bug fix.
+
+---
+
 ## Open, blocks further catalog growth (2026-08-18 night): `/about`'s "a human reviews it" claim doesn't match actual practice
 
 Elliot flagged this himself, unprompted, after tonight's publishes: he
