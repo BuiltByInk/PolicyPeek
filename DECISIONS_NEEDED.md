@@ -1,5 +1,59 @@
 # Decisions Needed
 
+## Open (2026-09-01): Microsoft Copilot's stored facts contradict a fresh live re-extraction from the same source URL — source-page specificity problem, papered over (correctly, for the badge) by shared_domain but not for the underlying data
+
+Phase 1's Task 2 asked me to run 3 real tools through the live extraction
+pipeline as a manual-verification sample: DeepL, Otter.ai, and Microsoft
+Copilot (the shared-domain case). DeepL and Otter.ai's fresh extractions
+matched both the existing catalog entry and my own read of the pages —
+Microsoft Copilot didn't.
+
+`tools.json`'s stored entry for `microsoft.com`: `trains_on_user_data:
+true`, `data_retention: "18 months for conversations by default; up to 30
+days for uploaded files..."` — this reads like consumer Copilot chat
+history retention.
+
+My fresh run against the exact same stored `source_url`
+(`https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy`)
+today: `trains_on_user_data: false`, `opt_out_available: true`, sourced
+from clauses like *"Prompts, responses, and your file contents when using
+Copilot in Microsoft 365 apps aren't used to train foundation models"* and
+*"Your personal data collected from the use of connected experiences in
+Microsoft 365 isn't used to train large language models"*. That's a page
+about the Microsoft 365 app-integration surface of Copilot, not the
+consumer chat product the 18-month retention figure sounds like it's
+describing — I did not see an 18-month figure anywhere in what I fetched.
+
+I did not touch `tools.json` or re-publish anything — this is a fact
+mismatch to investigate, not a mine to silently resolve, especially since
+`computeVerdict`'s `shared_domain_unverified` override means the *public
+badge* is identical either way (this is exactly the override's job: no
+apex-domain company's facts are trusted regardless of how clean they look).
+But the underlying stored facts still disagree with a fresh pull of the
+same URL, which matters for whatever eventually resolves the shared-domain
+cases into real per-product verdicts.
+
+Two live hypotheses, not resolving between them:
+1. The original extraction was run against a **different** Microsoft
+   Copilot privacy page (a consumer/`copilot.microsoft.com` surface) and
+   `tools.json`'s `source_urls` field was updated to the current
+   `/for-individuals/privacy` URL afterward without re-running extraction
+   against it — a provenance drift between "URL on file" and "URL actually
+   extracted from."
+2. Microsoft's own privacy page changed content between the original
+   extraction and today.
+
+Either way, this is a live example of why `shared_domain` apex-domain
+companies are genuinely hard to source cleanly — a single large company
+can have multiple, contradictory privacy surfaces for the "same" product
+depending on which specific page/product-tier is cited, and the
+shared_domain override exists precisely because no one page can be trusted
+to speak for the whole company. Not proposing a fix here, just flagging
+the concrete evidence since Elliot said not to silently patch this kind of
+thing.
+
+---
+
 ## Open (2026-09-01): Firefox badge bug — real manifest defect fixed, but full manual verification is blocked on a tooling gap, not a code gap
 
 Phase 1 kickoff asked me to diagnose "popup shows Checking… indefinitely,

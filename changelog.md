@@ -14,6 +14,45 @@ real record, not an empty log.
 
 ## 2026-09-01
 
+- **Live Haiku extraction proven against 3 real policy pages** (not cached
+  fixtures) — DeepL (clear GDPR language), Otter.ai (US-only, vague
+  retention), Microsoft Copilot (shared-domain edge case). Ran the actual
+  production functions (`ssrf.ts::safeFetchText` → `htmlClean.ts` →
+  `extraction.ts::extractFacts` against real `claude-haiku-4-5-20251001` →
+  `rules.ts::computeVerdict`) directly rather than through `POST /v1/check`,
+  to avoid the anonymous daily rate cap (keyed by IP, and local `wrangler
+  dev` doesn't set `CF-Connecting-IP`, so all local calls would share one
+  bucket) — same code path, same model call, just not the HTTP/DB layer.
+  Results:
+  - **DeepL**: `trains_on_user_data: true`, `opt_out_available: null`,
+    `data_retention` correctly captured the free/Pro split → verdict
+    `not_compliant`. Matches the existing published badge and a human read
+    of the page.
+  - **Otter.ai**: `trains_on_user_data: true`, `data_retention: null`
+    (genuinely not stated on the fetched page), `gdpr_mentioned: false` →
+    verdict `not_compliant`. Matches the existing published badge.
+  - **Microsoft Copilot**: `shared_domain` override correctly forces
+    `shared_domain_unverified` regardless of facts — but the facts
+    themselves came back **`trains_on_user_data: false`, `opt_out_available:
+    true`**, the opposite of what's currently stored in `tools.json`
+    (`trains_on_user_data: true`). Investigated, not silently adjusted —
+    see `DECISIONS_NEEDED.md`'s 2026-09-01 entry: likely cause is that the
+    catalog's stored source URL describes a different Copilot surface
+    (consumer chat, 18-month retention) than the `/for-individuals/privacy`
+    page actually fetched here (Microsoft 365 app integration, which
+    explicitly says it does *not* train foundation models) — a real
+    source-URL-specificity problem this `shared_domain` company exposes,
+    that the shared-domain override happens to paper over in the public
+    badge but shouldn't paper over silently in the underlying data.
+  - Confirmed across all three: the raw Haiku JSON never contained
+    verdict-like language (no `compliant`/`verdict`/rating field) — only
+    the four fact fields plus direct-quote `relevant_clauses`, exactly per
+    `extraction.ts`'s schema. Pipeline separation between LLM-facts and
+    deterministic-verdict is holding.
+  - Did **not** bulk-process the rest of the 21/33-tool catalog and did
+    **not** touch `tools.json` — per Phase 1 scope, this was a
+    3-tool manual-verification pass only.
+
 - **Firefox extension: fixed a real manifest defect blocking clean installs.**
   `extension/manifest.json` was missing `browser_specific_settings.gecko.id`
   and `data_collection_permissions` — both required by Firefox for MV3
