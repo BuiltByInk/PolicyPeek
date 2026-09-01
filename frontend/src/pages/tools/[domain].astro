@@ -33,8 +33,12 @@ const reasonClass =
   <p class="domain">{tool.domain}</p>
 
   {tool.shared_domain ? (
+    // Per-tool summary carries the specific reason (e.g. a shared apex
+    // domain vs. a stale/unscoped source on top of that) -- fall back to
+    // the generic sentence only if a tool has no summary of its own, so
+    // this never renders blank.
     <p class={reasonClass}>
-      Policy text is shared across multiple company products, so this badge doesn't reflect {tool.name}-specific data handling.
+      {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
     </p>
   ) : (
     tool.summary && <p class={reasonClass}>{tool.summary}</p>

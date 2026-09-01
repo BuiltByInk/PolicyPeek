@@ -1,6 +1,77 @@
 # Decisions Needed
 
-## Open (2026-09-01): Microsoft Copilot discrepancy diagnosed — root cause is a stale/redirected source URL, not extraction noise. Needs your call on the fix, tools.json not touched.
+## Resolved (2026-09-01): Copilot and v0 now show their specific unverified reason, not the generic shared-domain sentence
+
+Follow-up to the diagnosis below. Elliot's call: both should read as
+unverified for their *actual* reason (Copilot's source is stale/covers
+"the older version"; v0's source was never product-scoped at all), not
+reuse shared-domain's generic wording for an unrelated problem — but
+without building new verdict infrastructure.
+
+**What I found tracing the render path end-to-end (your step 1):** the
+`compliance_status` bucket, `rules.ts`'s override, and `Badge.astro`'s
+outlined/dashed rendering for `shared_domain_unverified` were already
+exactly right for both tools — **both were already rendering outlined,
+not solid**, before this task started (`shared_domain: true` was already
+set on both). The actual gap was one level down: `frontend/src/pages/
+tools/[domain].astro` and `tools/index.astro` both had `tool.shared_domain
+? <hardcoded generic sentence> : tool.summary` — meaning **any** tool
+flagged `shared_domain` had its own `summary` field silently discarded in
+favor of one fixed sentence, with no way to say anything more specific.
+
+**Fix applied (your step 2's answer): no new state, no rules.ts change,
+no new `ComplianceStatus` value, no D1 schema change.** Reused the
+existing `summary` field (already piped through the whole system for
+non-shared-domain tools) by flipping the two templates' logic to
+`tool.summary || <generic fallback>` — falls back to the old sentence only
+if a tool has no summary, so every other `shared_domain` tool (Amazon Q
+Developer, Gemini) renders byte-identical to before, verified in the built
+output. Updated `summary` for Copilot and v0 to state their specific
+reason (source-staleness / never-product-scoped respectively) — `trains_
+on_user_data`, `data_retention`, `gdpr_mentioned`, `opt_out_available`
+untouched, exactly as instructed.
+
+**Source URL updates:** Copilot's `source_urls` now points at
+`support.microsoft.com/.../privacy-faq-for-microsoft-copilot` (the FAQ
+page from the diagnosis below, the best available Copilot-specific
+reference even though it's unverified). v0's stays at
+`vercel.com/legal/privacy-notice` unchanged, per your instruction.
+
+**Verified:** rebuilt the site (`astro build`), inspected the generated
+HTML directly for `/tools/microsoft.com/`, `/tools/vercel.com/`, and the
+`/tools` listing page — badge is `amber-outline` (dashed border) on both,
+and the reason paragraph now shows the specific text, not the generic
+sentence. Cross-checked `/tools/amazon.com/` (an unrelated shared-domain
+tool) renders unchanged.
+
+**Scope boundary I did not cross, flagging rather than assuming:** the
+browser extension's popup reads its `summary` tooltip live from the
+backend's D1 `tools` table, which is a completely separate data store from
+`frontend/data/tools.json` (confirmed: the static site only ever reads the
+JSON file at build time, per `README.md` and the frontend agent's own
+charter — there's no live API call from the site, and no export/sync
+script exists in either direction). Your constraint said don't touch D1
+schema/migrations; I've also held off touching D1 *data* here, since (a)
+`microsoft.com` isn't even in local dev D1 today (a pre-existing gap
+logged separately below) and (b) unilaterally pushing new summary text
+into D1 for just `vercel.com` while `frontend/data/tools.json` is already
+a known-diverged snapshot felt like patching one edge of a bigger
+sync problem rather than actually fixing it. The extension's badge *shape*
+(outlined vs. solid) is generic per-status logic with no per-tool text at
+all, so that part already renders correctly regardless — it's only the
+tooltip wording that's frontend-only for now. Say the word if you want the
+D1 rows updated too.
+
+**Changelog:** one line added noting this is a display-text change only —
+`compliance_status` value is unchanged for both tools, so this is not a
+breaking change to `/v1/lookup`/`/v1/check` consumers (and in fact those
+endpoints are unaffected either way, since they read D1, not `frontend/
+data/tools.json` — confirmed by tracing `lookup.ts`, which never touches
+the JSON file at all).
+
+---
+
+## Resolved (2026-09-01): Microsoft Copilot discrepancy diagnosed — root cause is a stale/redirected source URL, not extraction noise. Elliot's call applied above (marked unverified with a specific reason; source_urls updated to the FAQ page).
 
 Follow-up investigation per your ask, before any Phase 2 bulk processing.
 

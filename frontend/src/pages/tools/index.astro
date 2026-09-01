@@ -32,7 +32,7 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
           </div>
           {tool.shared_domain ? (
             <p class="reason shared-domain-note">
-              Policy text is shared across multiple company products, so this badge doesn't reflect {tool.name}-specific data handling.
+              {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
             </p>
           ) : (
             tool.summary && <p class="reason">{tool.summary}</p>

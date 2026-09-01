@@ -14,6 +14,22 @@ real record, not an empty log.
 
 ## 2026-09-01
 
+- **Behavior change: Microsoft Copilot and v0 now show a specific reason
+  for their unverified badge**, instead of the generic "policy text is
+  shared across multiple company products" sentence every other
+  `shared_domain` tool still shows. No verdict-bucket change —
+  `compliance_status` stays `shared_domain_unverified` on both, badge
+  stays outlined/amber, `trains_on_user_data`/`data_retention`/
+  `gdpr_mentioned` untouched. Fixed by making `frontend/src/pages/tools/
+  [domain].astro` and `tools/index.astro` prefer each tool's own
+  `summary` field over the hardcoded sentence (falls back to it only if a
+  tool has no summary, so every other shared-domain tool renders
+  unchanged — verified in the built output). Copilot's `source_urls` also
+  updated to the FAQ page that's the actual best current source (was
+  pointing at a URL whose content has since drifted — see
+  `DECISIONS_NEEDED.md`). Not a breaking change to `/v1/lookup`/
+  `/v1/check`: those read D1, not `frontend/data/tools.json`, so this is
+  a static-site-only change with zero API surface impact.
 - **Live Haiku extraction proven against 3 real policy pages** (not cached
   fixtures) — DeepL (clear GDPR language), Otter.ai (US-only, vague
   retention), Microsoft Copilot (shared-domain edge case). Ran the actual

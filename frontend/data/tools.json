@@ -271,12 +271,12 @@
     "name": "Microsoft Copilot",
     "domain": "microsoft.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "summary": "Company-wide policy, not product-verified \u2014 and the best available Copilot-specific source (Microsoft's privacy FAQ) states it covers \u201cthe older version\u201d of the app, with no current replacement page that states enough to verify facts against.",
     "data_retention": "18 months for conversations by default; up to 30 days for uploaded files; screenshots and camera images from Vision not stored after session ends",
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy"
+      "https://support.microsoft.com/en-us/microsoft-copilot/privacy-faq-for-microsoft-copilot"
     ],
     "verified": true,
     "shared_domain": true
@@ -397,7 +397,7 @@
     "name": "v0",
     "domain": "vercel.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "summary": "Company-wide policy, not product-verified \u2014 the only available source is Vercel's general Privacy Notice, which was never scoped to v0 specifically and has no v0-specific policy text to verify facts against.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
