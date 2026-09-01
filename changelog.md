@@ -14,6 +14,17 @@ real record, not an empty log.
 
 ## 2026-09-01
 
+- **Local dev D1: synced v0's `summary` to match the website's new text**
+  (direct two-row-scoped `wrangler d1 execute --local` write, confirmed via
+  both a direct query and a live `/v1/lookup` call). Copilot's D1 row
+  doesn't exist locally at all, so it couldn't be synced the same way —
+  see `DECISIONS_NEEDED.md`.
+- **New `ARCHITECTURE_NOTES.md`**: traced every read/write path for
+  `frontend/data/tools.json` vs. D1's `tools` table, diffed their content
+  for every tool present in both, and laid out the tools.json-vs-D1
+  source-of-truth options with a recommendation (D1 as source, `tools.json`
+  generated from it) — write-up only, nothing implemented, Elliot's call
+  before Phase 2.
 - **Behavior change: Microsoft Copilot and v0 now show a specific reason
   for their unverified badge**, instead of the generic "policy text is
   shared across multiple company products" sentence every other

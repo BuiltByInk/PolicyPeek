@@ -1,5 +1,28 @@
 # Decisions Needed
 
+## Open (2026-09-01): Copilot's D1 summary can't be synced — no D1 row exists for it at all
+
+Follow-up to the entry below: asked to sync D1's `summary` field for
+Copilot and v0 to match the new `tools.json` text (two-row write, nothing
+else touched). **v0/`vercel.com` done** — updated directly via `wrangler
+d1 execute --local`, confirmed by both a direct D1 query and a live
+`GET /v1/lookup?domain=vercel.com` call returning the new text (the exact
+path the extension popup uses).
+
+**Copilot/`microsoft.com` could not be done** — there's no row for it in
+local D1 at all (part of the 19-tool coverage gap documented in
+`ARCHITECTURE_NOTES.md`). "Update the summary field" has nothing to act
+on. I did not insert a new row to work around this: that would mean
+deciding values for every NOT NULL column myself (not just summary),
+which is exactly the kind of one-off, unreviewed write the source-of-
+truth writeup below argues against doing more of. If you want Copilot
+addressable locally before Phase 2, that's either a full row insert
+(scoped, reviewed, done deliberately) or resolved by whichever direction
+comes out of the source-of-truth decision — flagging rather than picking
+one myself.
+
+---
+
 ## Resolved (2026-09-01): Copilot and v0 now show their specific unverified reason, not the generic shared-domain sentence
 
 Follow-up to the diagnosis below. Elliot's call: both should read as
