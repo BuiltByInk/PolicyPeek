@@ -1,5 +1,50 @@
 # Decisions Needed
 
+## Open (2026-09-01): Phase 2 bulk run complete — 9 tools await your manual approval, 1 fact discrepancy logged, security review still pending
+
+**Bulk run finished**: 19/19 tools processed through the real pipeline
+across 4 batches, no further schema errors after the fix above. Local D1:
+13 → 23 of 32 `tools.json` domains. Full per-tool breakdown and cost is in
+`changelog.md`'s batch-by-batch entries; summary here:
+
+- **10 auto-published** (tier A — clean, deterministic facts): Claude,
+  Cursor, ChatGPT, ElevenLabs, Gemini, Grammarly, Microsoft Copilot,
+  Midjourney, Notion AI, Perplexity AI.
+- **9 correctly queued** (tier B — a null critical fact) for your manual
+  review, not auto-approved: Copy.ai (#27), GitHub Copilot (#33), Jasper
+  (#35), Otter.ai (#39), Replit AI (#41), Runway (#42), Sourcegraph Cody
+  (#43), Stability AI (#44), Zoom AI Companion (#45). `GET
+  /v1/admin/pending` shows each with its `queue_reason`.
+- **Total run cost: ~$0.108** (estimate; see the earlier note on why this
+  HTTP path doesn't expose real Anthropic token usage — if precise
+  billing numbers matter for the credit-budget tracking, that needs a
+  small `extraction.ts` change to capture and log the real `usage` field
+  from the API response, not attempted here since it wasn't asked for
+  and changes the pipeline code under test).
+- Temporary batch API key revoked (`api_keys.id = 1`).
+
+**New fact discrepancy found, not resolved**: Sourcegraph Cody's fresh
+extraction returned `trains_on_user_data: null`, disagreeing with
+`tools.json`'s existing entry (`trains_on_user_data: true`, currently
+rated `compliant`). Unlike the Grammarly/Perplexity AI cases above (old
+data predates the `compliant_with_caveats` bucket, same underlying facts
+just bucketed differently), this is a genuine facts disagreement between
+the two stores. It's currently harmless in practice — the fresh run
+correctly queued rather than auto-publishing over the existing rating —
+but it's a second entry (after Microsoft Copilot) in what might be a
+pattern worth watching once D1-vs-`tools.json` reconciliation happens:
+old hand-curated entries may have been sourced with more context (a
+specific page section, a human's own reading) than a single
+single-page fetch reproduces today.
+
+**Still pending, not started**: Task 3 (security review re-pass against
+real batch traffic) — held per your instruction not to run it against
+local D1 only when the real D1 is coming. Also still open from Task 1:
+carrying the 13 (now 23) known-good local tools over to the real database
+once it exists.
+
+---
+
 ## Resolved (2026-09-01): local D1 schema fixed, check.ts's silent-failure gap fixed, ChatGPT/ElevenLabs re-verified correct
 
 Elliot's call on the entry below: fix local D1 now (safe), fix the

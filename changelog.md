@@ -28,6 +28,52 @@ real record, not an empty log.
   auto-publish as `compliant_with_caveats` (confirmed via direct D1
   query, `auto_published = 1` on both). Cost: ~$0.0106 for the two
   re-runs (estimate). Running Phase 2 total so far: ~$0.035.
+- **Phase 2 batch 2 of 4** (Gemini, GitHub Copilot, Grammarly, Jasper,
+  Microsoft Copilot) — no schema errors, confirms the fix holds under
+  real traffic including a second `compliant_with_caveats` case
+  (Grammarly). Gemini and Microsoft Copilot both correctly landed on
+  `shared_domain_unverified` regardless of their extracted facts (the
+  override doing its job). GitHub Copilot and Jasper both correctly
+  queued for null critical facts. Cost: ~$0.026 for 5 tools. Running
+  total: ~$0.061. Note: Grammarly's fresh `compliant_with_caveats`
+  result differs from the old hand-curated `tools.json` entry, which
+  says plain `compliant` — consistent with the already-known history
+  that pre-2026-08-18 entries silently folded this case into `compliant`
+  before the bucket existed; not a new bug, logged for awareness when
+  D1-vs-tools.json reconciliation happens.
+- **Phase 2 batch 3 of 4** (Midjourney, Notion AI, Otter.ai, Perplexity
+  AI, Replit AI) — no schema errors. Midjourney and Perplexity AI
+  auto-published `compliant_with_caveats` (3rd/4th real-pipeline instance
+  of that bucket, same historical note as Grammarly for Perplexity, whose
+  old `tools.json` entry says plain `compliant`). Notion AI auto-published
+  `compliant` (`trains_on_user_data: false`), matches its existing
+  `tools.json` entry. Otter.ai and Replit AI correctly queued for null
+  critical facts — Otter.ai's result matches Phase 1's earlier
+  direct-script verification of the same page. Cost: ~$0.026 for 5 tools.
+  Running total: ~$0.088.
+- **Phase 2 batch 4 of 4 (final)** (Runway, Sourcegraph Cody, Stability AI,
+  Zoom AI Companion) — no schema errors. All 4 correctly queued for null
+  `trains_on_user_data`. Sourcegraph Cody's fresh `null` disagrees with
+  `tools.json`'s existing entry (`trains_on_user_data: true`) — a genuine
+  fact discrepancy, not just a bucket-folding one; logged in
+  `DECISIONS_NEEDED.md` rather than resolved here since it correctly
+  queued for human review either way. Zoom's fetched page produced zero
+  usable `relevant_clauses` (thin/marketing-only content) — a weak-source
+  candidate worth a better URL in a future research pass, not urgent.
+  Cost: ~$0.020 for 4 tools. **Phase 2 bulk run total: ~$0.108 across all
+  19 tools** (estimates throughout — see the note on why this HTTP path
+  can't expose real token usage).
+- **Phase 2 bulk run complete**: local D1 now has 23 of 32 `tools.json`
+  domains (up from 13 at Phase 2's start) — 10 auto-published this phase
+  (Claude, Cursor, ChatGPT, ElevenLabs, Gemini, Grammarly, Microsoft
+  Copilot, Midjourney, Notion AI, Perplexity AI), 9 correctly queued for
+  Elliot's manual review (Copy.ai, GitHub Copilot, Jasper, Otter.ai,
+  Replit AI, Runway, Sourcegraph Cody, Stability AI, Zoom AI Companion) —
+  none force-approved, per the human-review-gate rule. The temporary
+  local-only `paid`-tier API key used for batch volume has been revoked
+  (`api_keys.id = 1`, `revoked = 1`) now that the run is done. Microsoft
+  Copilot's D1 `summary` also synced to the specific-reason text (matches
+  the website fix from earlier today) now that its row finally exists.
 - **Phase 2 bulk pipeline run, batch 1 of ~4, STOPPED after batch 1** —
   found a schema bug (local D1 predates the `compliant_with_caveats`
   CHECK constraint, silently failing any auto-publish that lands on that
