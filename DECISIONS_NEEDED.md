@@ -1,5 +1,62 @@
 # Decisions Needed
 
+## Resolved (2026-09-01): local D1 schema fixed, check.ts's silent-failure gap fixed, ChatGPT/ElevenLabs re-verified correct
+
+Elliot's call on the entry below: fix local D1 now (safe), fix the
+check.ts error-handling gap before resuming the batch, then re-verify.
+All three done:
+
+1. **Local D1 migrated in place**, preserving every existing row and id
+   (13 original tools + Claude/Cursor from batch 1 = 15 tools; 30
+   changelog rows; 29 pending_checks; the temp API key — all confirmed
+   present with unchanged ids after). Mechanically: SQLite can't alter an
+   existing CHECK constraint, and this repo's `tools` table is a FK
+   target of `compliance_changelog.tool_id` with two triggers
+   (`trg_tools_changelog_on_insert/update`) whose bodies hardcode `INSERT
+   INTO compliance_changelog` — dropping/recreating `tools` directly hit
+   both the FK constraint (D1's batch execute doesn't appear to honor
+   `PRAGMA foreign_keys=OFF` mid-batch — SQLite documents that pragma as a
+   no-op inside a transaction, which a `--file` batch apparently is) and
+   then the triggers firing against a momentarily-missing
+   `compliance_changelog`. Worked around by: drop both triggers up front,
+   strip and restore `compliance_changelog`'s FK around the `tools` swap
+   (never dropping an FK-referenced table while anything still declares
+   that FK), then recreate both triggers verbatim at the end. Verified:
+   `SELECT sql FROM sqlite_master WHERE name='tools'` shows the corrected
+   5-value CHECK constraint; a live `/v1/lookup` call worked immediately
+   after with no restart needed; a full local sqlite file backup was
+   taken before starting (`scratchpad/pre-migration-backup.sqlite`,
+   session-local, not part of the repo).
+2. **`check.ts`'s silent-failure gap fixed**: the auto-publish step
+   (`evaluateAutoPublish` + `approvePendingCheck`) is now wrapped in its
+   own `try/catch`, separate from the existing one around `extractFacts`.
+   On failure, writes `auto_publish_failed: <message>` into
+   `pending_checks.extraction_error` instead of leaking an unhandled
+   `ctx.waitUntil` rejection — makes a future instance of this exact
+   failure mode (not just this specific bug) visible in `GET
+   /v1/admin/pending` instead of invisible. All 59 existing backend tests
+   still pass after the change.
+3. **ChatGPT and ElevenLabs re-run fully through `POST /v1/check`** (not
+   the cached-facts admin-approve shortcut, to avoid mis-attributing
+   `auto_published` — see below) — both now correctly auto-publish as
+   `compliant_with_caveats` with `auto_published = 1`, confirmed via
+   direct D1 query. Chose a full re-run over reusing the cached
+   `extracted_facts` via `POST /v1/admin/approve/:id` specifically
+   because that endpoint records `autoPublished: false` — using it here
+   would have permanently mis-tagged these two rows as human-approved
+   when they were always meant to auto-publish, corrupting exactly the
+   provenance signal `auto_published` exists to carry. Cost: 2 more
+   extraction calls (~$0.0106 total, on top of the ~$0.024 already spent
+   in batch 1) — acceptable given the alternative was permanently wrong
+   provenance data.
+4. The two original stuck rows (`pending_check` #25, #29) marked
+   `rejected` via `POST /v1/admin/pending/:id/reject` — superseded by
+   #30/#31, kept in `pending_checks` as history rather than deleted.
+
+Resuming the remaining 14 tools now.
+
+---
+
 ## Open, STOPPED the batch run for this (2026-09-01): local dev D1 has a stale CHECK constraint that silently swallows every `compliant_with_caveats` auto-publish
 
 Phase 2's bulk pipeline run, batch 1 of ~4 (5 tools: ChatGPT, Claude,

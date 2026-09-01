@@ -14,6 +14,20 @@ real record, not an empty log.
 
 ## 2026-09-01
 
+- **Local dev D1 migrated to the current schema** (adds
+  `compliant_with_caveats` to the `tools.compliance_status` CHECK
+  constraint, matching `schema.sql`) — preserved all existing rows/ids
+  across `tools`, `compliance_changelog`, `pending_checks`, `api_keys`.
+  See `DECISIONS_NEEDED.md` for the FK/trigger mechanics.
+- **`check.ts`: fixed a silent-failure gap** — the auto-publish step
+  (after extraction succeeds) now has its own error handling instead of
+  failing as an invisible unhandled `ctx.waitUntil` rejection. Failures
+  there now show up in `GET /v1/admin/pending` via `extraction_error`
+  instead of disappearing. All 59 backend tests still pass.
+- **ChatGPT and ElevenLabs re-verified**: both now correctly
+  auto-publish as `compliant_with_caveats` (confirmed via direct D1
+  query, `auto_published = 1` on both). Cost: ~$0.0106 for the two
+  re-runs (estimate). Running Phase 2 total so far: ~$0.035.
 - **Phase 2 bulk pipeline run, batch 1 of ~4, STOPPED after batch 1** —
   found a schema bug (local D1 predates the `compliant_with_caveats`
   CHECK constraint, silently failing any auto-publish that lands on that

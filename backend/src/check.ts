@@ -106,34 +106,51 @@ export async function runExtraction(
   // unambiguous extraction publishes itself immediately. Anything else
   // (null critical fact, or a recheck whose verdict would flip) stays
   // 'extracted' for the admin queue -- handleListPending explains why.
-  const existing = isRecheck
-    ? await env.DB.prepare("SELECT compliance_status FROM tools WHERE domain = ?")
-        .bind(domain)
-        .first<{ compliance_status: string }>()
-    : null;
-  const decision = evaluateAutoPublish(facts, {
-    sharedDomain,
-    isRecheck,
-    existingStatus: existing?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
-    sourcedFromArchive,
-  });
+  //
+  // Wrapped in its own try/catch (2026-09-01, Phase 2 finding): this used
+  // to be unguarded, so a failure here (e.g. a stale local D1 missing the
+  // 'compliant_with_caveats' CHECK constraint value, see DECISIONS_NEEDED.md)
+  // was an unhandled ctx.waitUntil rejection -- logged only to the Worker's
+  // own console, invisible to the admin queue, with extraction_error left
+  // NULL. A row stuck this way was indistinguishable from a normal,
+  // correctly-queued tier-B item. Now it's recorded and surfaces in
+  // GET /v1/admin/pending like any other flagged row.
+  try {
+    const existing = isRecheck
+      ? await env.DB.prepare("SELECT compliance_status FROM tools WHERE domain = ?")
+          .bind(domain)
+          .first<{ compliance_status: string }>()
+      : null;
+    const decision = evaluateAutoPublish(facts, {
+      sharedDomain,
+      isRecheck,
+      existingStatus: existing?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
+      sourcedFromArchive,
+    });
 
-  if (decision.eligible) {
-    await approvePendingCheck(
-      env,
-      {
-        id: pendingId,
-        domain,
-        name,
-        is_recheck: Number(isRecheck),
-        status: "extracted",
-        source_url: sourceUrl,
-        extracted_facts: JSON.stringify(facts),
-        shared_domain: Number(sharedDomain),
-        sourced_from_archive: Number(sourcedFromArchive),
-      },
-      { autoPublished: true }
-    );
+    if (decision.eligible) {
+      await approvePendingCheck(
+        env,
+        {
+          id: pendingId,
+          domain,
+          name,
+          is_recheck: Number(isRecheck),
+          status: "extracted",
+          source_url: sourceUrl,
+          extracted_facts: JSON.stringify(facts),
+          shared_domain: Number(sharedDomain),
+          sourced_from_archive: Number(sourcedFromArchive),
+        },
+        { autoPublished: true }
+      );
+    }
+  } catch (err) {
+    await env.DB.prepare(
+      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
+    )
+      .bind(`auto_publish_failed: ${String(err instanceof Error ? err.message : err)}`, pendingId)
+      .run();
   }
 }
 
