@@ -67,13 +67,15 @@ real record, not an empty log.
   the expected `404 not_found` with `Access-Control-Allow-Origin: *` and
   the other `cors.ts` headers present — rules out the backend or CORS
   config as the cause of the reported "stuck on Checking…" symptom.
-- **Manual click-through verification not completed** — see
-  `DECISIONS_NEEDED.md`'s 2026-09-01 entry. This environment has no GUI
-  input-automation for Firefox (no `xdotool`, no root/pip access to install
-  one, no Puppeteer/Playwright), so I could not click the toolbar icon and
-  watch the badge resolve myself. Flagged for Elliot to do the ~30-second
-  manual check rather than claiming this done on the strength of static
-  analysis alone.
+- **Manual click-through verification completed by Elliot, bug confirmed
+  fixed**: deepl.com resolved to `not_compliant` (red) instead of hanging;
+  kagi.com and you.com resolved to `compliant` (green). Two things that
+  looked like new bugs along the way turned out to be correct behavior —
+  openai.com/grammarly.com showing "not in catalog" (local dev D1 only has
+  13 of 33 published tools seeded) and a "used today's free check" message
+  (the real daily rate cap firing) — see `DECISIONS_NEEDED.md` for detail.
+  Firefox badge bug is closed; done-criteria (one red + one green case,
+  both resolving) met.
 
 ---
 

@@ -54,7 +54,7 @@ thing.
 
 ---
 
-## Open (2026-09-01): Firefox badge bug — real manifest defect fixed, but full manual verification is blocked on a tooling gap, not a code gap
+## Resolved (2026-09-01): Firefox badge bug — manifest fix confirmed working by Elliot's manual click-through
 
 Phase 1 kickoff asked me to diagnose "popup shows Checking… indefinitely,
 badge never resolves" in Firefox, following a specific order: read the
@@ -103,13 +103,28 @@ Puppeteer/Playwright/geckodriver already present. I did not fabricate a
 gap instead, per the charter's instruction to log a hit permission/tooling
 wall rather than wait for a rubber stamp.
 
-**Ask:** either (a) do the ~30-second manual check yourself — load
-`extension/` as a temporary add-on in `about:debugging`, click the toolbar
-icon on a real site, confirm the badge resolves, and paste back whatever
-error you see in the console if it still hangs — or (b) tell me to spend
-more time scripting Firefox's Remote Debugging Protocol directly (the same
-protocol `web-ext run` used above) to try to drive the popup without GUI
-input, which is possible but nontrivial and I haven't attempted it yet.
+**Ask (resolved):** Elliot did the manual check. First result: deepl.com
+correctly resolved to `not_compliant` (matches the catalog) instead of
+hanging — confirms the manifest fix was the real cause. Second round
+surfaced two more things that looked like bugs but weren't:
+openai.com/grammarly.com showed "not in catalog yet" because the local
+dev D1 only has a 13-tool subset seeded (not the full 33-tool published
+catalog — neither domain is in the local `tools` table, confirmed via
+`wrangler d1 execute --local`), and "already used today's free check" is
+the real IP-based daily cap correctly firing after his first check
+attempt. Redirected him to kagi.com/you.com (both in the local 13-tool
+set, both `compliant`) — both came back correctly green. Done-criteria
+met: one non-green (deepl.com, red) and one green (kagi.com/you.com) both
+resolve correctly. No further action needed on the extension itself.
+
+**Side finding, separate from this bug:** local dev D1 (`policypeek-db`
+via `wrangler dev --local`) only has 13 of the 33 tools in
+`frontend/data/tools.json` — it's a stale/partial seed, not the current
+published catalog. Not fixing this now (out of Phase 1 scope, and
+reseeding local dev data is a call about which snapshot should be the
+source of truth), just flagging so the next person testing locally isn't
+confused by "not in catalog" results for tools that are actually
+published.
 
 **Side note, not blocking:** `extension/SCOPE.md` describes a passive
 background-service-worker design (listens to `tabs.onUpdated`/`onActivated`,
