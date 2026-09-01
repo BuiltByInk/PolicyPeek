@@ -1,5 +1,122 @@
 # Decisions Needed
 
+## Open (2026-09-01): Microsoft Copilot discrepancy diagnosed — root cause is a stale/redirected source URL, not extraction noise. Needs your call on the fix, tools.json not touched.
+
+Follow-up investigation per your ask, before any Phase 2 bulk processing.
+
+### 1. The two URLs, verbatim
+
+- **Stored in `tools.json`'s `source_urls`:**
+  `https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy`
+- **Fetched by Task 2's fresh extraction:**
+  `https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/privacy`
+
+**They are the exact same URL.** This is case 3 from your instructions, not
+case 2 — not a stale-vs-current-URL mismatch in what's on file, but the
+same URL producing different facts.
+
+### 2. Stability check (case 3's instruction)
+
+Fetched this URL twice, independently: byte-identical cleaned text both
+times (6,589 chars). Ran `extractFacts` 3 more times on that identical
+text (4 runs total counting Task 2's original). All 4 runs agree:
+`trains_on_user_data: false`, `opt_out_available: true`,
+`gdpr_mentioned: false`, every time, from the same clauses about "Copilot
+in Microsoft 365 apps." **The extraction is stable, not noisy.** Per your
+own instruction, that means the stored facts are the bug — but it's more
+specific than that, and worth showing you the mechanism rather than just
+the conclusion:
+
+**The page at that URL is not the page the original facts describe.** Its
+own content includes this line: *"Note: This article applies only to when
+you're using Copilot in Microsoft 365 apps for home... For information
+about privacy for the Microsoft Copilot app, see [Microsoft Copilot for
+individuals: your data, privacy, and responsible AI]."* The URL's path
+says `/for-individuals/`, but the content it currently serves is
+explicitly about a *different* surface (Microsoft 365 apps for home) and
+points readers elsewhere for the actual "for individuals" product. This
+reads like a Microsoft docs-site restructure that repointed this URL's
+content after the original extraction ran, not a research/curation error
+on our side — `research/tool_sources.json`'s original notes on this tool
+say plainly: *"Consumer Copilot (for individuals) product line, distinct
+from Microsoft 365 Copilot enterprise product"* — i.e. this URL was
+deliberately chosen to be the consumer-specific one, and today it isn't.
+
+**Where the stored facts likely actually came from:** `research/
+tool_sources.json`'s entry for this tool lists a third URL never
+recorded in `tools.json`'s `source_urls` — `security_trust_page:
+"https://support.microsoft.com/en-us/microsoft-copilot/privacy-faq-for-
+microsoft-copilot"`. I fetched and extracted that page too:
+`trains_on_user_data: true`, `opt_out_available: true`, `data_retention:
+"By default, conversation activity stored for 18 months... files stored
+securely for no longer than 18 months"` — this matches `tools.json`'s
+stored `data_retention` text ("18 months for conversations by default...")
+closely enough (down to the specific "18 months" figure and the Copilot
+Vision reference elsewhere on that same FAQ page) that I'm confident this
+FAQ page, not the URL on file, is what the original facts were drawn from.
+**Complication:** that FAQ page itself opens with *"This article applies
+only to the older version of the Microsoft Copilot app,"* and redirects
+readers to a newer canonical page,
+`https://support.microsoft.com/en-us/privacy/microsoft-copilot/overview`
+("Microsoft Copilot for individuals: your data, privacy, and responsible
+AI"). I fetched and extracted that one too — it's thin (5,567 chars, mostly
+links out to the Microsoft Services Agreement and Privacy Statement rather
+than stating facts itself): `trains_on_user_data: null`,
+`data_retention: null`, everything null except `gdpr_mentioned: false`.
+
+So there are three candidate URLs, three different fact sets, and none of
+them is both current and fact-complete:
+
+| URL | What it's about | Facts |
+|---|---|---|
+| `.../for-individuals/privacy` (on file now) | Copilot in M365 apps for home | `trains_on_user_data: false`, `opt_out: true` — stable across 4 runs |
+| `.../privacy-faq-for-microsoft-copilot` (research's `security_trust_page`, not on file) | Standalone Copilot app, self-described as the **older** version | `trains_on_user_data: true`, `opt_out: true`, matches stored `data_retention` |
+| `.../privacy/microsoft-copilot/overview` (the FAQ page's own redirect target, newest) | Standalone Copilot app, current version | everything `null` — too thin to extract facts from directly |
+
+### 3-4. Recommendation (not applied — tools.json untouched)
+
+This doesn't change the *public badge* either way — `shared_domain`
+already forces `shared_domain_unverified` regardless of these facts — so
+there's no urgency on the verdict. But the underlying data is currently
+citing a URL that demonstrably isn't the source of its own stored facts,
+which is a provenance problem worth fixing before Copilot (or anything
+like it) goes through automated Phase 2 recheck logic that trusts
+`source_urls` at face value.
+
+My recommendation: update `source_urls` to the FAQ page
+(`.../privacy-faq-for-microsoft-copilot`) since it's almost certainly the
+real original source and is the only one of the three with complete,
+extractable facts — and keep the existing stored facts as-is, since they
+already match that page. The "older version" caveat on that page is a
+judgment call I'd rather you make than assume: if you'd rather the record
+reflect the *current* app version, the newest canonical page doesn't have
+enough stated facts to support a confident extraction on its own right
+now, which would push this tool toward `unrated`-quality data underneath
+the `shared_domain_unverified` override rather than resolving it. Not
+picking between these for you — flagging with the evidence.
+
+### 5. Other `shared_domain`-flagged tools — checked for the same URL-ambiguity risk (no re-extraction run)
+
+Checked each stored `source_url`'s own `<title>`/`<h1>` against the
+product it's meant to represent, without re-running extraction on any of
+them (per your constraint):
+
+- **Gemini** (`https://support.google.com/gemini/answer/13594961`) — page
+  title is *"Gemini Apps Privacy Hub - Gemini Apps Help"*. Clearly and
+  specifically scoped to Gemini Apps. No ambiguity found.
+- **Amazon Q Developer** (`https://docs.aws.amazon.com/amazonq/latest/
+  qdeveloper-ug/service-improvement.html`) — page title is *"Amazon Q
+  Developer service improvement - Amazon Q Developer."* Clearly scoped to
+  the specific product. No ambiguity found.
+- **v0** (`https://vercel.com/legal/privacy-notice`) — page title is
+  simply *"Privacy Notice,"* with no product name anywhere in the title or
+  the URL path. **This is the same class of problem as Copilot, arguably
+  worse: it was never product-scoped to begin with** — it's Vercel's
+  general company privacy notice, not anything specific to v0. Flagging
+  for the same review before any Phase 2 automated handling of this entry.
+
+---
+
 ## Open (2026-09-01): Microsoft Copilot's stored facts contradict a fresh live re-extraction from the same source URL — source-page specificity problem, papered over (correctly, for the badge) by shared_domain but not for the underlying data
 
 Phase 1's Task 2 asked me to run 3 real tools through the live extraction
