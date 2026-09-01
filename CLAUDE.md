@@ -116,11 +116,21 @@ For each agent above:
    should not touch Astro templates.
 2. **Global deny list, applies to every agent, no exceptions:**
    - Deleting or overwriting compliance data already in D1
-   - Anything touching production Cloudflare credentials, billing, or the
-     real `database_id` — deployment stays parked until Elliot lifts this
+   - `wrangler deploy`, `wrangler secret`, or publishing the site — stay
+     parked for Phase 3 regardless of the Phase 2 D1 lift below
    - Publishing a tool submission as a shared default without the human
      review gate
    - `rm -rf`, force-push, or any irreversible destructive command
+   - **Narrow, Phase-2-scoped lift (2026-09-01, Elliot's explicit
+     confirmation over Telegram, not inferred):** `wrangler d1 create`
+     and the resulting real `database_id` in `wrangler.toml` are approved
+     for Phase 2's bulk pipeline run specifically. This does **not**
+     reopen the rest of the production-Cloudflare deny line above —
+     deploy/secret/publish are still off-limits. Elliot runs
+     `wrangler login` himself (no agent attempts this — it's an
+     interactive OAuth flow tied to his account); an agent proceeds with
+     the real `d1 create` only after he confirms login is complete, not
+     before.
 3. **Once an agent's allow list is proven safe over real use, promote it** —
    move it from asking every time to running autonomously for its scoped
    job specifically. Promote one agent, one role, at a time — never widen
