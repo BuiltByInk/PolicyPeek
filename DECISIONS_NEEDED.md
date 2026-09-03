@@ -1,5 +1,26 @@
 # Decisions Needed
 
+## Open (2026-09-03): Sourcegraph Cody left queued — genuine old-vs-fresh fact disagreement, Elliot's call
+
+Of the 9 tools queued from Phase 2's bulk run, Elliot reviewed facts for all 9
+and approved 8 via the real admin endpoint (`POST /v1/admin/pending/:id/
+approve`) on 2026-09-03: Copy.ai, GitHub Copilot, Jasper, Otter.ai, Replit AI,
+Runway, Stability AI, Zoom AI Companion. All 8 landed exactly where expected —
+`unrated` for the 7 with a null `trains_on_user_data`, `not_compliant` for
+Otter.ai (trains=true, opt_out unstated, matching Phase 1's independent
+re-check of this same page) — and every one matches what `tools.json` already
+had, confirmed before approving. Local D1: 23 → 31 tools.
+
+**Sourcegraph Cody (pending_check #43) deliberately left queued**, per
+Elliot's explicit instruction ("leave sourcegraph for now") — this is the
+tool flagged 2026-09-01 where the fresh extraction (`trains_on_user_data:
+null`) disagrees with the existing `tools.json` entry (`trains_on_user_data:
+true`, rated `compliant`). Not a bucket-relabeling case like Grammarly/
+Perplexity AI — a real fact disagreement. Options still on the table: publish
+as `unrated` (trust the fresh extraction), keep the old `compliant` rating
+(trust the original, more-thorough-at-the-time sourcing), or have Research
+look at the live page directly before deciding. No default was applied.
+
 ## Open (2026-09-01): Phase 2 bulk run complete — 9 tools await your manual approval, 1 fact discrepancy logged, security review still pending
 
 **Bulk run finished**: 19/19 tools processed through the real pipeline
