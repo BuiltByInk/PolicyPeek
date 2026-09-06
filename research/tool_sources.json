@@ -87,7 +87,8 @@
     "terms_of_service": "https://sourcegraph.com/terms",
     "dpa": null,
     "security_trust_page": "https://sourcegraph.com/security",
-    "notes": "Confirmed still active as of June 2026 privacy policy update; Cody is now bundled under Sourcegraph's broader \"AI Tools\" umbrella rather than a standalone product name."
+    "cody_notice": "https://sourcegraph.com/terms/cody-notice",
+    "notes": "Confirmed still active as of June 2026 privacy policy update; Cody is now bundled under Sourcegraph's broader \"AI Tools\" umbrella rather than a standalone product name. 2026-09-06: added cody_notice -- the actual on-point source for the AI-training question, which privacy_policy/terms_of_service/security_trust_page don't specifically address (see research/sourcegraph_cody_followup.md). Use cody_notice as the source_url for this tool going forward."
   },
   "midjourney": {
     "name": "Midjourney",

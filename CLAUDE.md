@@ -145,6 +145,27 @@ For each agent above:
      treating this entry as precedent to act on unilaterally. Only the
      `d1 create` lift above (2026-09-01) is a standing approval; everything
      else against real D1 gets asked about fresh, every time.
+   - **Narrow, one-time lift (2026-09-06, Elliot's explicit approval over
+     Telegram after an agent stopped to ask): a workers.dev subdomain for
+     this Cloudflare account.** Turned out the account already had one
+     (`elliotink.workers.dev`) — nothing new was registered, Elliot's
+     approval just cleared the way to confirm it and retry. This unblocks
+     `wrangler dev --remote` (needed to run the real app pipeline —
+     `/v1/check`, `/v1/admin/pending/:id/approve` — against real D1
+     without a deploy, for Phase 2.5f's Sourcegraph Cody publish + 5-tool
+     recheck work). Explicit boundary, per Elliot's own wording: this is
+     about the account-level subdomain namespace only, nothing more. **It
+     does NOT
+     authorize `wrangler deploy` or `wrangler publish`** — those stay on
+     the deny list above and need their own separate explicit approval,
+     exactly as before; registering the subdomain doesn't reopen them.
+     **Flagging for the eventual Phase 3 deploy conversation** (not a
+     decision made here, just noting it so it isn't assumed away): once
+     deploy is approved, publishing without a custom domain configured
+     makes the worker reachable by default at
+     `<project-name>.<subdomain>.workers.dev` — custom domain setup should
+     be an explicit part of that conversation, not a default left to
+     happen on its own. See `DECISIONS_NEEDED.md` for the same note.
 3. **Once an agent's allow list is proven safe over real use, promote it** —
    move it from asking every time to running autonomously for its scoped
    job specifically. Promote one agent, one role, at a time — never widen

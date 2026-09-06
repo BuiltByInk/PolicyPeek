@@ -1,5 +1,145 @@
 # Decisions Needed
 
+## Resolved (2026-09-06, Phase 2.5f): workers.dev subdomain confirmed — narrow, deploy stays blocked
+
+Running the real app pipeline (`/v1/check`, `/v1/admin/pending/:id/approve`)
+against real D1 without a `wrangler deploy` requires `wrangler dev
+--remote`, which itself requires the Cloudflare account to have a
+`workers.dev` subdomain registered. There's no `wrangler` CLI subcommand
+for this in the installed version (4.119.0) and no interactive y/n prompt
+either — `wrangler dev --remote` just hard-errors with a dashboard link.
+Elliot approved registering one (over Telegram) specifically to unblock
+this phase's work, then found the account already had one from before
+(`elliotink.workers.dev`) — nothing new was actually registered, just
+confirmed to already exist. Retrying `wrangler dev --remote` then worked
+immediately.
+
+**Explicit boundary, per Elliot's own instruction, also logged in
+`CLAUDE.md`:** this is the account-level subdomain namespace only.
+**Does not authorize `wrangler deploy` or `wrangler publish`** — both stay
+on the deny list, unchanged, needing their own separate approval.
+
+**Flag for the Phase 3 deploy conversation, not decided here:** once
+deploy is eventually approved, publishing without a custom domain
+configured makes the worker reachable by default at
+`<project-name>.<subdomain>.workers.dev`. Custom domain setup should be an
+explicit item in that conversation rather than something that happens by
+default because the subdomain already exists from this narrower step.
+
+**Operational note for future `--remote` pipeline testing:** going through
+`wrangler dev --remote` means Cloudflare sets the real `CF-Connecting-IP`
+at the edge — it correctly ignores a client-supplied header override, so
+every request from one agent session shares one real IP and burns the
+free-tier daily cap after a single check. A temporary `paid`-tier
+`api_keys` row (same pattern as Phase 2's local-only batch-testing key,
+see the 2026-09-01 entry) sidesteps this — created for this phase
+(`label = 'phase2.5f-temp-testing-key-2026-09-06'`), used for the 6 checks
+below, and should be revoked once this phase is fully wrapped up (not done
+as of this entry — flagging so it doesn't get forgotten).
+
+---
+
+## Resolved (2026-09-06, Phase 2.5f): Sourcegraph Cody published as `compliant`, superseding the stale entry
+
+Closes the 2026-09-03 "Sourcegraph Cody left queued" entry below and the
+2026-09-01 original fact-discrepancy flag. Elliot reviewed
+`research/sourcegraph_cody_followup.md` (independently corroborated in
+Phase 2.5e) and approved publishing.
+
+Ran a real `POST /v1/check` against `https://sourcegraph.com/terms/cody-notice`
+(added to `research/tool_sources.json` as `cody_notice`, replacing
+`privacy_policy` as this tool's actual source — see that file's updated
+note) through `wrangler dev --remote`, real D1. Fresh extraction:
+`trains_on_user_data: false`, `data_retention` reflecting the zero-retention
+LLM-partner language, `relevant_clauses` quoting the "does not train on
+your code unless you provide permission" line directly. Clean facts, no
+null critical fact, brand-new domain → Tier A, auto-published without
+needing a manual approval step.
+
+**Verified, not assumed:** `computeVerdict` correctly produced `compliant`
+(the only valid bucket when `trains_on_user_data` is `false`, regardless
+of `opt_out_available` — the old stale entry's `compliant` was coincidentally
+the same label but for the wrong reason, an artifact of a fact that
+wasn't actually true). Confirmed directly on real D1: `tools.id = 32`,
+`source_urls = ["https://sourcegraph.com/terms/cody-notice"]`,
+`verified = 1`, `auto_published = 1`; `compliance_changelog` has the
+expected trigger + app-level insert pair (rows 32/33, both
+`null → compliant`). Real D1 tool count: 31 → 32.
+
+**tools.json still doesn't have this entry synced from D1** — same
+`tools.json`/D1 gap flagged repeatedly elsewhere (`ARCHITECTURE_NOTES.md`,
+`research/rules_consistency_audit.md`). Not fixed here, out of this
+phase's scope.
+
+---
+
+## Resolved (2026-09-06, Phase 2.5f): 5 pre-ruling tools rechecked — all correctly queued, none auto-published, none touched on real D1
+
+Bolt.new, HeyGen, Ideogram, JetBrains AI Assistant, Luma AI — all flagged
+in `research/rules_consistency_audit.md` as `compliant` with
+`trains_on_user_data: true`, auto-published before the 2026-08-18
+`compliant_with_caveats` ruling existed, never rechecked since. Each run
+individually through a real `POST /v1/check` (their existing on-file
+source URL, `wrangler dev --remote`, real D1) — no batching, no forced
+outcome.
+
+**All 5 landed the same way**, and it's worth being precise about *why*,
+since the original kickoff assumed a different mechanical outcome than
+what the code actually does:
+
+| Tool | Fresh facts | Fresh verdict | Existing verdict | Outcome |
+|---|---|---|---|---|
+| Bolt.new | trains=true, opt_out=true | `compliant_with_caveats` | `compliant` | Queued (pending_check #2) |
+| HeyGen | trains=true, opt_out=true | `compliant_with_caveats` | `compliant` | Queued (#3) |
+| Ideogram | trains=true, opt_out=true | `compliant_with_caveats` | `compliant` | Queued (#4) |
+| JetBrains AI Assistant | trains=true, opt_out=true | `compliant_with_caveats` | `compliant` | Queued (#5) |
+| Luma AI (Dream Machine) | trains=true, opt_out=true | `compliant_with_caveats` | `compliant` | Queued (#6) |
+
+**None auto-published**, and correctly so given the code as written:
+`evaluateAutoPublish` queues *any* recheck whose computed verdict differs
+from the existing stored status — it has no special case for "this is
+just a rules-version correction, the facts are the same," it only knows
+"verdict changed on a recheck," full stop (see `autoPublish.ts`'s comment
+on that branch). The kickoff for this task assumed the mechanical case
+would auto-publish; the code disagrees, and that's the code correctly
+doing its one job (any flip gets a human look) rather than a bug —
+changing that distinction would be exactly the kind of verdict-methodology
+judgment call `CLAUDE.md` reserves for Elliot, not something to patch
+around in this pass.
+
+**Two of the five are worth a second look at approval time, not just a
+rubber-stamp**, because the `opt_out_available: true` fact each landed on
+doesn't obviously support an AI-training-specific opt-out:
+- **Ideogram**: the only opt-out clauses extracted are about Google
+  Analytics tracking and general browser tracking-technology blocking —
+  not an opt-out from the model-training clause specifically.
+- **Luma AI**: the only opt-out clause extracted is about unsubscribing
+  from *marketing emails/texts* — unrelated to AI training at all.
+
+Bolt.new, HeyGen, and JetBrains AI Assistant's opt-out facts look more
+directly on-point (explicit account-setting/contact-based opt-outs from
+the training/improvement use itself). Not fixing or re-judging any of
+this here — flagging so whoever approves these five doesn't treat
+`opt_out_available: true` as self-evidently correct across all five.
+
+**Confirmed no side effects on the unreviewed four... five**: real D1's
+`tools` rows for all 5 domains are untouched (`updated_at` still shows the
+original 2026-08-17 publish time), and `compliance_changelog` has no new
+rows for any of them — the pipeline ran for real, computed for real, and
+correctly stopped short of writing anything, exactly matching "let it
+queue, don't force an outcome."
+
+**`opt_out_available` persistence — still a gap, not fixed here, as
+flagged in `research/rules_consistency_audit.md`.** Confirmed again with
+fresh data: the fact exists in each `pending_checks.extracted_facts` JSON
+blob (all 5 show it above), but `tools` still has no `opt_out_available`
+column (`backend/schema.sql`), so it's still lost the moment (if/when)
+any of these five gets approved. Whoever approves these should know the
+approval itself won't durably record which specific fact justified
+`compliant_with_caveats` over `not_compliant` beyond what's in this
+writeup and the changelog note text — worth deciding on a schema change
+separately, not bundled into this recheck pass.
+
 ## Resolved (2026-09-06, Phase 2.5c): Low finding — duplicate compliance_changelog rows on concurrent duplicate submissions
 
 Closes finding #3 in `security/review-2026-09-06-concurrency.md`, left
