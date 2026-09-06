@@ -131,6 +131,20 @@ For each agent above:
      interactive OAuth flow tied to his account); an agent proceeds with
      the real `d1 create` only after he confirms login is complete, not
      before.
+   - **One specific approved instance, not a standing exception (2026-09-06,
+     Elliot's explicit approval over Telegram after an agent stopped to
+     ask):** a single `wrangler d1 execute --remote` was approved to drop
+     and recreate the real `anonymous_check_log` table only (new
+     `(client_ip, day_bucket)` PRIMARY KEY shape, syncing it with Phase
+     2.5b's local rate-limit fix — see `DECISIONS_NEEDED.md`). That
+     operation is done. **`wrangler d1 execute --remote` is NOT on a
+     standing allow-list because of this** — it was never explicitly
+     denied above either (unlike `deploy`/`secret`/publish, which are),
+     but it touches real production data, so the default is still to stop
+     and ask case-by-case, the same way this one was handled, rather than
+     treating this entry as precedent to act on unilaterally. Only the
+     `d1 create` lift above (2026-09-01) is a standing approval; everything
+     else against real D1 gets asked about fresh, every time.
 3. **Once an agent's allow list is proven safe over real use, promote it** —
    move it from asking every time to running autonomously for its scoped
    job specifically. Promote one agent, one role, at a time — never widen

@@ -75,18 +75,32 @@ harness that found them. The Low finding (redundant changelog rows on a
 same-verdict concurrent recheck) remains open — cosmetic, not a blocker,
 not in this fix's scope.
 
-**Not done in this pass, flagging before Phase 3 deploy actually happens:**
-the real Cloudflare D1 database (Task 1) still has the OLD
-`anonymous_check_log` schema (`AUTOINCREMENT id`, no day-bucket PRIMARY
-KEY) — this fix was scoped to local dev only, per the Phase 2.5b
-instructions. **Remote will need this same schema change applied (a
-drop-and-recreate of just `anonymous_check_log`, not the whole database)
-before the deployed Worker code can rely on the new atomic
-`tryReserveDailySlot` working correctly against it** — deploying the new
-code against the old remote schema would break at the first free-tier
-`POST /v1/check` (the `INSERT OR IGNORE` would fail against a table
-missing the `day_bucket` column entirely). Not applying this now since it
-touches the real database and wasn't asked for in this pass.
+**Resolved (2026-09-06, same day): real D1 schema sync applied.** Elliot
+explicitly approved a narrowly-scoped `wrangler d1 execute --remote` for
+this one table/operation (see `CLAUDE.md`'s updated deny-list entry for
+the exact approved scope). Confirmed `anonymous_check_log` was genuinely
+empty (0 rows) on real D1 before touching it, so this was a clean
+drop-and-recreate with **no data lost, because there was none to lose** —
+not a lossy migration by necessity, just an empty table. Applied via a
+2-statement SQL file (`DROP TABLE IF EXISTS` + `CREATE TABLE` with the new
+`(client_ip, day_bucket)` PRIMARY KEY, matching local dev's Phase 2.5b
+schema exactly). Verified directly against real D1 afterward, not just
+trusted the success message:
+- Schema: `SELECT sql FROM sqlite_master WHERE name='anonymous_check_log'`
+  shows the correct new shape.
+- Other tables confirmed untouched: same 5 real tables present, `tools`
+  still 31 rows, `compliance_changelog` still 31 rows.
+- Smoke test (matching Phase 2.5b's local proof): `INSERT OR IGNORE` with
+  a given `(client_ip, day_bucket)` → `changes: 1`; the identical insert
+  repeated → `changes: 0` (correctly ignored); the same IP with a
+  different `day_bucket` → `changes: 1` again. Exactly the atomicity
+  Phase 2.5b's fix relies on, now proven against real D1, not just local.
+  Smoke-test rows deleted afterward, table confirmed empty again (0 rows).
+
+**Real D1 is now considered ready for the Phase 2.5b code.** No other
+remote command was run beyond this one table's drop+recreate and the
+smoke-test insert/delete cleanup — no `wrangler deploy`/`secret`/publish,
+no other table touched.
 
 ---
 
