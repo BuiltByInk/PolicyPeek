@@ -98,18 +98,29 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
 -- anonymous_check_log: server-side authoritative daily-cap enforcement for
 -- POST /v1/check requests made without a registered API key (or with an
 -- invalid/revoked one -- same "degrade to free" treatment as resolveTier
--- already applies to GET /v1/lookup, see auth.ts). One row per accepted
--- (not merely attempted) check. Identity is the caller's IP -- see
--- DECISIONS_NEEDED.md for the shared-IP/CGNAT/VPN tradeoff that choice
--- carries; a client-supplied anonymous token was the alternative and is
--- trivially resettable, which is worse for a real cost control.
+-- already applies to GET /v1/lookup, see auth.ts). Identity is the caller's
+-- IP -- see DECISIONS_NEEDED.md for the shared-IP/CGNAT/VPN tradeoff that
+-- choice carries; a client-supplied anonymous token was the alternative and
+-- is trivially resettable, which is worse for a real cost control.
+--
+-- (client_ip, day_bucket) PRIMARY KEY -- changed 2026-09-06 from an
+-- AUTOINCREMENT id + a rolling-24h SELECT-then-INSERT (see
+-- DECISIONS_NEEDED.md's concurrency findings: that shape let concurrent
+-- requests all read "0 checks so far" before any of them had recorded one,
+-- bypassing the cap entirely -- confirmed 2/2, 5/5, 10/10 in testing). The
+-- PRIMARY KEY makes the reservation atomic: only one INSERT for the same
+-- (ip, day) can ever succeed, so the write itself is the check, with no
+-- separate read-then-decide step to race. This does trade the old rolling-
+-- 24h window for a coarser UTC-calendar-day bucket -- a real, deliberate
+-- behavior change (a check right before midnight UTC frees up again sooner
+-- than a true 24h window would), not just a mechanical fix, per Elliot's
+-- 2026-09-06 sign-off on the proposed fix in DECISIONS_NEEDED.md.
 CREATE TABLE IF NOT EXISTS anonymous_check_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
   client_ip TEXT NOT NULL,
-  checked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  day_bucket TEXT NOT NULL, -- UTC calendar day, 'YYYY-MM-DD'
+  checked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  PRIMARY KEY (client_ip, day_bucket)
 );
-
-CREATE INDEX IF NOT EXISTS idx_anon_check_log_ip_time ON anonymous_check_log (client_ip, checked_at);
 
 -- Known bug last build: a trigger scoped to UPDATE OF compliance_status only
 -- silently misses the admin-approval INSERT path (a brand new tool never gets

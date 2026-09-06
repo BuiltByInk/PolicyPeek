@@ -4,9 +4,12 @@ import type { Env } from "./index";
 // Verifies the boundary called out in the "anonymous /v1/check access +
 // server-side daily check cap" commit message: a validation failure (bad
 // domain) must NOT consume the caller's one daily free-tier slot, while a
-// successfully-queued check must. isUnderDailyCap/recordAnonymousCheck are
-// unit-tested in isolation (rateLimit.test.ts) but nothing previously drove
-// handleCheck end-to-end to confirm they're wired together correctly.
+// successfully-queued check must. Updated 2026-09-06 for the atomic
+// reserve/release rate-limit model (see DECISIONS_NEEDED.md) -- the pure
+// day-bucket helpers are unit-tested in isolation (rateLimit.test.ts); this
+// file drives handleCheck end-to-end against a fake D1 that enforces the
+// same (client_ip, day_bucket) uniqueness a real PRIMARY KEY would, so the
+// reserve-then-release-on-failure wiring is what's actually under test.
 
 vi.mock("./ssrf", () => ({
   SsrfBlockedError: class SsrfBlockedError extends Error {},
@@ -23,7 +26,11 @@ interface FakeRow {
 // actually issues, backed by plain in-memory arrays. Returns the log arrays
 // directly so assertions don't need a real D1 to inspect state.
 function makeFakeEnvWithLog() {
-  const anonymousCheckLog: { client_ip: string; checked_at: string }[] = [];
+  // Keyed by "client_ip|day_bucket" -- mirrors the real (client_ip,
+  // day_bucket) PRIMARY KEY's uniqueness, since that's exactly the
+  // mechanism under test here (INSERT OR IGNORE either creates a new key or
+  // no-ops, never a duplicate).
+  const anonymousCheckLog = new Map<string, { client_ip: string; day_bucket: string; checked_at: string }>();
   const pendingChecks: FakeRow[] = [];
   let nextId = 1;
 
@@ -45,21 +52,25 @@ function makeFakeEnvWithLog() {
         return null;
       },
       async all<T>() {
-        if (sql.includes("FROM anonymous_check_log")) {
-          const clientIp = boundArgs[0] as string;
-          const matches = anonymousCheckLog.filter((r) => r.client_ip === clientIp);
-          return { results: matches as unknown as T[] };
-        }
         return { results: [] as T[] };
       },
       async run() {
-        if (sql.includes("INSERT INTO anonymous_check_log")) {
-          anonymousCheckLog.push({
-            client_ip: boundArgs[0] as string,
-            checked_at: new Date().toISOString(),
-          });
+        if (sql.includes("INSERT OR IGNORE INTO anonymous_check_log")) {
+          const [clientIp, dayBucket] = boundArgs as [string, string];
+          const key = `${clientIp}|${dayBucket}`;
+          if (anonymousCheckLog.has(key)) {
+            return { success: true, meta: { changes: 0 } };
+          }
+          anonymousCheckLog.set(key, { client_ip: clientIp, day_bucket: dayBucket, checked_at: new Date().toISOString() });
+          return { success: true, meta: { changes: 1 } };
         }
-        return { success: true };
+        if (sql.includes("DELETE FROM anonymous_check_log")) {
+          const [clientIp, dayBucket] = boundArgs as [string, string];
+          const key = `${clientIp}|${dayBucket}`;
+          const existed = anonymousCheckLog.delete(key);
+          return { success: true, meta: { changes: existed ? 1 : 0 } };
+        }
+        return { success: true, meta: { changes: 0 } };
       },
     };
     return statement;
@@ -99,7 +110,7 @@ describe("handleCheck daily-cap boundary", () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json).toMatchObject({ error: "invalid_domain" });
-    expect(anonymousCheckLog).toHaveLength(0);
+    expect(anonymousCheckLog.size).toBe(0);
   });
 
   it("does not burn the daily slot when source_url doesn't match the domain", async () => {
@@ -111,7 +122,7 @@ describe("handleCheck daily-cap boundary", () => {
     );
 
     expect(res.status).toBe(400);
-    expect(anonymousCheckLog).toHaveLength(0);
+    expect(anonymousCheckLog.size).toBe(0);
   });
 
   it("burns the daily slot once a check is successfully queued", async () => {
@@ -124,8 +135,8 @@ describe("handleCheck daily-cap boundary", () => {
 
     expect(res.status).toBe(202);
     expect(pendingChecks).toHaveLength(1);
-    expect(anonymousCheckLog).toHaveLength(1);
-    expect(anonymousCheckLog[0].client_ip).toBe("1.2.3.4");
+    expect(anonymousCheckLog.size).toBe(1);
+    expect([...anonymousCheckLog.values()][0].client_ip).toBe("1.2.3.4");
   });
 
   it("rejects a second check from the same IP within the window, still without double-burning", async () => {
@@ -136,7 +147,7 @@ describe("handleCheck daily-cap boundary", () => {
       makeCtx()
     );
     expect(first.status).toBe(202);
-    expect(anonymousCheckLog).toHaveLength(1);
+    expect(anonymousCheckLog.size).toBe(1);
 
     const second = await handleCheck(
       makeRequest({ domain: "other.com", source_url: "https://other.com/policy" }),
@@ -146,6 +157,26 @@ describe("handleCheck daily-cap boundary", () => {
     expect(second.status).toBe(429);
     const json = await second.json();
     expect(json).toMatchObject({ error: "daily_check_limit_reached" });
-    expect(anonymousCheckLog).toHaveLength(1); // unchanged
+    expect(anonymousCheckLog.size).toBe(1); // unchanged
+  });
+
+  // Regression test for the 2026-09-06 concurrency finding (see
+  // DECISIONS_NEEDED.md): the OLD implementation read the count, THEN
+  // wrote -- two "concurrent" calls (here: sequential awaits against a
+  // shared fake store, which is enough to prove the *logic* is atomic; the
+  // real race needed genuine concurrency against real D1, see
+  // security/loadtest/) both used to see "0 so far" and both got through.
+  // The fix makes the reservation itself the single atomic decision point --
+  // this test would have failed under the old isUnderDailyCap/
+  // recordAnonymousCheck shape (both calls would have returned 202).
+  it("only the first of two same-IP submissions can ever hold the reservation, even racing the exact same day-bucket key", async () => {
+    const { env, anonymousCheckLog } = makeFakeEnvWithLog();
+    const [first, second] = await Promise.all([
+      handleCheck(makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy" }, "9.9.9.9"), env, makeCtx()),
+      handleCheck(makeRequest({ domain: "other.com", source_url: "https://other.com/policy" }, "9.9.9.9"), env, makeCtx()),
+    ]);
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([202, 429]);
+    expect(anonymousCheckLog.size).toBe(1);
   });
 });

@@ -1,6 +1,96 @@
 # Decisions Needed
 
-## Open, blocks Phase 3 sign-off (2026-09-06): Phase 2.5 concurrency validation found 2 real High findings — proposed fixes, neither applied
+## Resolved (2026-09-06, Phase 2.5b): both High concurrency findings fixed and re-validated with the harness
+
+Elliot reviewed the proposed fixes below and specified the exact approach
+to use for each (superseding the original proposals on two points) — see
+`security/review-2026-09-06-concurrency.md` for the original findings this
+resolves.
+
+**Fix #1 — rate-limit, implemented as atomic INSERT (as proposed):**
+`anonymous_check_log` now has a `(client_ip, day_bucket)` PRIMARY KEY
+instead of an `AUTOINCREMENT id` + rolling-24h `SELECT`. `rateLimit.ts`'s
+`isUnderDailyCap`/`recordAnonymousCheck` (separate read-then-write) are
+replaced by `tryReserveDailySlot` (a single `INSERT OR IGNORE`, checking
+`meta.changes` to know if the reservation was won) and `releaseDailySlot`
+(a compensating `DELETE`, called on any validation/fetch failure so a bad
+request still doesn't burn the slot — same rule as before, just
+reserve-then-release instead of check-then-record). **Deliberate behavior
+change, called out explicitly per Elliot's instruction:** the cap is now
+per UTC calendar day, not a rolling 24h window — a check at 11:58pm and
+another at 12:02am now count as two different days rather than being
+blocked. Accepted tradeoff, not a silent side effect: D1/SQLite has no
+easy atomic way to enforce "1 per rolling 24h" the same way it does "1 per
+calendar day."
+
+**Fix #2 — verdict-publish, implemented as compare-and-swap (stronger
+than the originally-proposed "fresh read," per Elliot's explicit
+instruction not to stop at that):** `check.ts`'s `runExtraction` now takes
+a fresh `SELECT` of the tool's live status immediately before deciding
+(replacing the stale submission-time `isRecheck` snapshot for this
+decision only — the snapshot is kept for the unrelated `pending_checks
+.is_recheck` display value). That same fresh snapshot is then used as an
+actual compare-and-swap guard on the write itself, in a new
+`admin.ts::tryAutoPublishAtomic` (kept separate from `approvePendingCheck`,
+which the human-driven `/approve` endpoint still uses unchanged — a human
+approving one at a time never races itself): a brand-new domain publishes
+via `INSERT ... ON CONFLICT (domain) DO NOTHING RETURNING id`; an existing
+domain publishes via `UPDATE tools SET ... WHERE id = ? AND
+compliance_status = ?`, checking `meta.changes`. Either way, `changes = 0`
+means another writer won the race in the gap since the snapshot was taken
+— `runExtraction` treats that as `published: false` and routes the
+`pending_check` to human review (a new `extraction_error` note,
+`auto_publish_raced: ...`) instead of assuming success or retrying.
+
+**Harness re-run, all required cases pass** (`security/loadtest/`):
+- 10 concurrent same-IP checks: **1/10 accepted, 9/10 correctly capped**
+  (was 10/10 accepted before the fix).
+- 5 concurrent first-ever checks of a fresh domain (`sourcegraph.com`):
+  **zero unreviewed flips** — 2 of 5 legitimately agreed and published
+  (matching verdicts, correctly resolved via CAS), the other 3 computed a
+  differing verdict and were correctly queued for human review by the
+  now-fresh flip-guard check (`extraction_error: null`, `status:
+  'extracted'`, visible in the admin queue) rather than silently
+  publishing or dropping. Re-ran once more with `kagi.com` (deterministic
+  facts, no LLM variance) as a sanity check: all 5 legitimately resolved
+  to the same verdict via sequential CAS writes, no failures.
+- General stress N=5/20/50: no crashes, no unhandled errors (some 429s at
+  N=50 from synthetic-IP range reuse across back-to-back test invocations
+  — a harness timestamp-seeding quirk, not a Worker-side issue; confirmed
+  by an empty `error`/`exception`/`uncaught` grep of `wrangler dev`'s log
+  for this run).
+- SSRF re-confirmed unaffected (neither fix touched `ssrf.ts`): 75/75
+  correctly blocked across N=5/20/50, matching the original findings
+  exactly.
+
+All 63 backend tests pass (`rateLimit.test.ts` rewritten for the new
+day-bucket helpers; `check.rateLimit.test.ts`'s fake-D1 mock updated to
+enforce `(client_ip, day_bucket)` uniqueness, plus one new regression test
+proving only one of two same-IP concurrent submissions can ever hold the
+reservation).
+
+**Sign-off: yes, from a concurrency-safety standpoint, ready for Phase 3.**
+Both High findings are fixed and empirically re-validated with the same
+harness that found them. The Low finding (redundant changelog rows on a
+same-verdict concurrent recheck) remains open — cosmetic, not a blocker,
+not in this fix's scope.
+
+**Not done in this pass, flagging before Phase 3 deploy actually happens:**
+the real Cloudflare D1 database (Task 1) still has the OLD
+`anonymous_check_log` schema (`AUTOINCREMENT id`, no day-bucket PRIMARY
+KEY) — this fix was scoped to local dev only, per the Phase 2.5b
+instructions. **Remote will need this same schema change applied (a
+drop-and-recreate of just `anonymous_check_log`, not the whole database)
+before the deployed Worker code can rely on the new atomic
+`tryReserveDailySlot` working correctly against it** — deploying the new
+code against the old remote schema would break at the first free-tier
+`POST /v1/check` (the `INSERT OR IGNORE` would fail against a table
+missing the `day_bucket` column entirely). Not applying this now since it
+touches the real database and wasn't asked for in this pass.
+
+---
+
+## Resolved (2026-09-06): Phase 2.5 concurrency validation found 2 real High findings, proposed fixes (superseded, see above)
 
 Elliot's Phase 2.5 kickoff asked for a real load-test harness against local
 D1 + `wrangler dev` (not a unit test, not real infra) probing three

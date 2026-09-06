@@ -12,6 +12,39 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-06 (Phase 2.5b)
+
+- **Both High concurrency findings fixed and re-validated.** Rate-limit:
+  `anonymous_check_log` switched from an `AUTOINCREMENT id` + rolling-24h
+  window to a `(client_ip, day_bucket)` PRIMARY KEY, with the check-and-
+  record logic replaced by a single atomic `INSERT OR IGNORE`
+  (`tryReserveDailySlot`/`releaseDailySlot` in `rateLimit.ts`). **Deliberate
+  behavior change:** the cap is now per UTC calendar day, not a rolling 24h
+  window — accepted tradeoff, not a side effect (D1/SQLite has no easy
+  atomic way to do a rolling-window cap the same way). Verdict-publish:
+  `runExtraction` now takes a fresh read of a domain's live status right
+  before deciding (not the stale submission-time snapshot), and the actual
+  publish write is a compare-and-swap (`admin.ts::tryAutoPublishAtomic`) —
+  `INSERT ... ON CONFLICT DO NOTHING` for a new domain, `UPDATE ... WHERE
+  id = ? AND compliance_status = ?` for an existing one, checking
+  `meta.changes` either way. A lost race now routes to human review
+  (`auto_publish_raced` note) instead of risking a silent unreviewed
+  verdict flip. Full detail and re-run evidence in `DECISIONS_NEEDED.md`.
+- **Harness re-run clean on both fixes**: 10 concurrent same-IP checks now
+  correctly cap at 1/10 (was 10/10 through); 5 concurrent first-ever checks
+  of a fresh domain produced zero unreviewed flips (losers correctly
+  queued for review, not silently published or dropped); general
+  N=5/20/50 stress and SSRF (75/75 blocked) both unaffected. 63 backend
+  tests pass (`rateLimit.test.ts` rewritten, `check.rateLimit.test.ts`
+  updated + one new regression test).
+- **Signed off: ready for Phase 3 from a concurrency-safety standpoint.**
+  The Low finding (redundant changelog rows on a same-verdict concurrent
+  recheck) stays open, cosmetic, out of this fix's scope.
+- **Flagged, not done**: the real Cloudflare D1 database still has the old
+  `anonymous_check_log` schema — needs the same table recreated (not the
+  whole database) before Phase 3 deploy, or the new code's `INSERT OR
+  IGNORE` will fail against the missing `day_bucket` column on first use.
+
 ## 2026-09-06 (Phase 2.5)
 
 - **Concurrency validation harness built and run** ahead of Phase 3, per
