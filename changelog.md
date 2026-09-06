@@ -12,6 +12,25 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-06
+
+- **Real Cloudflare D1 database is live.** Elliot ran `wrangler login` and
+  created the database himself; `wrangler.toml`'s `database_id` updated
+  from the placeholder to the real uuid, `schema.sql` applied and verified
+  directly against the remote database (correct CHECK constraint, both
+  triggers present), and all 31 known-good tools migrated over with
+  verdicts spot-checked post-import. `wrangler deploy`/`secret`/publish
+  remain untouched, still parked for Phase 3.
+- **Security review re-pass done**, see `security/review-2026-09-06.md` —
+  no new findings; only `check.ts` changed since the last review (already
+  reviewed clean when it shipped). One informational carry-forward: Phase
+  2's batch was sequential, not concurrent, so SSRF/rate-limit code hasn't
+  been proven under real concurrent load yet.
+- Phase 2 is now fully closed out: real database live, known-good data
+  migrated, security re-passed. Remaining open items are Sourcegraph
+  Cody's held decision and the pre-existing legacy pending-review backlog,
+  both already logged in `DECISIONS_NEEDED.md`.
+
 ## 2026-09-03
 
 - **Elliot reviewed and approved 8 of the 9 tools queued from Phase 2's bulk

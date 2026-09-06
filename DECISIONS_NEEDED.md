@@ -1,5 +1,53 @@
 # Decisions Needed
 
+## Resolved (2026-09-06): Phase 2's Task 1 (real D1) and Task 3 (security review) both complete
+
+Elliot confirmed `wrangler login` was done and a real Cloudflare D1 database
+("PolicyPeek", uuid `95eb15f7-cce3-4d50-bba4-ffa2f3163f8c`) already existed
+— he'd created it himself. Completed the rest of Task 1:
+
+1. `wrangler.toml`'s `database_id` updated from the placeholder to the real
+   uuid.
+2. `schema.sql` applied to the real database via `wrangler d1 execute
+   --remote --file=./schema.sql` — verified directly afterward (not just
+   trusted the success message) that the current 5-value
+   `compliance_status` CHECK constraint and both changelog triggers are
+   actually present on the remote database.
+3. All 31 known-good local-dev tools carried over to the real database via
+   a generated `INSERT` script (explicit ids preserved, apostrophes in
+   summary text correctly escaped — checked directly, e.g. v0's "Vercel's"
+   round-tripped intact). Verified row count (31) and spot-checked 5
+   verdicts against expectations post-import.
+4. Confirmed remote `api_keys` is empty — the temporary batch-testing key
+   from Phase 2 never touched the real database.
+
+**Side effect worth knowing, not a bug:** changing `wrangler.toml`'s
+`database_id` repoints local `wrangler dev`/`d1 execute --local` at a new,
+empty local SQLite file (local D1 storage is keyed by database_id) — the
+old data-bearing local file is still on disk, orphaned but harmless, not
+deleted. Local dev now effectively starts fresh going forward; the real
+data lives in the real database now, which was the point.
+
+**Task 3** (security review re-pass against real batch traffic): done, see
+`security/review-2026-09-06.md`. No new High/Medium/Low findings — the only
+backend file that changed since the 2026-08-18 review is `check.ts` (the
+auto-publish try/catch fix), reviewed and clean. One informational item
+carried forward, not blocking: Phase 2's 19-tool batch proved correctness
+at volume but was run sequentially, not concurrently, so `safeFetchText`'s
+SSRF check and the daily-cap rate limiter haven't actually been exercised
+under genuine concurrent load — worth a real concurrency test before Phase
+3 exposes this to public traffic.
+
+**Not done, out of today's scope:** carrying over `pending_checks`/
+`compliance_changelog` history beyond the fresh insert-triggers, or
+migrating the 17-item legacy pending-review backlog (Tabnine, Synthesia,
+etc., predating Phase 2) to the real database — Task 1's mandate was
+specifically the known-good published tools, not in-progress operational
+data. Flagging so it's a deliberate scope call, not an oversight, if it
+comes up later.
+
+---
+
 ## Open (2026-09-03): Sourcegraph Cody left queued — genuine old-vs-fresh fact disagreement, Elliot's call
 
 Of the 9 tools queued from Phase 2's bulk run, Elliot reviewed facts for all 9

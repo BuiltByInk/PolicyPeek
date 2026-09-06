@@ -5,7 +5,7 @@ compatibility_date = "2024-11-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "policypeek-db"
-database_id = "REPLACE_ME_AFTER_WRANGLER_D1_CREATE"
+database_id = "95eb15f7-cce3-4d50-bba4-ffa2f3163f8c"
 
 [triggers]
 # */15 * * * * -- stuck-pending observability check (checkStuckPending)
