@@ -128,15 +128,23 @@ export async function approvePendingCheck(
 
   // Explicit log entry in addition to whatever the DB trigger already wrote —
   // last build's changelog history got lost when a trigger silently didn't
-  // fire, so approval doesn't rely on the trigger alone.
-  const note = opts.autoPublished
-    ? `auto-published from pending_check #${pending.id}`
-    : `approved from pending_check #${pending.id}`;
-  await env.DB.prepare(
-    "INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, ?, ?)"
-  )
-    .bind(toolId, existing?.compliance_status ?? null, verdict, note)
-    .run();
+  // fire, so approval doesn't rely on the trigger alone. Only log when the
+  // status actually moved (2026-09-06, Low finding from the concurrency
+  // harness): a resubmission/recheck that resolves to the same verdict as
+  // before is a legitimate no-op write, not an audit-worthy transition, and
+  // logging it anyway on every one of N duplicate submissions is what made
+  // the audit trail noisy.
+  const statusChanged = existing === null || existing.compliance_status !== verdict;
+  if (statusChanged) {
+    const note = opts.autoPublished
+      ? `auto-published from pending_check #${pending.id}`
+      : `approved from pending_check #${pending.id}`;
+    await env.DB.prepare(
+      "INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, ?, ?)"
+    )
+      .bind(toolId, existing?.compliance_status ?? null, verdict, note)
+      .run();
+  }
 
   await env.DB.prepare(
     "UPDATE pending_checks SET status = 'approved', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
@@ -251,11 +259,19 @@ export async function tryAutoPublishAtomic(
     return { toolId, verdict, published: false };
   }
 
-  await env.DB.prepare(
-    "INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, ?, ?)"
-  )
-    .bind(toolId, freshRead?.compliance_status ?? null, verdict, `auto-published from pending_check #${pending.id}`)
-    .run();
+  // Same no-op guard as approvePendingCheck's explicit log entry above (2026-09-06
+  // Low finding): the compare-and-swap WHERE clause above matches for every
+  // concurrent racer as long as the verdict doesn't change value, so without this
+  // guard N concurrent duplicate rechecks of an unchanged verdict each log an
+  // identical old_status===new_status row.
+  const statusChanged = freshRead === null || freshRead.compliance_status !== verdict;
+  if (statusChanged) {
+    await env.DB.prepare(
+      "INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, ?, ?)"
+    )
+      .bind(toolId, freshRead?.compliance_status ?? null, verdict, `auto-published from pending_check #${pending.id}`)
+      .run();
+  }
 
   await env.DB.prepare(
     "UPDATE pending_checks SET status = 'approved', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"

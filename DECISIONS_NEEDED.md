@@ -1,5 +1,68 @@
 # Decisions Needed
 
+## Resolved (2026-09-06, Phase 2.5c): Low finding — duplicate compliance_changelog rows on concurrent duplicate submissions
+
+Closes finding #3 in `security/review-2026-09-06-concurrency.md`, left
+open deliberately during Phase 2.5b since it wasn't in scope for the two
+High fixes.
+
+**Root cause confirmed**, reproduced first with the harness before
+touching any code (`node security/loadtest/load_test.mjs samedomain-recheck 5`
+against `kagi.com`, seeded then hit with 5 concurrent rechecks landing on
+the same `compliant` verdict): the `compliance_changelog` DB trigger
+(`trg_tools_changelog_on_update`, `backend/schema.sql`) already correctly
+no-ops on a same-value write via its `WHERE OLD.compliance_status IS NOT
+NEW.compliance_status` guard — that trigger was never the source of the
+duplicates. The actual cause is the *application-level* explicit
+`compliance_changelog` INSERT that both `admin.ts::approvePendingCheck`
+(human `/approve` path) and `admin.ts::tryAutoPublishAtomic` (Phase 2.5b's
+auto-publish path) fire unconditionally after every successful write,
+regardless of whether the value actually changed. Fix #2's compare-and-
+swap write (`UPDATE ... WHERE id = ? AND compliance_status = ?`) still
+matches every concurrent racer when the verdict being swapped is
+unchanged — the guard protects against a *stale* read, not against a
+*repeated identical* one — so all N racers' writes legitimately succeed,
+and pre-fix, each one then logged its own "auto-published from
+pending_check #N" row for a status that never moved. Confirmed via direct
+row inspection: 5 concurrent `kagi.com` rechecks produced 5 rows, all
+`compliant → compliant`, distinct pending_check IDs, near-identical
+timestamps.
+
+**Fix applied (application-level guard, not a trigger change):** both
+explicit INSERTs in `admin.ts` now check `old_status !== new_status`
+(comparing against `existing.compliance_status` in `approvePendingCheck`,
+`freshRead.compliance_status` in `tryAutoPublishAtomic`; a null/nonexistent
+prior row always counts as "changed," so first-ever publishes still log)
+before firing — mirroring the DB trigger's own condition instead of
+diverging from it. The compare-and-swap write logic itself is untouched.
+No trigger rewrite was needed since the trigger was never the problem;
+correspondingly **no real-D1 migration is needed for this fix** — it's
+pure application code, so it takes effect automatically whenever the
+backend is next deployed (Phase 3), with nothing to run against real D1
+in the meantime.
+
+**Re-verified after the fix:**
+- Same repro (5 concurrent `kagi.com` rechecks, same verdict): **0**
+  additional changelog rows (was 5) — only the original seed insert's 2
+  rows (trigger + app, an existing, unrelated, out-of-scope 2x on every
+  brand-new insert) remain.
+- Fix #1 regression (10 concurrent same-IP checks): still 1/10 accepted,
+  9/10 capped — unaffected, as expected (this change never touches
+  `rateLimit.ts`).
+- Fix #2 regression (5 and 8 concurrent first-ever submissions of a
+  fresh domain, `plausible.io` and `usefathom.com`): exactly 1 `tools` row
+  each time, no corruption, no unreviewed flips — unaffected, as expected
+  (this change never touches the publish decision or the CAS write, only
+  a downstream log call). Note: neither run happened to catch a genuine
+  simultaneous-INSERT race window this time (real network/Haiku timing
+  spaced the 5-8 requests out enough that each fresh-read saw the prior
+  one's commit) — that's timing variance in the test environment, not a
+  regression signal; the invariant that matters (no duplicate/corrupted
+  `tools` rows) held regardless.
+- Two new regression tests added: `backend/src/admin.changelogDedup.test.ts`
+  (`tryAutoPublishAtomic` logs nothing on an unchanged-verdict recheck,
+  still logs on a genuine flip). Full suite: **65/65 passing** (was 63).
+
 ## Resolved (2026-09-06, Phase 2.5b): both High concurrency findings fixed and re-validated with the harness
 
 Elliot reviewed the proposed fixes below and specified the exact approach

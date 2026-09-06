@@ -12,6 +12,32 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-06 (Phase 2.5c)
+
+- **Low finding fixed: duplicate compliance_changelog rows on concurrent
+  duplicate submissions of the same domain when the verdict doesn't
+  change.** Root cause confirmed: the DB trigger
+  (`trg_tools_changelog_on_update`) already correctly no-ops on a same-
+  value write (`WHERE OLD.compliance_status IS NOT NEW.compliance_status`),
+  but both `admin.ts::approvePendingCheck` (human `/approve` path) and
+  `admin.ts::tryAutoPublishAtomic` (auto-publish path) fired their own
+  explicit `compliance_changelog` INSERT unconditionally after every
+  successful write — and Fix #2's compare-and-swap `WHERE id = ? AND
+  compliance_status = ?` still matches every racer when the verdict being
+  swapped is unchanged, so N concurrent duplicate rechecks each
+  legitimately succeed and each logged an identical no-op row. Fix:
+  application-level guard on both explicit INSERTs — only log when
+  `old_status !== new_status` (or the row is genuinely new) — mirroring the
+  trigger's own condition. No trigger change needed. Two new regression
+  tests added (`admin.changelogDedup.test.ts`).
+- **Harness re-run**: 5 concurrent rechecks of `kagi.com` (same verdict
+  each time) now produce zero additional changelog rows (was 5); Fix #1
+  (rate-limit, 1/10 accepted) and Fix #2 (new-domain race, exactly 1 tools
+  row, no corruption) both re-confirmed unaffected. 65 backend tests pass.
+- Applied to local dev D1 only — this is a code-only fix (no schema/trigger
+  change), so it ships automatically whenever the backend is deployed;
+  nothing further is needed on real D1 for this one.
+
 ## 2026-09-06 (Phase 2.5b)
 
 - **Both High concurrency findings fixed and re-validated.** Rate-limit:
