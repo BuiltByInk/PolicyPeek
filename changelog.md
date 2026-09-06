@@ -12,6 +12,21 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-06 (Phase 2.5)
+
+- **Concurrency validation harness built and run** ahead of Phase 3, per
+  Elliot's kickoff — see `security/review-2026-09-06-concurrency.md` for
+  full findings/evidence, `security/loadtest/` for the reusable harness.
+  Found 2 real High-severity concurrency bugs (rate-limit cap bypass;
+  verdict-flip safety gate bypass on concurrent first-time domain
+  submissions), 1 Low (redundant changelog rows), confirmed SSRF handling
+  clean under real concurrent load (75/75 correctly blocked, N=5/20/50).
+  Neither High finding fixed yet — both logged in `DECISIONS_NEEDED.md`
+  with proposed fixes, pending Elliot's sign-off since both touch
+  security/verdict-integrity design decisions, not just bugs. ~112 real
+  Haiku calls incurred during testing, ~$0.56 estimated. Local dev D1 reset
+  to clean empty schema afterward; real Cloudflare D1 untouched.
+
 ## 2026-09-06
 
 - **Real Cloudflare D1 database is live.** Elliot ran `wrangler login` and

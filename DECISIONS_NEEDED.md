@@ -1,5 +1,58 @@
 # Decisions Needed
 
+## Open, blocks Phase 3 sign-off (2026-09-06): Phase 2.5 concurrency validation found 2 real High findings — proposed fixes, neither applied
+
+Elliot's Phase 2.5 kickoff asked for a real load-test harness against local
+D1 + `wrangler dev` (not a unit test, not real infra) probing three
+suspected races before Phase 3 deploy. Built it
+(`security/loadtest/load_test.mjs` + `mock_ssrf_server.mjs`), ran it at
+N=5/20/50 plus targeted smaller-N race probes, full findings and evidence
+in `security/review-2026-09-06-concurrency.md`. Summary:
+
+- **[HIGH] Rate-limit cap is trivially bypassed by concurrent same-IP
+  requests** — confirmed 2/2, 5/5, and 10/10 racers all got through the
+  1-per-24h anonymous cap when fired concurrently with a fresh IP each
+  time. The check-then-act gap between `isUnderDailyCap` and
+  `recordAnonymousCheck` (two separate D1 calls with real work in between)
+  is the root cause. Proposed fix: an atomic `UNIQUE`-constraint-based
+  INSERT-and-catch-conflict instead of SELECT-then-INSERT — a real design
+  change to the cap's mechanism (would also mean switching from a rolling
+  24h window to a coarser day-bucket), not something to silently patch.
+- **[HIGH] Concurrent first-time submissions of a brand-new domain can
+  silently bypass the "verdict changed → queue for human review" gate** —
+  the more serious finding. `handleCheck` snapshots `isRecheck` once at
+  submission time and it goes stale if a concurrent sibling for the same
+  new domain publishes first; `evaluateAutoPublish`'s flip-guard is keyed
+  off that stale flag, so a losing racer's *different* verdict can
+  silently auto-publish with zero review. Confirmed empirically with 5
+  simultaneous first-ever submissions of `sourcegraph.com`: 2 of 5 caused
+  real, unreviewed verdict flips. Does NOT affect concurrent rechecks of
+  an *already-published* domain (confirmed separately, safe). Proposed
+  fix: re-check the tool's live status unconditionally inside
+  `runExtraction`, right before the auto-publish decision, instead of
+  trusting the stale snapshot — not applied, since changing when/how the
+  verdict-flip safety gate fires is exactly the kind of methodology-
+  adjacent call `CLAUDE.md` reserves for Elliot even though the code lives
+  in `check.ts`, not `rules.ts`.
+- **[LOW] Redundant changelog audit rows** on concurrent duplicate
+  submissions of the same domain when the verdict doesn't change — noisy,
+  not corrupting, held per the kickoff's instruction not to patch mid-flight
+  on an unscheduled pass.
+- **[INFORMATIONAL] SSRF redirect validation — checked under real
+  concurrency (N=5/20/50, 75/75 correctly blocked), no races found.**
+  General robustness soak test (N=5/20/50 real traffic) — no crashes, no
+  unhandled errors.
+
+**Not signed off for Phase 3 as-is** — both High findings should be fixed
+and re-validated with this same harness before real concurrent public
+traffic hits this pipeline. Local dev D1 was reset to a clean empty schema
+after this exercise (the race-corrupted test data — e.g. `sourcegraph.com`
+ending up with a verdict determined by network timing rather than review —
+was never real data and shouldn't be mistaken for it later); the real
+Cloudflare D1 database was not touched by any part of this exercise.
+
+---
+
 ## Resolved (2026-09-06): Phase 2's Task 1 (real D1) and Task 3 (security review) both complete
 
 Elliot confirmed `wrangler login` was done and a real Cloudflare D1 database
