@@ -1,5 +1,132 @@
 # Decisions Needed
 
+## Resolved (2026-09-07, Phase 2.5h): Bolt.new and HeyGen approved — JetBrains AI Assistant moved to "needs Elliot's call," not approved
+
+Of the 5 queued rechecks from Phase 2.5f, this kickoff described 3 as
+"straightforward rules-version corrections" (Bolt.new, HeyGen, JetBrains
+AI Assistant) and 2 as needing a human look (Ideogram, Luma AI). Per the
+kickoff's own instruction not to assume "straightforward" without
+checking, re-verified all three against their live source pages before
+approving anything — **JetBrains didn't hold up**, see below. Only
+Bolt.new and HeyGen were actually approved.
+
+**Bolt.new** (pending_check #2): opt-out clause verified directly against
+`stackblitz.com/privacy-policy` — "Depending on account type or plan,
+users may have the ability to limit or opt out of the use of AI Inputs
+and AI Outputs for **model training or improvement**." Explicit,
+on-point. Approved via the real admin endpoint
+(`POST /v1/admin/pending/2/approve`) against real D1. `compliant` →
+`compliant_with_caveats`. Confirmed on `tools` (id 5, `updated_at`
+2026-09-07T08:57:15.963Z) and `compliance_changelog` (trigger + app-level
+rows, both `compliant → compliant_with_caveats`, note "approved from
+pending_check #2").
+
+**HeyGen** (pending_check #3): verified directly against
+`heygen.com/privacy` — "To train and enhance the models that power our
+products and services... **You may request to opt-out of this training
+and enhancement** by contacting us at [email]." Explicit, on-point (found
+in two places on the page, same mechanism both times). Approved
+(`POST /v1/admin/pending/3/approve`). `compliant` → `compliant_with_caveats`.
+Confirmed on `tools` (id 6, `updated_at` 2026-09-07T08:57:22.038Z) and
+changelog (same pattern as Bolt.new, note "approved from pending_check #3").
+
+**JetBrains AI Assistant (pending_check #5) — NOT approved, moved to the
+open section below.** Its queued clauses reference "Section 5,
+Transparency" for how opt-outs work, but don't state what that section
+actually covers. Fetched `jetbrains.com/legal/docs/privacy/privacy/`
+directly to check: Section 5 itself contains no opt-out mechanism at all
+("we will inform you about the categories of Personal Data... and the
+data management options that you may have") — it just points elsewhere.
+The actual opt-outs stated on the page are for **marketing emails**
+(unsubscribe link) and **cookies/personalized advertising** ("Opt-Out"
+link), plus a general deletion-request email. Nothing on the page ties
+an opt-out to AI training specifically — same shape of problem as
+Ideogram and Luma AI below, just not caught when this kickoff (and my own
+Phase 2.5f note, which was wrong on this point) called it straightforward.
+
+**Temp API key note**: turned out not to matter here — `POST
+/v1/admin/pending/:id/approve` only needs `X-Admin-Token`
+(`requireAdminToken`), it doesn't go through `resolveTier`/the daily cap
+at all, so the Phase 2.5f temp key (still revoked from before, confirmed
+via `SELECT revoked FROM api_keys WHERE label = 'phase2.5f-temp-testing-key-2026-09-06'`
+→ `1`) was never needed and wasn't touched. Worth remembering for next
+time: the free-tier cap only applies to `POST /v1/check`, not the admin
+approval path.
+
+---
+
+## Open: Ideogram, Luma AI, and JetBrains AI Assistant — opt-out fact isn't about AI training, awaiting Elliot's call
+
+Presenting evidence only, same as the Sourcegraph Cody writeup — not
+approving, rejecting, or guessing at intent for any of these three.
+
+### Ideogram (pending_check #4, domain `ideogram.ai`)
+
+Queued facts: `trains_on_user_data: true`, `opt_out_available: true`.
+Full extracted clauses:
+> "We use User Input and other information you submit to the Services
+> because it is in our legitimate interest to administer and improve the
+> Services and improve and develop our products and technology."
+> "training the models that power our Services"
+> "To opt out of tracking by Google Analytics, you can download and
+> install a plug-in available here."
+> "you may block or delete certain Tracking Technologies from your
+> browser"
+> "We retain your information for as long as is reasonably necessary for
+> the purposes specified in this Privacy Policy."
+
+**What the opt-out actually governs**: Google Analytics tracking and
+general browser tracking-technology blocking — not the training clause.
+Nothing in the queued extraction ties an opt-out to the "training the
+models" use specifically.
+
+**Practical effect on the verdict:**
+- Approve as-is (`compliant_with_caveats`, trusting `opt_out_available: true`
+  at face value): publishes a caveats badge implying a real opt-out from
+  training exists, which the actual clauses don't support.
+- Treat the training opt-out as effectively unconfirmed (i.e. as if
+  `opt_out_available` were `false`/unknown for this specific use):
+  `computeVerdict` would give `not_compliant` instead.
+- Leave queued / re-extract with a more targeted prompt or a different
+  source page to see if a real training-specific opt-out exists
+  elsewhere on the site that this pass didn't surface.
+
+### Luma AI (Dream Machine) (pending_check #6, domain `lumalabs.ai`)
+
+Queued facts: `trains_on_user_data: true`, `opt_out_available: true`.
+Full extracted clauses:
+> "Train, develop, and improve the artificial intelligence, machine
+> learning, and models that we use to support our Services"
+> "We collect the content of your conversations, including any
+> information you choose to provide in your Inputs, and this information
+> may be reproduced in the Outputs"
+> "If you are located in the European Economic Area or the United
+> Kingdom, we only process your personal information when we have a
+> valid 'legal basis'"
+> "You may opt out of marketing-related emails or texts by following the
+> opt-out or unsubscribe instructions at the bottom of the marketing
+> communication we send you"
+
+**What the opt-out actually governs**: unsubscribing from marketing
+emails/texts — entirely unrelated to AI training, more clearly
+disconnected than Ideogram's case (Ideogram's opt-out is at least
+data-adjacent; Luma's is pure marketing preference).
+
+**Practical effect on the verdict:** same three options as Ideogram —
+approve as `compliant_with_caveats` (opt-out fact taken at face value,
+though it doesn't support the caveats story), recompute as `not_compliant`
+(treating the training-specific opt-out as unconfirmed), or leave
+queued/re-extract.
+
+### JetBrains AI Assistant (pending_check #5, domain `jetbrains.com`)
+
+Moved here from the "resolved" section above — see that writeup for the
+full clause detail and live-page verification. Same three options as
+Ideogram/Luma AI apply: approve as `compliant_with_caveats` at face
+value, recompute as `not_compliant`, or leave queued/re-extract targeting
+a page or section that actually states a training-specific opt-out if
+one exists.
+
 ## Resolved (2026-09-07, Phase 2.5g): tools.json regenerated from real D1 — all 15 drifted tools synced, not just the 6 originally scoped
 
 `frontend/data/tools.json` (what the live site actually builds from) was
