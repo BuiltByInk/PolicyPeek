@@ -1,5 +1,69 @@
 # Decisions Needed
 
+## Resolved (2026-09-07, Phase 2.5g): tools.json regenerated from real D1 — all 15 drifted tools synced, not just the 6 originally scoped
+
+`frontend/data/tools.json` (what the live site actually builds from) was
+stale against real D1 for far more than the 5 tools + Sourcegraph Cody
+originally scoped. Caught before touching anything, per this task's own
+"stop if the diff shows anything unexpected" instruction — see below for
+why the earlier audit missed it.
+
+**Original 6** (as scoped): ChatGPT, ElevenLabs, Grammarly, Perplexity AI,
+Midjourney — `compliance_status` corrected to match D1 (`compliant` →
+`compliant_with_caveats` for the first four, `not_compliant` →
+`compliant_with_caveats` for Midjourney); Sourcegraph Cody — synced to the
+Phase 2.5f republish (`trains_on_user_data: true` → `false`, source URL
+now `cody-notice`, new summary/data_retention).
+
+**9 more, found while diffing, none a verdict change** — Claude, Copy.ai,
+Cursor, GitHub Copilot, Gemini, Microsoft Copilot, Replit AI, Stability AI
+(DreamStudio), Zoom AI Companion. All had `summary`/`data_retention`/
+`gdpr_mentioned` drift only — each of these went through Phase 2's real
+extraction+approval pipeline on 2026-09-01 or 2026-09-03 (confirmed via
+each row's D1 `updated_at`), refreshing their facts, and that refresh
+never made it back into `tools.json` either. Elliot reviewed the full
+15-tool diff and approved widening scope to sync all of them in one pass,
+since none introduce a new judgment call.
+
+**Audit-methodology gap, not just a data gap:** the Phase 2.5e consistency
+audit (`research/rules_consistency_audit.md`) only compared
+`compliance_status` and `trains_on_user_data` between `tools.json` and
+D1 — it never compared `summary`, `data_retention`, or `gdpr_mentioned`,
+so it structurally couldn't have found these 9. Worth remembering for any
+future audit of this kind: compare the *full* stored fact set, not just
+the fields that feed `computeVerdict`, or a "clean" audit result doesn't
+actually mean the two stores agree.
+
+**Mechanism**: new script, `scripts/generate-tools-json.mjs` — reads
+every `tools` row from real D1 (`wrangler d1 execute --remote`), converts
+D1's storage shapes (0/1 integers, a JSON-string `source_urls` column)
+into the plain booleans/arrays `tools.json` already uses, sorts
+case-insensitively by name (matching the existing file's order), and
+replicates the existing file's `\uXXXX`-escaped-non-ASCII formatting so a
+diff against a hand-edited version doesn't show spurious noise. Defaults
+to writing a separate `tools.generated.json` so a diff can be reviewed
+before replacing the real file — never overwrites `tools.json` directly
+on its own.
+
+Verified: generated output diffed against the live file (all 15 changes
+individually re-confirmed against direct D1 queries, not just trusted
+from the diff — this is exactly how the file first got flagged as having
+more drift than expected, so re-checking mattered). `tools.json` replaced,
+temp file removed, `astro build` succeeded (35 pages), and 11 pages
+spot-checked directly in the built HTML: all 5 flipped-verdict tools plus
+Sourcegraph Cody show the correct badge and updated facts; Claude/Cursor
+(9-tool group, no verdict change) still show correct unchanged badges;
+Zoom (whose `summary` went to `null`) renders cleanly with no literal
+"null" and the reason paragraph correctly omitted; Kagi/Fireflies.ai
+(unrelated tools) render unaffected.
+
+**Not decided here — recommendation, not a decision:** whether this
+script becomes part of the actual `astro build`/deploy step (source of
+truth stays D1, `tools.json` is never hand-stale again) versus staying a
+manual "run when needed" tool. Recommend the former eventually, but there
+isn't a real deploy pipeline yet to wire it into — revisit as part of the
+Phase 3 deploy conversation rather than deciding in isolation now.
+
 ## Resolved (2026-09-06, Phase 2.5f): workers.dev subdomain confirmed — narrow, deploy stays blocked
 
 Running the real app pipeline (`/v1/check`, `/v1/admin/pending/:id/approve`)
