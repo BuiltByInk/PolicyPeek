@@ -1,5 +1,100 @@
 # Decisions Needed
 
+## Open (2026-09-13, Phase 2.5i): Adobe Firefly — still unreachable, needs a strategy pick (surfacing options only, not choosing)
+
+Recap of where this stands (full history: "Update (2026-08-18)" and
+"Confirmed, not just suspected (2026-08-17)" entries further down): the
+live page hangs indefinitely against two different fetchers (Akamai-style
+bot detection stalling the connection, not a clean 403 — a longer
+timeout can't fix an indefinite hang), and the Wayback Machine fallback
+that rescued Windsurf doesn't work here either — archive.org itself
+returns 429 specifically for Adobe URLs (ruled out as a generic
+IP-rate-limit via an interleaved control test against Windsurf's URL from
+the same session, which succeeded). No further retries were planned
+without a new approach.
+
+Three concrete next strategies, not picking one:
+
+1. **Try a Firefly-specific URL instead of the corporate domain.** Both
+   attempts so far used `adobe.com/privacy/policy.html` and
+   `business.adobe.com` — Adobe's main corporate properties, likely
+   behind Adobe's heaviest bot protection. Firefly has its own product
+   pages (e.g. a `firefly.adobe.com` FAQ/legal page, if one states privacy
+   terms) that may sit on different infrastructure, the same way Microsoft
+   Copilot's FAQ page turned out to be reachable/extractable when its main
+   product page wasn't (see the Copilot provenance entries below). Cheapest
+   option to try — just a different URL through the existing pipeline, no
+   new code.
+2. **Try an archive source other than the Wayback Machine.** archive.org
+   specifically seems to throttle/block Adobe content — a different
+   on-demand or pre-existing archive (archive.today/archive.ph, or
+   checking whether Common Crawl's index has a snapshot) might not have
+   the same restriction. Would need `waybackFallback.ts`'s pattern
+   extended to a second archive provider, or a one-off manual fetch if
+   this is a single-tool exception rather than a general capability worth
+   building.
+3. **Accept the gap.** Adobe Firefly stays absent from the catalog,
+   documented as a known, deliberate exclusion rather than an oversight.
+   Reasonable if neither option above is worth the engineering time for
+   one tool — revisit if it comes up again (e.g. a user submits it via
+   `POST /v1/check` and hits the same wall live).
+
+Not evaluated: browser-fingerprint-level evasion of Adobe's bot detection
+(spoofing TLS/header fingerprints to look like a real browser). Technically
+possible but meaningfully more engineering and ongoing-maintenance cost
+than the above for a single catalog entry, and closer to actively working
+around a vendor's anti-automation measures than the archive-fallback
+approach already in place — flagging that it exists as an option only if
+Elliot specifically wants to consider it, not recommending it.
+
+---
+
+## Open (2026-09-13, Phase 2.5i): true legacy pending-review backlog count — resolved to 9, not 12 or 17 (checked the surviving local file directly, real D1 was never in scope for this data)
+
+The 2026-09-13 audit flagged that the 2026-09-06 changelog's "17-item
+legacy pending-review backlog (Tabnine, Synthesia, etc., predating
+Phase 2)" phrase doesn't reconcile with the only local artifact that
+could hold it (12 non-terminal rows). Checked further this pass —
+**a real-D1 query would not resolve this even if run**: the 2026-09-06
+"Task 1 (real D1)" entry explicitly scoped carrying over `pending_checks`/
+`compliance_changelog` history as **out of scope**, on purpose — only the
+31 known-good *published* tools were migrated. The legacy backlog was
+never in real D1 to begin with, so there's no `--remote` query that would
+find it.
+
+The only surviving copy is the orphaned pre-cutover local file
+(`backend/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/57ca0628...
+.sqlite`, frozen 2026-09-06 10:24). Queried it directly (a local file
+read, not a live D1 connection) — 12 non-terminal `pending_checks` rows,
+but 3 of them are not legacy at all: `openai.com` and `sourcegraph.com`
+(created 2026-09-01, i.e. during Phase 2, not predating it) and
+`deepl.com` (created 2026-09-06). All three are already published in the
+current catalog (`ChatGPT`/`compliant_with_caveats`, `Sourcegraph Cody`/
+`compliant`, `DeepL`/`not_compliant`) — resolved through the real
+pipeline entirely separately from this old file.
+
+**The genuine legacy backlog — created 2026-08-17, predating Phase 2,
+still not in the catalog at all — is 9 tools, not 17 or 12:**
+`tabnine.com`, `suno.ai`, `synthesia.io`, `wordtune.com`, `sudowrite.com`,
+`rev.com`, `speechify.com`, `poe.com`, `character.ai`. Confirmed each is
+absent from current `tools.json` (i.e. genuinely never published, not
+just missing from this stale snapshot).
+
+Where "17" came from originally isn't determinable from anything in this
+repo — possibly a miscount at the time, or it included rows that have
+since moved/been deleted from this file for other reasons. Not guessing
+further.
+
+**If you want these 9 in the catalog:** re-submitting each fresh through
+`POST /v1/check` against real D1 is almost certainly simpler and more
+correct than trying to migrate 3-4-week-old `extracted_facts` blobs out of
+this orphaned file — policy pages may have changed since 2026-08-17, and
+the fresh pipeline will re-verify rather than trust stale extracted text.
+No code needed either way; this is a decide-and-run-the-submissions call,
+not an engineering one.
+
+---
+
 ## Open (2026-09-13, Phase 2.5i): /about and homepage copy claims 100% human review — no longer true, needs your sign-off before it ships
 
 **The problem:** both `frontend/src/pages/about.astro` (line 34-38) and
