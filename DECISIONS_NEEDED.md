@@ -1,5 +1,62 @@
 # Decisions Needed
 
+## Open (2026-09-13, Phase 2.5i): /about and homepage copy claims 100% human review — no longer true, needs your sign-off before it ships
+
+**The problem:** both `frontend/src/pages/about.astro` (line 34-38) and
+`frontend/src/pages/index.astro` (line 39) state, unconditionally: *"A
+human reviews it before it's published. Nothing reaches the tools list
+without someone checking the extracted facts against the actual source
+before approving it."* That was true when written but has been false
+since the three-tier auto-publish system shipped (2026-08-17,
+`backend/src/autoPublish.ts`): a clean, deterministic extraction (no null
+critical facts, no verdict flip on a recheck, not sourced from a Wayback
+fallback) publishes immediately with no human in the loop. This is a
+public trust claim about the product, not an internal detail, so per the
+kickoff's instruction I drafted a fix but did **not** ship it — your call
+on the wording and whether anything else needs to change alongside it.
+
+**Drafted replacement for `about.astro`'s step 3** (keeps the trust
+framing by explaining *why* skipping review is safe, rather than just
+admitting it isn't 100%):
+
+> **A human reviews it — unless the extraction is unambiguous.**
+> Every result is checked against a fixed set of auto-publish criteria:
+> if every fact the rule above needs was clearly stated in the policy —
+> nothing missing, nothing ambiguous — and, on a recheck, the badge
+> wouldn't change, it publishes immediately. Anything less clear-cut — a
+> policy that doesn't answer the key question, a rating that would flip
+> on a recheck, or a source pulled from a web archive because the live
+> page blocks automated checks — always gets a human's eyes before it's
+> published. Either way, the same fixed rule from step 2 decides the
+> badge; a human never overrides it, they only confirm the facts it ran
+> on.
+
+**Drafted replacement for `index.astro`'s bullet** (shorter, same idea,
+links to the fuller explanation which is already one line below it):
+
+> Clear-cut results publish immediately under a fixed rule; anything
+> ambiguous — a missing fact, a recheck that would change the badge, an
+> archived source — gets a human's eyes first.
+
+**Not built, flagging as a separate option:** there is currently no
+visible per-tool distinction between "a human approved this" and "this
+auto-published" anywhere on the site — `tools.auto_published` exists in
+D1 but isn't carried into `frontend/data/tools.json` at all (confirmed in
+`ARCHITECTURE_NOTES.md`'s field-level diff) and no template reads it. If
+you want that distinction visible (e.g. a small "auto-published" tag next
+to the badge, similar to how `shared_domain_unverified` gets its own
+outlined badge treatment), that's a real UI/visual-language decision on
+top of the copy fix above — same category as the 2026-08-17 "Visual
+direction (Compliance Label)" decision — so I didn't design or build
+anything here, just flagging that the copy fix alone doesn't make the
+distinction inspectable per-tool, only true in aggregate.
+
+**Nothing published or edited in the live copy.** Say the word (or edit
+directly) and I'll wire in whichever wording you want, plus the
+`tools.json`/template plumbing if you also want the per-tool badge.
+
+---
+
 ## Resolved (2026-09-07, Phase 2.5h): Bolt.new and HeyGen approved — JetBrains AI Assistant moved to "needs Elliot's call," not approved
 
 Of the 5 queued rechecks from Phase 2.5f, this kickoff described 3 as
