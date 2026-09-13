@@ -2044,6 +2044,8 @@ The last line means I decided, at milestone 6, that "trains by default + opt-out
 
 SEO work (sitemap.xml, canonical URLs, OpenGraph URLs) needs an absolute domain to generate against. I used `https://policypeek.example` as a placeholder in `frontend/astro.config.mjs` (`site:`) and `frontend/public/robots.txt` (`Sitemap:` line) — both need the real production domain swapped in before this ever goes live. Not attempting to guess it since that's your call, and it's adjacent to the deploy decisions you told me not to touch.
 
+**Resolved (2026-09-13):** Elliot confirmed the production domain as `getpolicypeek.com`. `frontend/astro.config.mjs` and `frontend/public/robots.txt` updated accordingly. Still does not touch DNS, deployment, or `wrangler.toml` routes — the actual custom-domain setup at the Cloudflare level remains a separate, still-blocked Phase 3 step.
+
 ---
 
 ## FYI, not urgent: light competitive scan
