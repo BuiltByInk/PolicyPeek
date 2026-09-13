@@ -86,7 +86,7 @@ export async function approvePendingCheck(
     // place instead of dead-ending on a duplicate-domain conflict.
     await env.DB.prepare(
       `UPDATE tools SET compliance_status = ?, data_retention = ?, trains_on_user_data = ?, gdpr_mentioned = ?,
-        source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = ?, sourced_from_archive = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        opt_out_available = ?, source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = ?, sourced_from_archive = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
        WHERE id = ?`
     )
       .bind(
@@ -94,6 +94,7 @@ export async function approvePendingCheck(
         facts.data_retention,
         facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
+        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -105,8 +106,8 @@ export async function approvePendingCheck(
     toolId = existing.id;
   } else {
     const inserted = await env.DB.prepare(
-      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary, shared_domain, auto_published, sourced_from_archive)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?) RETURNING id`
+      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, opt_out_available, source_urls, verified, summary, shared_domain, auto_published, sourced_from_archive)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?) RETURNING id`
     )
       .bind(
         pending.name || pending.domain,
@@ -115,6 +116,7 @@ export async function approvePendingCheck(
         facts.data_retention,
         facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
+        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -206,8 +208,8 @@ export async function tryAutoPublishAtomic(
     // completely untouched -- we just detect that we lost, via RETURNING
     // giving back no row.
     const inserted = await env.DB.prepare(
-      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, summary, shared_domain, auto_published, sourced_from_archive)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 1, ?)
+      `INSERT INTO tools (name, domain, compliance_status, data_retention, trains_on_user_data, gdpr_mentioned, opt_out_available, source_urls, verified, summary, shared_domain, auto_published, sourced_from_archive)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 1, ?)
        ON CONFLICT (domain) DO NOTHING
        RETURNING id`
     )
@@ -218,6 +220,7 @@ export async function tryAutoPublishAtomic(
         facts.data_retention,
         facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
+        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -235,7 +238,7 @@ export async function tryAutoPublishAtomic(
     // write landed.
     const result = await env.DB.prepare(
       `UPDATE tools SET compliance_status = ?, data_retention = ?, trains_on_user_data = ?, gdpr_mentioned = ?,
-        source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = 1, sourced_from_archive = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        opt_out_available = ?, source_urls = ?, verified = 1, summary = ?, shared_domain = ?, auto_published = 1, sourced_from_archive = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
        WHERE id = ? AND compliance_status = ?`
     )
       .bind(
@@ -243,6 +246,7 @@ export async function tryAutoPublishAtomic(
         facts.data_retention,
         facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
         facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
+        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
         sourceUrls,
         summary,
         Number(sharedDomain),

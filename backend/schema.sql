@@ -17,6 +17,14 @@ CREATE TABLE IF NOT EXISTS tools (
   data_retention TEXT,
   trains_on_user_data INTEGER CHECK (trains_on_user_data IN (0, 1)),
   gdpr_mentioned INTEGER CHECK (gdpr_mentioned IN (0, 1)),
+  -- added 2026-09-13 (Phase 2.5i): the fact that decides compliant_with_caveats
+  -- vs. not_compliant in rules.ts::computeVerdict was previously only ever
+  -- read in-memory from a pending_check's extracted_facts JSON blob at
+  -- verdict-compute time, never copied here -- so once a row was published
+  -- there was no durable record of which specific fact justified the
+  -- caveats bucket over a flat rejection. NULL means "not recorded/not
+  -- recoverable", same tri-state convention as trains_on_user_data.
+  opt_out_available INTEGER CHECK (opt_out_available IN (0, 1)),
   source_urls TEXT NOT NULL DEFAULT '[]', -- JSON array of strings
   verified INTEGER NOT NULL DEFAULT 0 CHECK (verified IN (0, 1)),
   -- true when the only public policy for this tool lives on a domain shared
