@@ -17,7 +17,7 @@
   {
     "name": "Bolt.new",
     "domain": "bolt.new",
-    "compliance_status": "compliant",
+    "compliance_status": "compliant_with_caveats",
     "summary": "We may use AI Inputs and AI Outputs to operate, maintain, and improve the Services, including improving AI performance, reliability, and safety. Such use shall be on aggregated, anonymized, or de-identified data.",
     "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days subject to backup retention and legal obligations. Residual copies may persist in backups/logs for limited period.",
     "trains_on_user_data": true,
@@ -186,7 +186,7 @@
   {
     "name": "HeyGen",
     "domain": "heygen.com",
-    "compliance_status": "compliant",
+    "compliance_status": "compliant_with_caveats",
     "summary": "To train and enhance the models that power our products and services, including to make our avatar creation models more accurate. It is necessary for our legitimate interest and subject to appropriate safeguards. You may request to opt-out of this training and enhancement by contacting us at [email protected]",
     "data_retention": null,
     "trains_on_user_data": true,
