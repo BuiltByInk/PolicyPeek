@@ -1,5 +1,32 @@
 # Decisions Needed
 
+## Blocked on you (2026-09-13, Phase 2.5j): JetBrains / Ideogram / Luma AI opt-out correction — verdicts computed, real-D1 write needed
+
+Your ruling: none of the three quoted opt-out clauses actually govern AI training (JetBrains points at a vague non-mechanism in "Section 5, Transparency"; Ideogram's opt-out is Google Analytics/tracking-tech only; Luma's is a marketing-email unsubscribe — full clause detail in the "Open: Ideogram, Luma AI, and JetBrains AI Assistant" entry below). `opt_out_available` should be `false` for all three, not the currently-queued `true`.
+
+**Computed verdicts** — pure application of `computeVerdict()`, no D1 access needed since all three already have `trains_on_user_data: true` (confirmed in the entry below):
+```
+if (facts.trains_on_user_data === null) return "unrated";
+if (facts.trains_on_user_data === false) return "compliant";
+return facts.opt_out_available === true ? "compliant_with_caveats" : "not_compliant";
+```
+With `opt_out_available: false`, all three resolve to **`not_compliant`** — JetBrains AI Assistant, Ideogram, and Luma AI (Dream Machine) all move away from the `compliant_with_caveats` framing the current (uncorrected) `true` value would otherwise produce.
+
+**Blocked: persisting the correction.** All three live only as real-D1 `pending_checks` rows (#4 Ideogram, #5 JetBrains, #6 Luma AI) — no local copy to correct instead. Writing the fix needs a `--remote` D1 command, which is outside this pass's scope per your instruction to stop and report rather than work around it:
+
+```
+npx wrangler d1 execute policypeek-db --remote --command "UPDATE pending_checks SET extracted_facts = json_set(extracted_facts, '$.opt_out_available', json('false')) WHERE id IN (4, 5, 6);"
+```
+
+This only flips that one field in each row's `extracted_facts` — nothing else changes, and nothing publishes. After running it, all three stay in `pending_checks` awaiting the **normal admin approval step** (`POST /v1/admin/pending/:id/approve`) exactly as instructed — that approval is its own separate real-D1-touching action (same shape as the Bolt.new/HeyGen precedent), not implied by running the UPDATE above.
+
+Optional read-only check to confirm the write landed before approving:
+```
+npx wrangler d1 execute policypeek-db --remote --command "SELECT id, domain, json_extract(extracted_facts, '$.opt_out_available') AS opt_out FROM pending_checks WHERE id IN (4, 5, 6);"
+```
+
+---
+
 ## Open (2026-09-13, Phase 2.5i): Adobe Firefly — still unreachable, needs a strategy pick (surfacing options only, not choosing)
 
 Recap of where this stands (full history: "Update (2026-08-18)" and
