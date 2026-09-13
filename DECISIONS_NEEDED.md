@@ -27,6 +27,25 @@ npx wrangler d1 execute policypeek-db --remote --command "SELECT id, domain, jso
 
 ---
 
+## Open (2026-09-13, Phase 2.5j update): Adobe Firefly — new evidence found, still not clean enough to call it resolved
+
+Attempted strategy (a) from the entry below: tried Firefly/Adobe-specific URLs via a different fetch path (this session's own web-fetch tool, **not** the backend's actual SSRF-safe fetcher/Cloudflare Workers egress — flagging that distinction because it matters, see caveat at the end).
+
+Results:
+- `helpx.adobe.com/firefly/faq.html` — **403 Forbidden**.
+- `helpx.adobe.com/acrobat/desktop/use-acrobat-ai/understand-usage-policies/content-usage-handling.html` — **403 Forbidden**.
+- `business.adobe.com/resources/sdk/adobe-firefly-data-and-content-usage.html` (the existing candidate already in `research/tool_sources.json`) — **timed out after 60s**, consistent with the original "hangs indefinitely" diagnosis. Still structurally blocked, at least via this fetch path too.
+- `adobe.com/legal/licenses-terms/adobe-gen-ai-user-guidelines.html` — **loaded successfully**, but it's an acceptable-use/content-credentials guide, not a privacy policy — no explicit training-data or opt-out statement, not usable as a source.
+- **`adobe.com/privacy/policy.html`** — the exact URL previously diagnosed as hanging indefinitely against the backend's fetcher — **loaded successfully this time**, and contains genuinely on-point language: *"Subject to your opt-out rights... we may perform analytics with Cloud Content to help us understand how our users are using our Services,"* with *"These features are off by default and, should you choose to enable them, you can always disable these features,"* and a pointer to `helpx.adobe.com/manage-account/using/machine-learning-faq.html` for the actual opt-out mechanism. Read plainly, this points toward `trains_on_user_data: false` (off-by-default) rather than the `not_compliant`/`compliant_with_caveats` split the original framing assumed.
+
+**Why I'm not calling this "solved" and moving on:**
+1. **Fetch-path caveat.** This used a different fetcher/network path than the backend's actual extraction pipeline — different egress IP/ASN and likely different bot-detection treatment. Adobe's block on this exact URL was diagnosed as Akamai-style bot detection, which is commonly IP/ASN-based, not just user-agent-based — so this reachability result doesn't confirm the backend's own `safeFetchText` pipeline (running from Cloudflare Workers) would succeed if retried. Someone would need to actually retry it through the real pipeline to know.
+2. **Shared-domain concern.** `adobe.com/privacy/policy.html` is Adobe's umbrella privacy policy covering every Adobe product, not a Firefly-specific page — this is exactly the pattern `CLAUDE.md`'s `shared_domain_unverified` override describes ("the tool's only public policy lives on a domain shared with unrelated products... a product-specific source page on that same shared domain does not resolve this — see the Amazon Q Developer precedent"). Whether this policy is specific enough to Firefly to source a verdict from, or whether it should route to `shared_domain_unverified` instead, is itself a judgment call I'm surfacing, not deciding.
+
+So: strategy (a) didn't cleanly fail (there's real, favorable-looking language now visible) and didn't cleanly succeed either (fetch-path and shared-domain questions both open). Didn't attempt strategy (b) (archive.today) since (a) produced this ambiguous result rather than a clean failure to fall through on. Your call on how to proceed — retry through the real pipeline, treat this as `shared_domain_unverified`, or something else.
+
+---
+
 ## Open (2026-09-13, Phase 2.5i): Adobe Firefly — still unreachable, needs a strategy pick (surfacing options only, not choosing)
 
 Recap of where this stands (full history: "Update (2026-08-18)" and
