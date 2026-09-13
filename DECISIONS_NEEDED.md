@@ -95,7 +95,11 @@ Elliot specifically wants to consider it, not recommending it.
 
 ---
 
-## Open (2026-09-13, Phase 2.5i): true legacy pending-review backlog count — resolved to 9, not 12 or 17 (checked the surviving local file directly, real D1 was never in scope for this data)
+## Resolved (2026-09-13, Phase 2.5j): true legacy pending-review backlog — Elliot's ruling: not migrating
+
+Elliot's ruling: none of the 9 legacy tools get migrated from the stale local blobs. Closing this as **not migrating** — if any of these 9 get prioritized later, re-submit fresh through `POST /v1/check` against real D1 rather than reviving 3-4-week-old `extracted_facts` (several already have unresolved core facts, e.g. `rev.com`/`speechify.com`/`poe.com` all show `trains_on_user_data: null`, and policy pages may have changed since 2026-08-17 anyway). No code or data change made — this is a decision closed, not an engineering task done.
+
+Original discovery writeup, kept for the record:
 
 The 2026-09-13 audit flagged that the 2026-09-06 changelog's "17-item
 legacy pending-review backlog (Tabnine, Synthesia, etc., predating
