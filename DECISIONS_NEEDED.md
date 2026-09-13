@@ -817,7 +817,36 @@ bulk run is done, so it doesn't linger as an unused live credential.
 
 
 
-## Open (2026-09-01): Copilot's D1 summary can't be synced — no D1 row exists for it at all
+## Resolved (2026-09-13, Phase 2.5i — superseded, not directly fixed): Copilot's D1 summary can't be synced — no D1 row exists for it at all
+
+**Root cause investigation (Phase 2.5i, per the 2026-09-13 audit's Phase C ask):**
+this entry was accurate when written (2026-09-01, local dev D1 only, before
+real D1 existed) — `microsoft.com` was indeed one of the 19 `tools.json`
+domains missing from local D1 at that time (see `ARCHITECTURE_NOTES.md`'s
+field-level diff). It stopped being true later that same day without this
+entry ever being updated: the "Phase 2 bulk run complete" entry below lists
+**Microsoft Copilot as one of the 10 auto-published tier-A tools** in that
+run (local D1: 13 → 23), and the 2026-09-06 "Task 1 (real D1)" entry
+further down confirms all 31 known-good local-dev tools — Microsoft
+Copilot included — were carried into real D1 via a generated INSERT
+script, verified by row count (31) afterward.
+
+**Confirming evidence I could check without a live D1 query** (this pass
+never runs `--remote`): `frontend/data/tools.json`'s current Microsoft
+Copilot row was produced by Phase 2.5g's `scripts/generate-tools-json.mjs`
+regeneration directly from **real** D1 on 2026-09-07 (commit `5f85cc7`) —
+it shows a fully populated row (`verified: true`, `shared_domain: true`,
+real facts, not placeholder/default values), which the regen script could
+only have produced if a real-D1 row for `microsoft.com` existed at that
+query time. A direct `SELECT * FROM tools WHERE domain='microsoft.com'`
+against real D1 would confirm this definitively but wasn't run here.
+
+**Nothing to fix in code** — the underlying gap this entry described no
+longer exists. Leaving the original text below for the historical record
+of the diagnosis, since Task 1's `summary`-sync request itself was never
+revisited once a row started existing.
+
+---
 
 Follow-up to the entry below: asked to sync D1's `summary` field for
 Copilot and v0 to match the new `tools.json` text (two-row write, nothing
@@ -1028,7 +1057,43 @@ them (per your constraint):
 
 ---
 
-## Open (2026-09-01): Microsoft Copilot's stored facts contradict a fresh live re-extraction from the same source URL — source-page specificity problem, papered over (correctly, for the badge) by shared_domain but not for the underlying data
+## Resolved (2026-09-13, Phase 2.5i): Microsoft Copilot's stored facts contradict a fresh live re-extraction from the same source URL — source-page specificity problem, papered over (correctly, for the badge) by shared_domain but not for the underlying data
+
+**Phase 2.5i finding:** the recommendation from the diagnosis entry above
+("Microsoft Copilot discrepancy diagnosed") — update `source_urls` to the
+FAQ page, keep the existing facts since they already match it — **was, in
+fact, applied**, contrary to this pass's kickoff description of it as
+"never applied." Evidence, chronological:
+
+1. The "Resolved (2026-09-01): Copilot and v0 now show their specific
+   unverified reason" entry above did the `source_urls` swap to
+   `.../privacy-faq-for-microsoft-copilot` directly in `tools.json` — that
+   entry's own text confirms this.
+2. That fix predates the Phase 2 bulk run (same day, but this entry is
+   further down the file / chronologically earlier — file is newest-first).
+   The bulk run's fresh extraction of Microsoft Copilot came back clean
+   enough to auto-publish (tier A, listed among the 10 auto-published tools
+   in "Phase 2 bulk run complete" below) — consistent with it having
+   re-fetched the now-corrected FAQ URL rather than the stale one.
+3. Real D1 was populated from local D1 on 2026-09-06 (Task 1), carrying
+   that row forward.
+4. `frontend/data/tools.json`'s current Microsoft Copilot entry — produced
+   by regenerating straight from real D1 on 2026-09-07 — shows
+   `source_urls: [".../privacy-faq-for-microsoft-copilot"]` and facts
+   matching that page exactly (`trains_on_user_data: true`,
+   `data_retention` citing 18 months, matching the diagnosis below almost
+   verbatim). If the stale `/for-individuals/privacy` URL or its facts
+   were still in real D1, this regenerated file would show that instead.
+
+**Not independently re-verified against a live real-D1 query** (outside
+this pass's `--remote` constraint) — this is drawn from the documented
+chain above plus the regenerated file's content, not a fresh `SELECT`.
+Since `shared_domain` already hard-overrides the public verdict regardless
+of these facts (confirmed in the diagnosis below), there was never any
+badge-correctness risk either way. No code or data change made here —
+tracing this fully is the entirety of Phase C item 2's ask.
+
+---
 
 Phase 1's Task 2 asked me to run 3 real tools through the live extraction
 pipeline as a manual-verification sample: DeepL, Otter.ai, and Microsoft
