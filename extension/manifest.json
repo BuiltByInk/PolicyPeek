@@ -14,7 +14,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "policypeek@builtbyink.com",
-      "data_collection_permissions": { "required": ["none"] }
+      "data_collection_permissions": { "required": ["browsingActivity"] }
     }
   },
 

@@ -1,8 +1,8 @@
 # Decisions Needed
 
-## Open (2026-09-17, extension store-submission prep): two real blockers found, not fixable by me
+## Open (2026-09-17, extension store-submission prep): icon-assets blocker still open (data-collection disclosure resolved separately below)
 
-**1. Missing icon assets for `compliant_with_caveats`.** Fixed the popup UI's
+**Missing icon assets for `compliant_with_caveats`.** Fixed the popup UI's
 handling of this state (was completely missing from `badgeCopy.js` — see
 changelog), but `extension/icons/` has no
 `compliant_with_caveats-{16,32,48,128}.png` files at all, unlike every
@@ -13,22 +13,51 @@ tools currently in this state) — the in-popup badge will now render
 correctly, but the toolbar icon won't update. Needs real icon art (same
 solid-teal-double-border treatment as the site's badge) — this is a design
 asset I can't produce myself. Blocks a real store submission, since a
-reviewer or user would hit this immediately on those 2 tools.
+reviewer or user would hit this immediately on those 2 tools. Not
+touched this pass, per instruction.
 
-**2. Data-collection disclosure accuracy — `manifest.json`'s
-`data_collection_permissions: { required: ["none"] }` may be incorrect,
-not just incomplete.** Verified against Firefox's current builtin-consent
-docs (mandatory since Nov 2025) — the schema and syntax are correct, but
-the *content* is worth a second look: the extension transmits the hostname
-of whatever page the user is on to PolicyPeek's own backend
-(`GET /v1/lookup?domain=...`) every time the popup opens, and the full tab
-URL on an explicit "Check this site" submission. Whether that counts as
-`browsingActivity` under Mozilla's disclosure framework (even though it's
-only sent to PolicyPeek's own service, not a third party) is a real
-compliance-accuracy question, not something to guess at — a wrong "none"
-declaration risks a review rejection or later removal. Flagging for your
-call (or a quick look at Mozilla's exact definition of `browsingActivity`)
-rather than silently leaving `"none"` or silently changing it myself.
+---
+
+## Resolved (2026-09-17): data-collection disclosure fixed — `browsingActivity`, not `none`
+
+Elliot's call: the extension does send the active tab's domain to
+`api.getpolicypeek.com` on every lookup, and the full tab URL on an
+explicit submission — that's real browsing-activity transmission, so
+`manifest.json`'s Firefox disclosure should say so rather than `"none"`.
+
+- `extension/manifest.json`:
+  `browser_specific_settings.gecko.data_collection_permissions.required`
+  changed from `["none"]` to `["browsingActivity"]`. Category name and
+  spelling confirmed directly against Mozilla's current
+  extension-data-collection support documentation
+  (`extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/`),
+  which lists it exactly as: *"Browsing activity — Information about the
+  websites users visit, such as specific URLs, domains, or categories of
+  pages users view."*
+- **No accompanying description field exists in this schema** — checked
+  directly, `data_collection_permissions` only supports `required`/
+  `optional` category arrays, nothing else. The plain-language
+  explanation Elliot drafted belongs in AMO's own listing/submission
+  form fields, not `manifest.json` — kept here for whoever does the
+  actual submission:
+  > "The domain of the site you're currently on is sent to PolicyPeek's
+  > backend to check its privacy/compliance status. Used only to return
+  > a badge — not stored beyond what's needed to serve the result, not
+  > sold, not used for tracking or advertising."
+- **Chrome has no manifest-level equivalent at all** — confirmed this
+  disclosure lives entirely in the Chrome Web Store Developer
+  Dashboard's "Privacy practices" tab (a data-usage checklist + privacy
+  policy URL filled in at submission time), not any field in
+  `manifest.json`. Chrome's own policy explicitly permits browsing-activity
+  collection "to the extent required for a user-facing feature described
+  prominently in the Product's Chrome Web Store page and in the Product's
+  user interface" — so the dashboard disclosure needs to be paired with
+  listing copy that actually says this. Drafted, not committed anywhere
+  (it's store-listing copy, not code) — Elliot's sentence:
+  > "PolicyPeek checks the site you're currently on by sending its domain
+  > to our server and returning a compliance badge. No other data is
+  > collected."
+- Icon-assets blocker above is separate and still open — not touched.
 
 ---
 

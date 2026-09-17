@@ -12,6 +12,22 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (extension data-collection disclosure fixed)
+
+`extension/manifest.json`'s Firefox disclosure changed from `required:
+["none"]` to `required: ["browsingActivity"]`, per Elliot's call — the
+extension does send the active tab's domain to `api.getpolicypeek.com`
+on every lookup, and the full tab URL on submission. Category name
+confirmed against Mozilla's current docs. Schema doesn't support an
+accompanying description field (checked directly), so the plain-
+language explanation Elliot drafted is logged in `DECISIONS_NEEDED.md`
+for the actual AMO submission form instead. Chrome has no manifest
+equivalent at all — that disclosure lives in the Developer Dashboard's
+"Privacy practices" tab; a matching one-sentence store-listing draft is
+also logged there, not committed (it's listing copy, not code). Icon-
+assets blocker for `compliant_with_caveats` is untouched, still open.
+Code change only — no submission, no deploy.
+
 ## 2026-09-17 (post-launch queue, batch 1)
 
 - **Tool-card sizing fixed** (`frontend/src/pages/tools/index.astro`):
