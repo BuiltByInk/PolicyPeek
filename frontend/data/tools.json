@@ -12,6 +12,7 @@
       "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": true
   },
   {
@@ -26,6 +27,7 @@
       "https://stackblitz.com/privacy-policy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -40,6 +42,7 @@
       "https://openai.com/policies/row-privacy-policy/"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -54,6 +57,7 @@
       "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -68,6 +72,7 @@
       "https://www.copy.ai/privacy-notice"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -82,6 +87,7 @@
       "https://cursor.com/privacy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -97,6 +103,7 @@
       "https://www.deepl.com/en/terms-of-use"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -111,6 +118,7 @@
       "https://elevenlabs.io/privacy-policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -125,6 +133,7 @@
       "https://fireflies.ai/privacy-policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -139,6 +148,7 @@
       "https://support.google.com/gemini/answer/13594961"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": true
   },
   {
@@ -153,6 +163,7 @@
       "https://github.com/trust-center/privacy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -167,6 +178,7 @@
       "https://www.grammarly.com/privacy-policy-november-2024"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -181,6 +193,7 @@
       "https://docs.granola.ai/help-center/policies/privacy-policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -195,6 +208,7 @@
       "https://www.heygen.com/privacy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -209,6 +223,7 @@
       "https://ideogram.ai/legal/privacy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -223,6 +238,7 @@
       "https://www.jasper.ai/legal/privacy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -237,6 +253,7 @@
       "https://www.jetbrains.com/legal/docs/privacy/privacy/"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -251,6 +268,7 @@
       "https://kagi.com/privacy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -265,6 +283,7 @@
       "https://lumalabs.ai/legal/privacy-policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -279,6 +298,7 @@
       "https://support.microsoft.com/en-us/microsoft-copilot/privacy-faq-for-microsoft-copilot"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": true
   },
   {
@@ -293,6 +313,7 @@
       "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -307,6 +328,7 @@
       "https://www.notion.com/trust/privacy-policy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -321,6 +343,7 @@
       "https://otter.ai/privacy-policy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -335,6 +358,7 @@
       "https://www.perplexity.ai/hub/legal/privacy-notice"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -349,6 +373,7 @@
       "https://replit.com/privacy-policy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -363,6 +388,7 @@
       "https://runway.com/privacy-policy"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -377,6 +403,7 @@
       "https://sourcegraph.com/terms/cody-notice"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -391,6 +418,7 @@
       "https://stability.ai/ds-pp"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -405,6 +433,7 @@
       "https://vercel.com/legal/privacy-notice"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": true
   },
   {
@@ -420,6 +449,7 @@
       "http://web.archive.org/web/20260511113517/https://windsurf.com/terms-of-service-individual"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -434,6 +464,7 @@
       "https://you.com/privacy"
     ],
     "verified": true,
+    "auto_published": true,
     "shared_domain": false
   },
   {
@@ -448,6 +479,7 @@
       "https://www.zoom.com/en/products/ai-assistant/resources/privacy-security/"
     ],
     "verified": true,
+    "auto_published": false,
     "shared_domain": false
   }
 ]

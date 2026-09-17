@@ -12,6 +12,42 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 ("Reviewed by a human" fixed — real fix, not cosmetic)
+
+Fixed the data-accuracy bug found during the UI polish pass: the tool
+detail page's "Reviewed by a human" field now reads `tools.auto_published`
+(inverted), not `tools.verified`.
+
+Turned out smaller than expected — `auto_published` already existed as a
+column and `admin.ts`'s write paths were already setting it correctly on
+both the human-approval and auto-publish paths, so **no migration and no
+backend code change were needed**. The actual gap was just that the field
+was never exposed past the backend: added it to the `Tool` type, the
+`generate-tools-json.mjs` SELECT/output, regenerated `tools.json` (diffed
+first — confirmed the only change is the new field appearing per row,
+nothing else moved), and switched `[domain].astro`'s display field.
+
+Checked `verified`'s other uses before touching anything, per instruction:
+it's load-bearing elsewhere (the monthly recheck cron's "which rows are
+published" query, and the public `/v1/lookup` API response) — left
+completely alone, only the frontend display changed.
+
+Backfill: not needed. Cross-checked all 32 currently-published tools'
+`auto_published` values against this project's own documented history
+(which mechanism published each one, and when) — every single row already
+matches. No guessing, no "unreviewed" fallback needed. One nuance flagged
+rather than smoothed over: Sourcegraph Cody shows `auto_published: true`
+(it went through the Tier-A pipeline) even though Elliot had separately
+reviewed the underlying research by hand first — the field answers a
+narrower, different question ("did this reach `tools` via the automatic
+path") than "did a human look at any part of this," which is an inherent
+limit of a single boolean, not a bug.
+
+Security review: `security/review-2026-09-17-auto-published-field.md`, 0
+findings — no write path, endpoint, or auth code touched, this was a
+read-path display fix only. Verdicts untouched throughout, as instructed.
+Full cross-check table in `DECISIONS_NEEDED.md`.
+
 ## 2026-09-17 (UI polish pass — audit and fix)
 
 Audited spacing/alignment, typography, color-token usage, responsive

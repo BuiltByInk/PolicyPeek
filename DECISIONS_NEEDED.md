@@ -1,5 +1,76 @@
 # Decisions Needed
 
+## Resolved (2026-09-17): "Reviewed by a human" field now reads off `auto_published`, not `verified`
+
+Closes the entry below. Turned out narrower than it looked: `auto_published`
+already existed as a real column (`schema.sql`: `INTEGER NOT NULL DEFAULT 0
+CHECK (auto_published IN (0, 1))`), and `admin.ts`'s two write paths were
+already setting it correctly — `approvePendingCheck` (the human `/approve`
+endpoint) has exactly one caller, always passing `{ autoPublished: false }`;
+`tryAutoPublishAtomic` hardcodes `auto_published = 1` on both its `INSERT`
+and `UPDATE` branches. **No migration and no `admin.ts` change were needed
+this pass** — the gap was purely that the field was never exposed past the
+backend.
+
+**Repo-wide check on `verified` before touching anything**, per
+instruction: it's read in two other places —
+`backend/src/cron.ts:52` (`SELECT ... FROM tools WHERE verified = 1`, the
+monthly-recheck cron's query for "which rows are live published tools") and
+`backend/src/lookup.ts:109` (exposed as-is in the public `GET /v1/lookup`
+API response). Neither is about human review — `verified` genuinely means
+"this is a real published row," a different, still-needed concept.
+**Not removed, not repurposed** — left exactly as-is, only the frontend
+display now points at the right field.
+
+**Backfill: not needed, not guessed.** Rather than assume the original
+bulk-run tools were unreconstructable, queried real D1 directly for all 32
+current rows' `auto_published` values and cross-checked every single one
+against this project's own `changelog.md`/`DECISIONS_NEEDED.md` history
+(which mechanism published it, and when):
+
+| Tools | `auto_published` | Matches documented history? |
+|---|---|---|
+| JetBrains AI Assistant, Ideogram, Luma AI (Dream Machine), Fireflies.ai, You.com, Granola, Kagi, v0 | `true` | Yes — 2026-08-17 seed batch, auto-published before the 08-18 `compliant_with_caveats` ruling existed |
+| Bolt.new, HeyGen | `false` | Yes — approved via the real admin endpoint, Phase 2.5h (09-07) |
+| Amazon Q Developer, DeepL, Windsurf | `false` | Yes — required human attention (shared-domain call / unresolved facts) |
+| Claude, Cursor, ChatGPT, ElevenLabs, Gemini, Grammarly, Microsoft Copilot, Midjourney, Notion AI, Perplexity AI | `true` | Yes — the documented "10 auto-published (Tier A)" list from Phase 2's bulk run, verbatim |
+| Copy.ai, GitHub Copilot, Jasper, Otter.ai, Replit AI, Runway, Stability AI (DreamStudio), Zoom AI Companion | `false` | Yes — the 8 tools Elliot approved 2026-09-03 |
+| Sourcegraph Cody | `true` | Yes, but with a caveat — see below |
+
+Every one of the 32 currently-published rows checks out. **No row needed
+the "unreviewed" safe-default fallback** — there's no gap between what
+exists in real D1 today and what the documented history says should be
+there.
+
+**One genuine nuance, not a discrepancy — flagging rather than smoothing
+over**: Sourcegraph Cody shows `auto_published: true` (it went through the
+Tier-A pipeline path on 2026-09-06, per that day's own changelog entry:
+*"Clean facts, no null critical fact, brand-new domain → Tier A,
+auto-published without needing a manual approval step"*). But Elliot had
+separately reviewed `research/sourcegraph_cody_followup.md` by hand and
+approved publishing *before* that submission ran. So "Reviewed by a human:
+No — auto-published" is mechanically accurate (a human didn't click
+approve on this specific row through the admin endpoint) but slightly
+undersells that Elliot did personally review the underlying research for
+this one. Not treating this as a bug to fix — `auto_published` correctly
+answers "did this reach `tools` via the automatic path," which is a
+narrower, different question than "did any human look at any part of
+this," and that's an inherent limit of what a single boolean can express.
+
+**What actually shipped**: `frontend/src/types.ts` (new `auto_published`
+field on `Tool`, doc comments on both fields), `scripts/generate-tools-
+json.mjs` (added to the `SELECT`/output), `frontend/data/tools.json`
+(regenerated — diffed first, confirmed the *only* change is the new field
+appearing on every row, nothing else moved), `frontend/src/pages/tools/
+[domain].astro` (reads `auto_published` inverted: `"No — auto-published"`
+vs `"Yes"`, replacing the old `"Yes"`/`"Not yet"` wording that implied
+review was merely pending rather than never happening). Security review:
+`security/review-2026-09-17-auto-published-field.md`, 0 findings — no
+write path or auth-adjacent code touched. Verdicts untouched, as
+instructed.
+
+---
+
 ## Open (2026-09-17, UI polish pass): "Reviewed by a human" field can read "Yes" for a tool no human reviewed
 
 Found during a CSS/UI audit, but it's a data-accuracy issue, not a style
