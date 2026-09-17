@@ -19,7 +19,7 @@
     "domain": "bolt.new",
     "compliance_status": "compliant_with_caveats",
     "summary": "We may use AI Inputs and AI Outputs to operate, maintain, and improve the Services, including improving AI performance, reliability, and safety. Such use shall be on aggregated, anonymized, or de-identified data.",
-    "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days subject to backup retention and legal obligations. Residual copies may persist in backups/logs for limited period.",
+    "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days (subject to backups, legal obligations, security requirements). Residual copies may persist in backups/logs for limited period.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
