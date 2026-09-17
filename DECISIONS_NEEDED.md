@@ -257,6 +257,8 @@ approval path.
 
 ---
 
+## Ruled (2026-09-13, Phase 2.5j) — see the "Blocked on you" entry near the top of this file: Elliot has now ruled `opt_out_available` is `false` for all three (verdicts computed as `not_compliant`), blocked only on a real-D1 write. Original evidence writeup kept below for reference.
+
 ## Open: Ideogram, Luma AI, and JetBrains AI Assistant — opt-out fact isn't about AI training, awaiting Elliot's call
 
 Presenting evidence only, same as the Sourcegraph Cody writeup — not
@@ -821,6 +823,10 @@ Perplexity AI — a real fact disagreement. Options still on the table: publish
 as `unrated` (trust the fresh extraction), keep the old `compliant` rating
 (trust the original, more-thorough-at-the-time sourcing), or have Research
 look at the live page directly before deciding. No default was applied.
+
+## Resolved (superseded by 2026-09-03 and 2026-09-06 activity): all 9 queued tools below are now resolved — see changelog.md
+
+8 of the 9 approved 2026-09-03 (Copy.ai, GitHub Copilot, Jasper, Otter.ai, Replit AI, Runway, Stability AI, Zoom AI Companion); Sourcegraph Cody published `compliant` separately on 2026-09-06 (see that entry above). Confirmed all 9 present in `tools.json` with the approved verdicts as of the 2026-09-13 audit. Task 3 (security review) and the real-D1 migration mentioned below also both completed 2026-09-06 (see "Resolved (2026-09-06): Phase 2's Task 1 (real D1) and Task 3 (security review) both complete" above). Original writeup kept below for the record.
 
 ## Open (2026-09-01): Phase 2 bulk run complete — 9 tools await your manual approval, 1 fact discrepancy logged, security review still pending
 
