@@ -68,6 +68,14 @@ with this list, `rules.ts` is the source of truth, fix the doc:
 finishes a milestone. Read access everywhere, write access only to docs
 files.
 
+**Manager Agent (added 2026-09-13, orchestration only):** queues and
+sequences work across the five agents above for a batch backlog run —
+never writes code or touches D1/Wrangler itself, and inherits every
+restriction already defined here plus each subagent's own tool scoping.
+Reserve escalation the same way the five agents do (see "Escalation
+Rules" below); a security finding mid-run is a stop, not a note for
+later. See `.claude/agents/manager.md`.
+
 ---
 
 ## Business Model & ICP (decided 2026-08-15)

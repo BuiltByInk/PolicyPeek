@@ -12,6 +12,130 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-13 (Phase 2.5j)
+
+- **JetBrains AI Assistant / Ideogram / Luma AI opt-out correction —
+  computed, blocked on a real-D1 write.** Elliot ruled that none of the
+  three tools' quoted opt-out clauses actually govern AI training.
+  `computeVerdict()` applied by hand with `opt_out_available: false`
+  (needs no D1 access, all three already have `trains_on_user_data:
+  true`): all three resolve to `not_compliant`. Persisting the correction
+  itself needs a `wrangler d1 execute --remote` write against real D1's
+  `pending_checks` rows (#4/#5/#6) — exact `UPDATE` command logged in
+  `DECISIONS_NEEDED.md` for Elliot to run himself; does not auto-publish,
+  still needs the normal admin-approval step after.
+- **Adobe Firefly — new evidence, not resolved.** Strategy (a) (try a
+  Firefly/Adobe-specific URL): `helpx.adobe.com` pages 403'd,
+  `business.adobe.com`'s existing candidate still times out, but
+  `adobe.com/privacy/policy.html` — the exact URL previously diagnosed as
+  hanging indefinitely — loaded via a different fetch path and contains
+  on-point opt-in/off-by-default language. Not treated as fixed: different
+  fetch infra than the backend's actual pipeline, and it's Adobe's
+  umbrella privacy policy, not Firefly-specific (a `shared_domain_
+  unverified` candidate). Strategy (b) (archive.today) attempted
+  separately — the archive.ph domain is unreachable via available tooling
+  entirely, unrelated to Adobe's own blocking.
+- **Legacy 9-tool backlog closed as "not migrating"**, per Elliot's
+  ruling — re-submit fresh via `POST /v1/check` if any get prioritized
+  later, rather than reviving 3-4-week-old `extracted_facts`.
+- **Two stale `DECISIONS_NEEDED.md` entries annotated** as
+  resolved/superseded (the Ideogram/Luma/JetBrains "awaiting Elliot's
+  call" entry, now ruled on above; the "9 tools await approval" entry from
+  2026-09-01, all 9 resolved by 09-03/09-06).
+- **`.claude/agents/`**: added `manager.md` to orchestrate `backend`/
+  `frontend`/`security`/`research`/`docs` through a queued backlog run.
+  Tightened the other five to minimum-necessary tools (backend →
+  Read/Edit/Bash, frontend → Read/Edit, docs → Read/Edit scoped by
+  instruction to `CLAUDE.md`/`changelog.md`/`DECISIONS_NEEDED.md`,
+  security's `Bash` restricted to the concurrency harness only, research
+  keeps its full set since it still authors new `research/*.md` docs).
+  Flagged rather than assumed: no `.claude/settings.json` or hooks exist
+  in this repo, so deny-list/tool-scope enforcement here is still
+  instruction-only, same as `CLAUDE.md`'s existing org-chart model.
+
+## 2026-09-13 (Phase 2.5i)
+
+- **Full read-only state audit** run against the repo (decisions backlog,
+  tool-verdict drift, schema gap, temp API key status, rate-limit
+  bucketing, deploy readiness, general repo health) — see
+  `security/review-2026-09-13-phase2.5i.md` and the corresponding
+  `DECISIONS_NEEDED.md` entries for detail.
+- **Fixed a live `tools.json` drift**: Bolt.new and HeyGen were approved
+  `compliant` → `compliant_with_caveats` in real D1 back in Phase 2.5h,
+  but `tools.json` (what the site actually serves) was never regenerated
+  after that approval — hand-patched both rows to match.
+- **Added the `opt_out_available` column** to `tools` in `backend/
+  schema.sql`; wired it through `admin.ts`'s real write paths and
+  `autoPublish.ts` so the fact is persisted at publish time instead of
+  only living in-memory / in the `pending_checks` JSON blob. Migration +
+  backfill SQL written and verified against local D1 fixtures — the real-
+  D1 migration itself is still pending Elliot (`wrangler d1 execute
+  --remote`, exact command in `DECISIONS_NEEDED.md`).
+- **Investigated Copilot's two open data issues** (missing D1 row,
+  fact-provenance mismatch) — both turned out already resolved as side
+  effects of earlier work; no code fix needed, docs corrected instead.
+- **Drafted accurate `/about` + homepage copy** — both currently claim
+  100% human review, no longer true since three-tier auto-publish
+  shipped. Not shipped; sitting in `DECISIONS_NEEDED.md` awaiting Elliot's
+  sign-off.
+- **Adobe Firefly**: 3 next strategies surfaced, none picked. **Legacy
+  backlog count corrected**: the true count is 9 tools, not the
+  documented 17 or an earlier audit's 12 (3 of those 12 turned out to be
+  post-Phase-2 rows already published elsewhere).
+- **Placeholder production domain swapped**: `policypeek.example` →
+  `getpolicypeek.com` in `astro.config.mjs`/`robots.txt` (domain confirmed
+  by Elliot), verified in the actual built `sitemap-index.xml`.
+- **Scoped security review** of everything touched this pass: 0 High/
+  Medium/Low, 7 Informational findings.
+
+## 2026-09-07 (Phase 2.5g – 2.5h)
+
+- **Phase 2.5g: `tools.json` regenerated from real D1.** New script,
+  `scripts/generate-tools-json.mjs` (reads every `tools` row via
+  `wrangler d1 execute --remote`, converts D1's storage shapes, writes a
+  reviewable `tools.generated.json` rather than overwriting the real file
+  directly). Found **15** drifted tools, not the 6 originally scoped: 6
+  verdict-relevant (ChatGPT, ElevenLabs, Grammarly, Perplexity AI,
+  Midjourney, Sourcegraph Cody) and 9 more found only by diffing the full
+  fact set (`summary`/`data_retention`/`gdpr_mentioned`, which the prior
+  consistency audit never compared) — Claude, Copy.ai, Cursor, GitHub
+  Copilot, Gemini, Microsoft Copilot, Replit AI, Stability AI, Zoom AI
+  Companion. Elliot approved syncing all 15 in one pass. Verified via
+  direct D1 re-query (not just trusted from the diff) and an `astro
+  build` + spot-checked HTML output.
+- **Phase 2.5h: rechecked the 3 "straightforward" pre-ruling tools before
+  approving**, per instruction not to assume. Bolt.new and HeyGen held
+  up — explicit, on-point opt-out language confirmed directly against
+  their live pages — approved `compliant` → `compliant_with_caveats` via
+  the real admin endpoint against real D1. **JetBrains AI Assistant did
+  not hold up**: its cited "Section 5, Transparency" opt-out mechanism
+  doesn't actually exist on the page — same shape of problem as Ideogram
+  and Luma AI. Moved to open rather than approved.
+
+## 2026-09-06 (Phase 2.5f)
+
+- **Cloudflare account's `workers.dev` subdomain confirmed**
+  (`elliotink.workers.dev` — already existed, nothing new registered).
+  Unblocks `wrangler dev --remote` against real D1 without a deploy.
+  Explicit boundary, logged in `CLAUDE.md`: does **not** authorize
+  `wrangler deploy`/`wrangler publish`, which stay on the deny list.
+- **Sourcegraph Cody published `compliant`** (`trains_on_user_data:
+  false`, fresh source URL `cody-notice`) — closes the 2026-09-01/09-03
+  fact-discrepancy flag. `tools.json` sync for this one landed the
+  following day (Phase 2.5g).
+- **5 pre-ruling tools individually rechecked** (Bolt.new, HeyGen,
+  Ideogram, JetBrains AI Assistant, Luma AI) — all correctly queued, none
+  auto-published, since each one's recomputed verdict
+  (`compliant_with_caveats`) differs from its existing `compliant` status
+  and `evaluateAutoPublish` queues any recheck that flips a verdict, no
+  exception for "just a rules-version correction." Flagged that Ideogram's
+  and Luma AI's `opt_out_available: true` facts don't actually look
+  training-specific on inspection — a heads-up for whoever approves these,
+  not a re-judgment (this held up: both were later corrected to `false` in
+  Phase 2.5j above).
+
+---
+
 ## 2026-09-06 (Phase 2.5c)
 
 - **Low finding fixed: duplicate compliance_changelog rows on concurrent
