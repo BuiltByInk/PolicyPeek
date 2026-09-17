@@ -35,7 +35,7 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
               {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
             </p>
           ) : (
-            tool.summary && <p class="reason">{tool.summary}</p>
+            <p class="reason">{tool.summary || "No summary available for this tool yet."}</p>
           )}
         </a>
       </li>
@@ -78,6 +78,19 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
     color: var(--muted);
     font-family: var(--font-body);
     font-size: 0.88rem;
+    line-height: 1.35;
+    /* Fixed to a 3-line slot, present on every card (even the one tool with
+       no summary, which now gets a fallback string above) -- summary length
+       in tools.json ranges from ~64 to ~310 characters, which was the main
+       driver of visibly inconsistent card heights across grid rows. Clamps
+       long text with an ellipsis and reserves the same space for short
+       text via min-height, so every card in the grid ends up the same
+       height regardless of content length. Grid columns/reflow untouched. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.35em * 3);
   }
   .reason.shared-domain-note {
     color: var(--amber-fg);

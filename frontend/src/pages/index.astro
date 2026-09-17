@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SubmitTool from "../components/SubmitTool.astro";
 import type { Tool } from "../types";
 import toolsData from "../../data/tools.json";
 
@@ -40,6 +41,8 @@ const notCompliantCount = tools.filter((t) => t.compliance_status === "not_compl
     </ol>
     <a href="/about">Read the full methodology →</a>
   </section>
+
+  <SubmitTool />
 </Layout>
 
 <style>
