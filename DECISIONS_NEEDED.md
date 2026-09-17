@@ -1,5 +1,37 @@
 # Decisions Needed
 
+## Open (2026-09-17, extension store-submission prep): two real blockers found, not fixable by me
+
+**1. Missing icon assets for `compliant_with_caveats`.** Fixed the popup UI's
+handling of this state (was completely missing from `badgeCopy.js` — see
+changelog), but `extension/icons/` has no
+`compliant_with_caveats-{16,32,48,128}.png` files at all, unlike every
+other verdict state. `chrome.action.setIcon`/`setTitle` will fail
+(silently, per Chrome's own behavior on a bad icon path) for the toolbar
+icon specifically whenever the popup is open on Bolt.new or HeyGen (the 2
+tools currently in this state) — the in-popup badge will now render
+correctly, but the toolbar icon won't update. Needs real icon art (same
+solid-teal-double-border treatment as the site's badge) — this is a design
+asset I can't produce myself. Blocks a real store submission, since a
+reviewer or user would hit this immediately on those 2 tools.
+
+**2. Data-collection disclosure accuracy — `manifest.json`'s
+`data_collection_permissions: { required: ["none"] }` may be incorrect,
+not just incomplete.** Verified against Firefox's current builtin-consent
+docs (mandatory since Nov 2025) — the schema and syntax are correct, but
+the *content* is worth a second look: the extension transmits the hostname
+of whatever page the user is on to PolicyPeek's own backend
+(`GET /v1/lookup?domain=...`) every time the popup opens, and the full tab
+URL on an explicit "Check this site" submission. Whether that counts as
+`browsingActivity` under Mozilla's disclosure framework (even though it's
+only sent to PolicyPeek's own service, not a third party) is a real
+compliance-accuracy question, not something to guess at — a wrong "none"
+declaration risks a review rejection or later removal. Flagging for your
+call (or a quick look at Mozilla's exact definition of `browsingActivity`)
+rather than silently leaving `"none"` or silently changing it myself.
+
+---
+
 ## Open (2026-09-17, post-launch): domain/policy-link validator too strict on subdomains
 
 Submitting `midjourney.com` with policy link `docs.midjourney.com/hc/...`

@@ -12,6 +12,50 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (post-launch queue, batch 1)
+
+- **Tool-card sizing fixed** (`frontend/src/pages/tools/index.astro`):
+  summary length varies ~64-310 chars across 31/32 tools with no
+  clamping, and the one tool with no summary (Zoom AI Companion) skipped
+  the `.reason` paragraph entirely — main driver of visibly inconsistent
+  card heights across grid rows. Fixed by always rendering the paragraph
+  (fallback text for the no-summary case) and clamping it to a fixed
+  3-line slot. Grid columns/mobile reflow untouched.
+- **Tool submission added to the landing page**
+  (`frontend/src/pages/index.astro`): `<SubmitTool />` was only ever used
+  on `/tools`, buried behind a nav click. Added as a new section after
+  "How a rating gets made," reusing the component bare exactly as it's
+  already used elsewhere — no new styling introduced.
+- **Landing page copy reviewed, not rewritten** (proposals held pending
+  Elliot's sign-off): flagged that "a human reviews it before it's
+  published" is the same known-stale claim already open in
+  `DECISIONS_NEEDED.md` since Phase 2.5i; also flagged the H1's dangling
+  "it" pronoun, the lede's self-referential "this tool" ambiguity, and
+  the terse "No Opt-Out" stat label.
+- **Extension: fixed two real bugs found during store-submission
+  research** — `config.js`/`manifest.json` still pointed at
+  `http://localhost:8787` (now `https://api.getpolicypeek.com`, matching
+  the Phase 3 launch), and `badgeCopy.js` had no entry at all for
+  `compliant_with_caveats` (the actual current status of 2 published
+  tools, Bolt.new and HeyGen) — added the missing badge-copy entry and a
+  ported `.badge.caveat`/`.badge.double` CSS treatment. Toolbar icon
+  assets for this state still don't exist — logged in
+  `DECISIONS_NEEDED.md`, needs real icon art, not fixable here.
+- **Extension store-submission checklist produced** (sent separately,
+  not committed to the repo) — covers Chrome Web Store ($5 one-time fee,
+  2FA requirement, listing assets, permissions justification) and
+  Firefox AMO (mandatory data-collection manifest disclosure since Nov
+  2025 — already present and syntactically correct, but its accuracy is
+  now an open question, see `DECISIONS_NEEDED.md`). No submission
+  attempted — research and fixes only, per instruction.
+- **Several "next up" queue items turned out already done or
+  mis-stated** — see the DECISIONS_NEEDED.md-adjacent Telegram report
+  for the full correction: the `opt_out_available` schema gap and the
+  `tools.json` D1-sync were both completed the same day as launch, and
+  the actual current blocker for the 3 remaining pre-ruling tools
+  (Ideogram/JetBrains/Luma AI) is the admin token, not the Phase 2.5f
+  temp API key.
+
 ## 2026-09-17 (Phase 3 launch complete)
 
 `getpolicypeek.com` (Cloudflare Pages) and `api.getpolicypeek.com`
