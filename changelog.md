@@ -12,6 +12,23 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (compliant_with_caveats icon set — stopgap)
+
+Generated `extension/icons/compliant_with_caveats-{16,32,48,128}.png`,
+the last missing verdict-state icon set. No SVG rasterizer available
+anywhere in this environment or the project's toolchain, so these were
+hand-encoded directly with a one-off Python script (stdlib only —
+`zlib`/`struct`, not committed) rather than add a new dependency.
+Design: a solid teal disc with two thin concentric ring lines around it
+(`--caveat-fg` `#12586f`, matching how the other icons already use
+their light-theme `-fg` value as solid fill), porting Badge.astro's
+double-border treatment into the same flat single-hue silhouette style
+as every other icon in the set. Visually inspected all 4 sizes before
+committing. **Stopgap, not final branding** — Elliot may replace with
+real design work later; `badgeCopy.js`'s `iconPathsFor` just resolves a
+state name to a file path, so that's a drop-in swap whenever it
+happens. Full reasoning in `DECISIONS_NEEDED.md`.
+
 ## 2026-09-17 (extension data-collection disclosure fixed)
 
 `extension/manifest.json`'s Firefox disclosure changed from `required:

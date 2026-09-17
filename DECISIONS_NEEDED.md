@@ -1,20 +1,38 @@
 # Decisions Needed
 
-## Open (2026-09-17, extension store-submission prep): icon-assets blocker still open (data-collection disclosure resolved separately below)
+## Resolved, stopgap only (2026-09-17): `compliant_with_caveats` icon set generated programmatically
 
-**Missing icon assets for `compliant_with_caveats`.** Fixed the popup UI's
-handling of this state (was completely missing from `badgeCopy.js` — see
-changelog), but `extension/icons/` has no
-`compliant_with_caveats-{16,32,48,128}.png` files at all, unlike every
-other verdict state. `chrome.action.setIcon`/`setTitle` will fail
-(silently, per Chrome's own behavior on a bad icon path) for the toolbar
-icon specifically whenever the popup is open on Bolt.new or HeyGen (the 2
-tools currently in this state) — the in-popup badge will now render
-correctly, but the toolbar icon won't update. Needs real icon art (same
-solid-teal-double-border treatment as the site's badge) — this is a design
-asset I can't produce myself. Blocks a real store submission, since a
-reviewer or user would hit this immediately on those 2 tools. Not
-touched this pass, per instruction.
+Elliot asked for this to be built even without real design tooling
+available. No SVG-to-PNG rasterizer exists anywhere in this environment
+or the project's dependency tree (checked: no `rsvg-convert`,
+`imagemagick`, `cairosvg`, `PIL`, no `sharp`/equivalent in
+`node_modules`) — rather than add a new dependency, hand-encoded the 4
+PNGs directly with a one-off Python script using only the standard
+library (`zlib`/`struct` for raw PNG chunk encoding, `8x8` supersampling
+for anti-aliased edges). Script itself was not committed (a throwaway
+generation tool, not project code).
+
+Design: a filled center disc + two thin concentric ring lines around
+it, all in `--caveat-fg` (`#12586f`, the same light-theme value the
+other extension icons already use as their solid-fill color, e.g.
+green-fg `#1e7a34` for `compliant`) — porting Badge.astro's solid-teal-
+double-border treatment into a flat single-hue icon silhouette,
+consistent with every other icon in the set being a plain shape on a
+transparent ground (no two-tone background fill introduced). Outer
+diameter matches the existing solid dots' proportions. Visually
+inspected all 4 sizes directly (16/32/48/128) before committing — the
+double-ring separation is honestly a bit soft at 16px (any two
+sub-1px-wide bands would be at real-world icon scale), but it's clearly
+distinguishable from both the plain solid dot (`compliant`) and the
+single hollow ring (`shared_domain_unverified`) at every size, which is
+the actual thing that matters for at-a-glance recognition in a toolbar.
+
+**This is a stopgap, not final branding.** Programmatically-generated
+geometric shapes, not designed art — Elliot may replace with real
+design work later without needing to touch any code (`iconPathsFor` in
+`badgeCopy.js` just resolves a state name to a file path, so swapping
+in better-designed PNGs at the same 4 filenames is a drop-in
+replacement).
 
 ---
 
