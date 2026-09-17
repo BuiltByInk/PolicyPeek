@@ -63,7 +63,13 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
     color: var(--fg);
     height: 100%;
   }
-  .tool-card a:hover { background: var(--panel); }
+  .tool-card a:hover,
+  .tool-card a:focus-visible {
+    background: var(--panel);
+  }
+  /* Negative offset so the ring sits inside the card rather than getting
+     visually clipped by the 1px grid gap between cards. */
+  .tool-card a:focus-visible { outline: 2px solid var(--id); outline-offset: -2px; }
   .tool-card-head {
     display: flex;
     align-items: flex-start;

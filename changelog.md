@@ -12,6 +12,59 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (UI polish pass — audit and fix)
+
+Audited spacing/alignment, typography, color-token usage, responsive
+behavior, and hover/focus/active states across every page and
+component. **Caveat on the responsive check specifically**: no
+browser/screenshot tool is available in this environment (no
+chromium-cli, no connected browser-automation MCP) — that check was
+done by reasoning through the actual CSS (breakpoints, grid
+`minmax`/`auto-fit`/`auto-fill` values against real viewport widths),
+not by looking at a rendered screenshot. Flagging that distinction
+rather than claiming visual confirmation that didn't happen; found no
+likely breakage this way, but it's a lower-confidence result than the
+others below.
+
+Found and fixed:
+- **No link on the entire site had a `:focus-visible` style** — only
+  `SubmitTool.astro`'s inputs/button did (an existing `--id`-colored
+  outline convention). Added a global `a:focus-visible` rule in
+  `Layout.astro` extending that same convention to every link — nav,
+  the homepage CTA, tool cards, source links, the "back" link.
+- **Tool cards had a `:hover` background swap but no keyboard-focus
+  equivalent** — added `:focus-visible` alongside `:hover` with a
+  matching background, plus a negative outline-offset so the ring sits
+  inside the card instead of getting clipped by the 1px grid gap.
+- **The homepage's primary CTA button (`.cta`) had zero hover/focus
+  feedback** — the single most prominent interactive element on the
+  site. Added an invert-on-hover/focus treatment using the two colors
+  already on the element (no new color introduced).
+- **`SubmitTool.astro`'s submit button had the identical color
+  treatment as `.cta` but no hover state either** — added the same
+  invert treatment for consistency between the two (they're already
+  visually the same button style, just duplicated in two files).
+
+Found, not fixed (logged to `DECISIONS_NEEDED.md` instead — a data/copy
+decision, not a style one): `[domain].astro`'s "Reviewed by a human"
+field is driven by `tools.verified`, which `admin.ts` sets to `1` on
+**both** the human-approval path and the fully-automatic Tier-A
+auto-publish path — so it can show "Yes" for a tool no human actually
+reviewed. Same underlying inaccuracy as the already-open `/about`/
+homepage copy item, but a literal per-tool fact field, not just prose.
+
+Not changed (no concrete inconsistency found, or a judgment call
+outside this pass's scope): heading-size variance between the
+homepage's hero `h1` (a responsive `clamp()`) and other pages' plain
+unstyled `h1` reads as intentional hero-vs-inner-page treatment, not an
+oversight — noted, not touched. `:active` states are absent
+site-wide, but there's no existing convention to extend (unlike
+`:focus-visible`), so adding one would be a new interaction pattern,
+not a fix to an inconsistency — left alone.
+
+35-page build clean; `focus-visible`/hover rules spot-checked directly
+in the built HTML output.
+
 ## 2026-09-17 (compliant_with_caveats icon set — stopgap)
 
 Generated `extension/icons/compliant_with_caveats-{16,32,48,128}.png`,

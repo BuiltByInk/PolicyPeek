@@ -91,6 +91,13 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
     height: fit-content;
   }
   button:disabled { opacity: 0.6; cursor: default; }
+  /* Same invert-on-hover treatment as the homepage .cta button -- these two
+     already share the exact same fg/bg/border colors, just had no hover
+     state defined here. */
+  button:hover:not(:disabled) {
+    background: var(--bg);
+    color: var(--fg);
+  }
   button:focus-visible { outline: 2px solid var(--id); outline-offset: 2px; }
   #submit-status {
     margin: 0;

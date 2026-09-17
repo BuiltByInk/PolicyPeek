@@ -1,5 +1,37 @@
 # Decisions Needed
 
+## Open (2026-09-17, UI polish pass): "Reviewed by a human" field can read "Yes" for a tool no human reviewed
+
+Found during a CSS/UI audit, but it's a data-accuracy issue, not a style
+one — not touched, logging instead since it overlaps with the already-open
+`/about` + homepage copy item above.
+
+`frontend/src/pages/tools/[domain].astro` shows a `Reviewed by a human:
+Yes / Not yet` row on every tool's detail page, driven by `tool.verified`.
+Checked `backend/src/admin.ts` directly: `verified` is hard-coded to the
+literal `1` in **both** `approvePendingCheck` (the human `/approve` path)
+**and** `tryAutoPublishAtomic` (the fully automatic Tier-A path) — both the
+brand-new-domain `INSERT` and the existing-domain `UPDATE` branches of the
+auto-publish path set `verified = 1` unconditionally. So this field can't
+actually distinguish "a human looked at this" from "the pipeline
+auto-published it because the facts were clean" — the exact same
+inaccuracy already flagged for `/about`'s and the homepage's prose, but
+here it's a literal Yes/No fact field on every single tool page, not just
+copy tone.
+
+Given the original Phase 2 bulk run alone auto-published 10 tools (Tier A:
+"clean, deterministic facts"), there are very likely several published
+tools right now showing "Reviewed by a human: Yes" that no human actually
+reviewed. Whether the fix is a new column tracking real human review
+distinctly from `verified`/`auto_published`, or just changing this
+specific label to read off `auto_published` instead (`auto_published:
+false` → "Reviewed by a human: Yes", `auto_published: true` → "Published
+automatically — clean, deterministic facts" or similar) is a real design
+decision + likely a small schema/copy change, not something to guess at
+alongside a CSS audit.
+
+---
+
 ## Resolved, stopgap only (2026-09-17): `compliant_with_caveats` icon set generated programmatically
 
 Elliot asked for this to be built even without real design tooling

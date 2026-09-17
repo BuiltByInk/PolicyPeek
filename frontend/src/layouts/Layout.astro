@@ -133,6 +133,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         letter-spacing: 0.06em;
       }
       nav.site a:hover { color: var(--id); }
+      /* Global focus-visible for links -- SubmitTool.astro's inputs/button
+         already use this exact --id outline treatment; no anchor tag
+         anywhere had an equivalent, so every link on the site fell back to
+         the plain browser-default ring. Extends the existing convention
+         site-wide rather than introducing a new one. */
+      a:focus-visible {
+        outline: 2px solid var(--id);
+        outline-offset: 2px;
+      }
       main { padding: 2rem 0 3rem; }
       footer.site {
         border-top: 3px solid var(--line);

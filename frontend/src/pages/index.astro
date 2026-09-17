@@ -78,6 +78,14 @@ const notCompliantCount = tools.filter((t) => t.compliance_status === "not_compl
     font-weight: 700;
     font-size: 0.9rem;
   }
+  /* Was the site's most prominent interactive element with zero hover/focus
+     feedback -- invert using the same two tokens already on the element,
+     no new color introduced. */
+  .cta:hover,
+  .cta:focus-visible {
+    background: var(--bg);
+    color: var(--fg);
+  }
   .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
