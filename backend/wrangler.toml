@@ -2,6 +2,18 @@ name = "policypeek-backend"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
 
+# Phase 3 domain prep (2026-09-17, config only -- not deployed). Custom
+# Domains auto-provision TLS and route without touching DNS records
+# directly, unlike a zone-based `{ pattern, zone_name }` route -- the
+# right shape here since this Worker doesn't own the getpolicypeek.com
+# zone's other records (the frontend/Pages side does). Verified against
+# https://developers.cloudflare.com/workers/wrangler/configuration/
+# current syntax rather than assumed. Takes effect only on the next
+# `wrangler deploy`, which is out of scope for this pass.
+[[routes]]
+pattern = "api.getpolicypeek.com"
+custom_domain = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "policypeek-db"

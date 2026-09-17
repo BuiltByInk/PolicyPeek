@@ -1,0 +1,12 @@
+name = "policypeek-frontend"
+pages_build_output_dir = "./dist"
+compatibility_date = "2024-11-01"
+
+# Phase 3 domain prep (2026-09-17, config only -- not deployed). This is
+# the Pages-project counterpart to backend/wrangler.toml's routes config.
+# Per current Cloudflare Pages docs, custom domains are NOT configurable
+# via this file -- they're set on the dashboard, after the Pages project
+# itself exists (which requires an initial deploy/connection, out of
+# scope for this pass). Once deployed, add getpolicypeek.com as this
+# project's custom domain via the Cloudflare dashboard.
+# https://developers.cloudflare.com/pages/functions/wrangler-configuration/

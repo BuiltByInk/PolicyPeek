@@ -12,6 +12,47 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (Phase 3 prep — domain wiring, config only, no deploy)
+
+Target shape decided by Elliot: `getpolicypeek.com` (frontend, Cloudflare
+Pages) + `api.getpolicypeek.com` (backend Worker).
+
+- **`backend/wrangler.toml`**: added a Worker Custom Domain route for
+  `api.getpolicypeek.com` (`[[routes]]` with `custom_domain = true`, not
+  a zone-based `{ pattern, zone_name }` route — the right shape since
+  this Worker doesn't own the rest of the zone's DNS records). Verified
+  against current Cloudflare docs rather than assumed. Inert until the
+  next `wrangler deploy`, not run this pass.
+- **`frontend/wrangler.toml`** (new file): added the Pages-project
+  counterpart — `pages_build_output_dir = "./dist"`. Named the project
+  `policypeek-frontend` for symmetry with `policypeek-backend` (a naming
+  choice, not a constraint — trivially renamable later). Per current
+  Cloudflare Pages docs, a Pages custom domain is **dashboard-only**,
+  not configurable via `wrangler.toml` at all, and can't be set before
+  the Pages project exists (i.e. before a first deploy/connection) — so
+  `getpolicypeek.com` itself isn't wired here, just documented in a
+  comment for whoever deploys.
+- **`PUBLIC_API_BASE_URL` — blocked, not wired.** `SubmitTool.astro` is
+  the only place in the repo that reads it, and there was no existing
+  `.env.production` or Pages-dashboard env var to follow (neither
+  existed before this pass). The natural fix — a committed
+  `frontend/.env.production` with `PUBLIC_API_BASE_URL=https://api.
+  getpolicypeek.com` (not a secret; Astro/Vite's `PUBLIC_` prefix means
+  it's meant to land in the client bundle) — is blocked by this
+  environment's own permission settings, which refuse writing any
+  `.env*`-shaped file regardless of content, the same category of block
+  as the admin-token read earlier today. Elliot needs to add that one
+  line to `frontend/.env.production` himself (or set it as a Pages
+  project env var once the project exists) — nothing else in this repo
+  needs to change once that file exists.
+- Backend tests (67/67) and frontend build (35 pages) both re-confirmed
+  clean with both `wrangler.toml` changes in place; both files also
+  validated as syntactically correct TOML directly (not by invoking
+  `wrangler`, since even a dry-run touches the `deploy` subcommand this
+  pass was told to avoid).
+
+---
+
 ## 2026-09-13 (Phase 2.5j)
 
 - **JetBrains AI Assistant / Ideogram / Luma AI opt-out correction —
