@@ -1,5 +1,26 @@
 # Decisions Needed
 
+## Open (2026-09-17, post-launch): domain/policy-link validator too strict on subdomains
+
+Submitting `midjourney.com` with policy link `docs.midjourney.com/hc/...`
+was rejected by "Check the domain and policy link — one of them doesn't
+look right." `openai.com` (with a same-subdomain policy link) worked
+fine. Needs a decision on whether the validator should allow
+same-registrable-domain subdomains (`docs.`, `www.`, `legal.`, etc.)
+while still blocking genuine cross-domain mismatches. Check whether an
+existing rule already covers this before changing anything — don't
+conflate with the separate Bolt.new recheck already in flight from
+Phase 2.5f. Not investigated or fixed here — log only.
+
+## Open (2026-09-17, post-launch): new-tool submission → pending-review path not yet smoke-tested in production
+
+A recheck of an existing tool (OpenAI) was confirmed working end-to-end
+on the live site. Submitting a brand-new, not-yet-reviewed tool through
+the human-review gate hit the daily free-tier rate limit before it
+could be tested. Needs a real test once the limit resets — confirm it
+lands in pending-review state rather than auto-publishing. Not
+investigated or fixed here — log only.
+
 ## Blocked on you (2026-09-13, Phase 2.5j): JetBrains / Ideogram / Luma AI opt-out correction — verdicts computed, real-D1 write needed
 
 Your ruling: none of the three quoted opt-out clauses actually govern AI training (JetBrains points at a vague non-mechanism in "Section 5, Transparency"; Ideogram's opt-out is Google Analytics/tracking-tech only; Luma's is a marketing-email unsubscribe — full clause detail in the "Open: Ideogram, Luma AI, and JetBrains AI Assistant" entry below). `opt_out_available` should be `false` for all three, not the currently-queued `true`.

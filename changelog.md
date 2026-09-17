@@ -12,6 +12,25 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-17 (Phase 3 launch complete)
+
+`getpolicypeek.com` (Cloudflare Pages) and `api.getpolicypeek.com`
+(Worker custom domain) both live and verified in production:
+
+- Frontend deployed via `wrangler pages deploy`, custom domain added in
+  the dashboard, working.
+- Backend deployed via `wrangler deploy`, resolved to the
+  `api.getpolicypeek.com` custom domain correctly on first deploy (the
+  route config from the same-day Phase 3 prep entry below).
+- Submission pipeline confirmed end-to-end on the live site: an OpenAI
+  recheck succeeded, badge rendered. Independently spot-checked from
+  this session too — `getpolicypeek.com` renders the real site (32
+  tools), `api.getpolicypeek.com/v1/lookup?domain=openai.com` returns a
+  correct live `compliant_with_caveats` result for ChatGPT.
+- Rate limiting confirmed correct in production: same-IP requests (two
+  devices, same WiFi) correctly shared one daily free-tier slot — the
+  Phase 2.5b calendar-day bucketing fix holding up under real traffic.
+
 ## 2026-09-17 (Phase 3 prep — domain wiring, config only, no deploy)
 
 Target shape decided by Elliot: `getpolicypeek.com` (frontend, Cloudflare
