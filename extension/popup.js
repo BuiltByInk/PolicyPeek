@@ -166,7 +166,7 @@ async function runLookup(tab, hostname) {
   try {
     res = await fetch(`${API_BASE_URL}/v1/lookup?domain=${encodeURIComponent(hostname)}`);
   } catch {
-    showMessage("Couldn't reach PolicyPeek. Is the local backend running?");
+    showMessage("Couldn't reach PolicyPeek. Try again in a moment.");
     return;
   }
 

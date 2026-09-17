@@ -6,6 +6,14 @@
 export const BADGE_COPY = {
   compliant: { label: "Compliant", shape: "solid", color: "green" },
   not_compliant: { label: "Not compliant", shape: "solid", color: "red" },
+  compliant_with_caveats: {
+    label: "Compliant with caveats",
+    // Own shape (double border), not reused from ring/solid -- same "shape
+    // carries the distinction, not color alone" rule as shared_domain
+    // below, ported from Badge.astro's solid-teal-double-border treatment.
+    shape: "double",
+    color: "caveat",
+  },
   unrated: { label: "Unrated", shape: "solid", color: "amber" },
   shared_domain_unverified: {
     label: "Company-wide policy — not product-verified",

@@ -1,6 +1,6 @@
-// Single place the API target lives -- swap this one line when a deployed
-// Worker URL exists (deployment is deliberately parked per CLAUDE.md as of
-// this scaffold; see extension/SCOPE.md's "API target" decision). Also
-// update manifest.json's host_permissions entry to match, since MV3 only
+// Single place the API target lives. Updated 2026-09-17: the Worker is
+// deployed and live at api.getpolicypeek.com (Phase 3 launch) -- see
+// extension/SCOPE.md's "API target" decision, now resolved. manifest.json's
+// host_permissions updated to match in the same pass, since MV3 only
 // bypasses CORS for origins declared there.
-export const API_BASE_URL = "http://localhost:8787";
+export const API_BASE_URL = "https://api.getpolicypeek.com";

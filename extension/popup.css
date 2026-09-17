@@ -6,6 +6,7 @@
   --green-bg: #e6f4ea; --green-fg: #1e7a34;
   --amber-bg: #fef3e2; --amber-fg: #92600a;
   --red-bg: #fce8e6; --red-fg: #b3261e;
+  --caveat-bg: #e2eef4; --caveat-fg: #12586f;
   --gray-bg: #eceef1; --gray-fg: #4b5563;
   --text: #1a1a1a;
   --bg: #ffffff;
@@ -16,6 +17,7 @@
     --green-bg: #123821; --green-fg: #6fe39a;
     --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
     --red-bg: #3a1414; --red-fg: #f28b82;
+    --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
     --gray-bg: #2a2e35; --gray-fg: #b0b8c1;
     --text: #f0f0f0;
     --bg: #1e1e1e;
@@ -53,6 +55,7 @@ header {
 .badge.green { background: var(--green-bg); color: var(--green-fg); }
 .badge.amber { background: var(--amber-bg); color: var(--amber-fg); }
 .badge.red { background: var(--red-bg); color: var(--red-fg); }
+.badge.caveat { background: var(--caveat-bg); color: var(--caveat-fg); }
 .badge.gray { background: var(--gray-bg); color: var(--gray-fg); }
 
 /* Same "solid vs outline" accessibility rule as Badge.astro's
@@ -61,6 +64,15 @@ header {
   background: transparent;
   border: 1.5px solid currentColor;
   padding: calc(0.2rem - 1.5px) calc(0.65rem - 1.5px);
+}
+
+/* Ported from Badge.astro's compliant_with_caveats treatment (a double
+   rule instead of a single keyline) -- reads as "qualified," distinct
+   from both the plain solid badges and the dashed amber-outline ring. */
+.badge.double {
+  background: var(--caveat-bg);
+  border: 4px double currentColor;
+  padding: calc(0.2rem - 3px) calc(0.65rem - 3px);
 }
 
 #status {
