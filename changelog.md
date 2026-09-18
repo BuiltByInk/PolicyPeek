@@ -12,6 +12,54 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-18 (production outage: ANTHROPIC_API_KEY never set — found, fixed, verified)
+
+**What broke**: the real deployed Worker never had an `ANTHROPIC_API_KEY`
+secret set on it at all, going all the way back to the Phase 3 launch.
+Every extraction against the live production API failed at
+`check.ts`'s `if (!env.ANTHROPIC_API_KEY)` guard, which records the
+error but leaves the row stuck in `pending_checks.status = 'pending'`
+forever — `cron.ts`'s `checkStuckPending` detects this every 15 minutes
+but only `console.warn`s, which is not persisted or surfaced anywhere
+(no `[observability]` config, no Logpush, no alerting integration of
+any kind — see `DECISIONS_NEEDED.md`'s open item on that).
+
+**How long**: 2026-09-17 (launch) through 2026-09-18 07:47 UTC — roughly
+16.5 hours, though real traffic in that window was minimal (the daily
+per-IP free-tier cap limited it to exactly 2 real submission attempts
+the whole time).
+
+**What it affected**: both real submissions that hit the live API in
+that window failed silently — Elliot's own `openai.com` recheck from
+launch day (`pending_checks` id 7, **still unresolved, not touched this
+pass**) and a new-tool submission for `hancocyber.com` (id 8, then a
+resubmission attempt id 9) that surfaced the whole issue when its
+status was checked.
+
+**Root cause had two parts, found in sequence**: first, no
+`ANTHROPIC_API_KEY` secret existed at all. After Elliot set one, a
+second, different error appeared (`anthropic_api_400: This API key is
+not scoped to a workspace...`) — the first key provided was an
+org-level key needing a workspace ID, not a workspace-scoped key. Elliot
+swapped in a workspace-scoped key.
+
+**Now fixed and verified**: Elliot manually resubmitted `hancocyber.com`
+through the live site (hitting a real, separate, minor bug along the
+way — he'd typed `https://hancocyber.com` into the domain field, which
+only accepts a bare domain per `isValidDomain`'s regex; not a validator
+bug, just needed the `https://` dropped). That resubmission
+(`pending_checks` id 10) completed extraction cleanly —
+`status = 'extracted'`, no error. Correctly did **not** auto-publish,
+since `trains_on_user_data` came back `null` (the page reads as generic
+WordPress boilerplate, not an AI tool's actual policy) — sitting in the
+review queue exactly as the three-tier system is supposed to handle an
+ambiguous case, not a bug.
+
+**Still open**: the `openai.com` recheck (id 7) has not been resubmitted
+— holding per instruction to focus on `hancocyber.com` only for now.
+The real-alerting decision for `checkStuckPending` is logged in
+`DECISIONS_NEEDED.md`, not implemented.
+
 ## 2026-09-17 ("Reviewed by a human" fixed — real fix, not cosmetic)
 
 Fixed the data-accuracy bug found during the UI polish pass: the tool

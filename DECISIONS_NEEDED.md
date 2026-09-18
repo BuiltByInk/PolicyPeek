@@ -1,6 +1,6 @@
 # Decisions Needed
 
-## Blocked on you (2026-09-18): production Worker has no `ANTHROPIC_API_KEY` secret — every real check has been silently failing since launch
+## Resolved (2026-09-18): `ANTHROPIC_API_KEY` fixed and verified — `openai.com` recheck (id 7) still outstanding
 
 Discovered while checking the status of a real submission (`hancocyber.com`,
 2026-09-18T07:32Z). It failed with `extraction_error: "ANTHROPIC_API_KEY
@@ -22,14 +22,28 @@ identical error and is also stuck in `pending` — whatever badge/success was
 observed on the live site for that came from the tool's existing published
 row, not a fresh extraction; the recheck itself silently never ran.
 
-**Fix needs Elliot directly, two steps:**
-1. `wrangler secret put ANTHROPIC_API_KEY` against the real Worker —
-   `wrangler secret` is explicitly on the deny list for every agent, and
-   there's no key value to supply anyway; that's Elliot's own credential
-   to provide.
-2. Once set, `hancocyber.com` (`pending_checks` id 8) and the `openai.com`
-   recheck (id 7) both need to be **resubmitted from scratch** — confirmed
-   above that stuck rows don't self-recover once the secret exists.
+**Resolution, in the order it actually happened** (two distinct bugs, not
+one): Elliot first set a secret, but named it `Anthrophic_api_key`
+(misspelled, wrong case) — caught via `wrangler secret list` before
+wasting a resubmission, since Cloudflare env bindings are exact-match.
+Elliot then set the correctly-named `ANTHROPIC_API_KEY` alongside it.
+Resubmitting `hancocyber.com` at that point (`pending_checks` id 9) hit a
+*third*, different error: `anthropic_api_400: This API key is not scoped
+to a workspace...` — the key provided was an org-level key, not a
+workspace-scoped one. Elliot swapped in a workspace-scoped key.
+
+Elliot then resubmitted `hancocyber.com` himself directly through the live
+site (id 10) — hit one more, unrelated, minor issue on the way (typed
+`https://hancocyber.com` into the domain field, which only accepts a bare
+domain; not a validator bug, just needed the scheme dropped) — and it
+**completed extraction cleanly**: `status = 'extracted'`, no error.
+Correctly did not auto-publish (`trains_on_user_data: null` — the page
+reads as generic WordPress boilerplate, not an AI tool's real policy),
+sitting in the review queue exactly as intended for an ambiguous case.
+
+**`openai.com` (`pending_checks` id 7) has NOT been resubmitted** — held
+per instruction to focus on `hancocyber.com` only this pass. Still
+stuck, whenever it's prioritized.
 
 **Confirmed complete**: queried every `pending_checks` row with
 `status = 'pending' AND created_at >= '2026-09-17T00:00:00.000Z'` (the
