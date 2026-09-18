@@ -32,13 +32,50 @@ row, not a fresh extraction; the recheck itself silently never ran.
    above that stuck rows don't self-recover once the secret exists.
 
 **Confirmed complete**: queried every `pending_checks` row with
-`status = 'pending'` (not just the 5 most recent) — exactly these 2 exist,
-no other victims. Makes sense given the free-tier 1-check-per-IP-per-day
-cap has sharply limited real traffic since launch.
+`status = 'pending' AND created_at >= '2026-09-17T00:00:00.000Z'` (the
+full post-launch window, not just the 5 most recent) — exactly these 2
+exist, no other victims:
 
-**Worth a look separately**: whether this should get a real alert instead
-of a 15-minute log line that nobody was watching — the cron already
-detects this exact condition, it just doesn't tell anyone.
+| id | Domain | Type | Submitted (UTC) | Notes |
+|---|---|---|---|---|
+| 7 | `openai.com` | Recheck of existing tool (published as "ChatGPT", id 16) | 2026-09-17T15:22:44Z | Elliot's own launch-day test |
+| 8 | `hancocyber.com` | **New-tool submission** — not an existing published domain | 2026-09-18T07:32:17Z | The one that surfaced this |
+
+Makes sense given the free-tier 1-check-per-IP-per-day cap has sharply
+limited real traffic since launch — only 2 real submissions total have
+hit the live API in ~16 hours.
+
+---
+
+## Open (2026-09-18): `checkStuckPending`'s warning has nowhere to go — this outage was undetectable by design, not by accident
+
+Elliot's question: why did a 3+ day outage go undetected when the cron
+already runs a stuck-check every 15 minutes? Checked rather than assumed:
+
+- `console.warn` in a Cloudflare Worker only writes to that invocation's
+  own ephemeral runtime log. It is **not** persisted or surfaced anywhere
+  by default.
+- `backend/wrangler.toml` has no `[observability]` block (Cloudflare
+  Workers Logs, which would persist and let you query logs after the
+  fact — requires explicit opt-in, not present), no `tail_consumers`, and
+  no Logpush configuration.
+- Repo-wide search for any alerting integration at all (webhook, Slack,
+  email, PagerDuty/Opsgenie) — nothing exists anywhere in the codebase.
+
+The only way anyone would ever see this specific warning is running
+`wrangler tail` and having a terminal open at the exact moment one of
+the 15-minute cron ticks fires with a stuck row present. **This isn't a
+mechanism that failed — there was never a mechanism that could have
+worked.** `checkStuckPending` detects the right condition, it just has
+no delivery path to a human.
+
+**Decision needed, not made here**: whether this warrants real alerting
+(e.g. the cron POSTs to a Slack/Discord webhook, or sends an email, when
+it finds stuck rows) versus accepting the current state and relying on
+manual/periodic checks. If real alerting is wanted, the cheapest version
+is probably a webhook URL as a new secret + one `fetch()` call added to
+`checkStuckPending` when `results.length > 0` — not implemented here,
+this is a scope/priority call, not a technical blocker.
 
 ---
 
