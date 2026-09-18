@@ -1,5 +1,47 @@
 # Decisions Needed
 
+## Blocked on you (2026-09-18): production Worker has no `ANTHROPIC_API_KEY` secret — every real check has been silently failing since launch
+
+Discovered while checking the status of a real submission (`hancocyber.com`,
+2026-09-18T07:32Z). It failed with `extraction_error: "ANTHROPIC_API_KEY
+not configured"`, stuck permanently in `status = 'pending'` — confirmed via
+`check.ts:79-83` that this specific guard never transitions status to
+`extracted`/`rejected`, it only records the error and returns, and
+confirmed via `cron.ts`'s `checkStuckPending` that the only automated
+handling of stuck `pending` rows is a `console.warn` every 15 minutes —
+nothing retries or reprocesses them.
+
+**Confirmed this is not a one-off**: `npx wrangler secret list` against the
+real deployed Worker returns an empty array — `ANTHROPIC_API_KEY` was never
+set on it via `wrangler secret put` at any point, including at the Phase 3
+launch. Every extraction against the production API since launch
+(2026-09-17) has failed the same way. Second confirmed victim: Elliot's own
+`openai.com` recheck from launch day (2026-09-17T15:22Z, the one described
+in the launch changelog entry as "succeeded, badge rendered") has the
+identical error and is also stuck in `pending` — whatever badge/success was
+observed on the live site for that came from the tool's existing published
+row, not a fresh extraction; the recheck itself silently never ran.
+
+**Fix needs Elliot directly, two steps:**
+1. `wrangler secret put ANTHROPIC_API_KEY` against the real Worker —
+   `wrangler secret` is explicitly on the deny list for every agent, and
+   there's no key value to supply anyway; that's Elliot's own credential
+   to provide.
+2. Once set, `hancocyber.com` (`pending_checks` id 8) and the `openai.com`
+   recheck (id 7) both need to be **resubmitted from scratch** — confirmed
+   above that stuck rows don't self-recover once the secret exists.
+
+**Confirmed complete**: queried every `pending_checks` row with
+`status = 'pending'` (not just the 5 most recent) — exactly these 2 exist,
+no other victims. Makes sense given the free-tier 1-check-per-IP-per-day
+cap has sharply limited real traffic since launch.
+
+**Worth a look separately**: whether this should get a real alert instead
+of a 15-minute log line that nobody was watching — the cron already
+detects this exact condition, it just doesn't tell anyone.
+
+---
+
 ## Resolved (2026-09-17): "Reviewed by a human" field now reads off `auto_published`, not `verified`
 
 Closes the entry below. Turned out narrower than it looked: `auto_published`
