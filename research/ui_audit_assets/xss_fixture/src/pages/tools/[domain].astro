@@ -1,0 +1,201 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Badge from "../../components/Badge.astro";
+import type { Tool } from "../../types";
+import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
+import toolsData from "../../../data/tools.json";
+
+export async function getStaticPaths() {
+  const tools = toolsData as Tool[];
+  return tools.map((tool) => ({
+    params: { domain: tool.domain },
+    props: { tool },
+  }));
+}
+
+const { tool } = Astro.props as { tool: Tool };
+const reasonClass =
+  tool.compliance_status === "not_compliant" ? "reason prominent red" :
+  tool.compliance_status === "compliant_with_caveats" ? "reason prominent caveat" :
+  tool.compliance_status === "unrated" ? "reason prominent amber" :
+  tool.compliance_status === "shared_domain_unverified" ? "reason prominent amber-outline" :
+  tool.compliance_status === "not_ai_tool" ? "reason prominent gray" :
+  "reason";
+
+// One-line reason next to the verdict. Amber/red never render blank (see
+// reasonFor in verdicts.ts): before this, an unrated tool with an empty
+// summary (Zoom AI Companion) showed a badge and no reason at all.
+const reason = reasonFor(tool);
+const meaning = VERDICTS.find((v) => v.status === tool.compliance_status)?.meaning ?? "";
+const isNotAi = tool.compliance_status === "not_ai_tool";
+// The "what this means" line only adds something when the reason above it is
+// the tool's own policy wording; for fixed fallback reasons it would repeat them.
+const showMeaning = !isNotAi && Boolean(tool.summary && tool.summary.trim());
+
+// A non-AI site has nothing to say about "training on your data", so the
+// fact rows say "Not applicable" rather than "Unclear from policy" (which
+// reads as if the policy were vague, not as if the question doesn't apply).
+const yesNo = (v: boolean | null) => (isNotAi && v === null ? "Not applicable" : v === null ? "Unclear from policy" : v ? "Yes" : "No");
+const retention = tool.data_retention && tool.data_retention.trim() ? tool.data_retention : "Not stated";
+// Short values keep the mono treatment (they read like label numerals);
+// sentences read better in the body face than in bold monospace.
+const retentionIsLong = retention.length > 48;
+
+const sources = tool.source_urls
+  .map((raw) => ({ raw, href: safeHttpUrl(raw) }));
+
+// Title/description: title is awkward for a non-AI site ("Does hancocyber.com
+// Train on Your Data?"), so it gets its own wording.
+const pageTitle = isNotAi
+  ? `${tool.name}: not an AI tool`
+  : `Does ${tool.name} Train on Your Data? GDPR Check`;
+const pageDescription = isNotAi
+  ? `PolicyPeek's data-training check doesn't apply to ${tool.name}: the policy we found shows no sign it's an AI product.`
+  : (tool.summary && tool.summary.trim()) || `Does ${tool.name} train on your data? See PolicyPeek's sourced rating.`;
+---
+<Layout title={pageTitle} description={pageDescription}>
+  <a class="back" href="/tools">← All tools</a>
+
+  <header class="detail-head">
+    <h1>{tool.name}</h1>
+    <Badge status={tool.compliance_status} />
+  </header>
+  {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
+
+  {reason && <p class={reasonClass}>{reason}</p>}
+  {showMeaning && <p class="meaning">{meaning}</p>}
+  {!showMeaning && <div class="meaning-gap"></div>}
+
+  <div class="label-panel">
+    <h2 class="lp-head">Data Practices Disclosure</h2>
+    <dl class="facts">
+      <div>
+        <dt>Trains on user data</dt>
+        <dd>{yesNo(tool.trains_on_user_data)}</dd>
+      </div>
+      <div>
+        <dt>Data retention</dt>
+        <dd class={retentionIsLong ? "long" : undefined}>{retention}</dd>
+      </div>
+      <div>
+        <dt>GDPR mentioned</dt>
+        <dd>{yesNo(tool.gdpr_mentioned)}</dd>
+      </div>
+      <div>
+        <dt>Reviewed by a human</dt>
+        <dd>{tool.auto_published ? "No — auto-published" : "Yes"}</dd>
+      </div>
+    </dl>
+  </div>
+
+  {sources.length > 0 && (
+    <>
+      <h2>Sources</h2>
+      <ul class="sources">
+        {sources.map(({ raw, href }) => (
+          <li>
+            {href
+              ? <a href={href} rel="nofollow noopener noreferrer" target="_blank">{raw}<span class="sr-only"> (opens in a new tab)</span></a>
+              : <span>{raw}</span>}
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+</Layout>
+
+<style>
+  .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
+  .detail-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+  .detail-head h1 { margin: 0; overflow-wrap: anywhere; }
+  .domain { color: var(--muted); font-family: var(--font-mono); font-size: 0.9rem; margin: 0.25rem 0 0; overflow-wrap: anywhere; }
+  .reason {
+    font-size: 1.05rem;
+    margin: 1.25rem 0 0.5rem;
+    overflow-wrap: anywhere;
+    max-width: 65ch;
+  }
+  /* Keylines instead of the earlier 0.4rem-radius boxes: sharp corners are
+     the direction (Layout.astro); the rounded callout was the one soft
+     shape left on the site. */
+  .reason.prominent {
+    padding: 0.85rem 1rem;
+    max-width: none;
+  }
+  .reason.prominent.red { border-left: 6px solid var(--red-fg); background: var(--red-bg); }
+  .reason.prominent.caveat { border-left: 6px double var(--caveat-fg); background: var(--caveat-bg); }
+  .reason.prominent.amber { border-left: 6px solid var(--amber-fg); background: var(--amber-bg); }
+  .reason.prominent.amber-outline {
+    border: 1.5px dashed var(--amber-fg);
+    border-left: 6px solid var(--amber-fg);
+    background: transparent;
+    color: var(--amber-fg);
+  }
+  .reason.prominent.gray { border-left: 6px solid var(--gray-fg); background: var(--gray-bg); }
+  .meaning { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem; }
+  .meaning-gap { margin-bottom: 1.5rem; }
+  .label-panel {
+    margin: 1.5rem 0;
+    border: 3px solid var(--line);
+  }
+  .lp-head {
+    margin: 0;
+    padding: 0.6rem 1rem;
+    border-bottom: 3px solid var(--line);
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 1rem;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .facts { margin: 0; }
+  .facts div {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .facts div:last-child { border-bottom: none; }
+  .facts dt {
+    margin: 0;
+    flex: 0 0 10.5rem;
+    color: var(--muted);
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .facts dd {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  /* Sentence-length values (retention policies run to 600+ characters) go in
+     the body face at normal weight; bold monospace prose was a wall of text. */
+  .facts dd.long {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+  @media (max-width: 480px) {
+    .facts div { flex-direction: column; gap: 0.25rem; }
+    .facts dt { flex-basis: auto; }
+  }
+  .sources { padding-left: 1.25rem; font-family: var(--font-body); }
+  .sources li { margin-bottom: 0.4rem; overflow-wrap: anywhere; }
+</style>

@@ -1,0 +1,184 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · PolicyPeek</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} · PolicyPeek`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={`${title} · PolicyPeek`} />
+    <meta name="twitter:description" content={description} />
+
+    <style>
+      /* Design direction: "Compliance Label" -- modeled on nutrition-facts /
+         energy-rating panels. Black keylines instead of soft grey borders,
+         a condensed headline face for the regulatory-document voice,
+         tabular monospace for every number, sharp corners throughout (no
+         rounded-lg default). See DECISIONS_NEEDED.md (2026-08-17 UI entry)
+         for the other two directions this was picked over. */
+      :root {
+        color-scheme: light dark;
+        --fg: #111318;
+        --bg: #ffffff;
+        --muted: #565b66;
+        --line: #111318;
+        --line-soft: #d6d8dc;
+        --panel: #f7f7f5;
+        --id: #1f3a5f;
+        --green-bg: #e6f4ea; --green-fg: #1e7a34;
+        --amber-bg: #fef3e2; --amber-fg: #92600a;
+        --red-bg: #fce8e6; --red-fg: #b3261e;
+        /* caveat = a genuinely separate hue (teal), not a green/amber blend --
+           this is "we DO know, and it's conditional," a different epistemic
+           state than amber's "we don't know." Never reuse green/amber/red
+           here or it reads as a rounding of one of those states. */
+        --caveat-bg: #e2eef4; --caveat-fg: #12586f;
+        /* gray = not_ai_tool. Deliberately neutral, not a shade of green/
+           amber/red/teal -- this isn't a compliance verdict at all, it's
+           "this question doesn't apply here." Must read as clearly outside
+           the compliant/caveats/not_compliant/unrated spectrum. */
+        --gray-bg: #eceef0; --gray-fg: #40464f;
+        --font-head: "Helvetica Neue Condensed", "Arial Narrow", Arial, sans-serif;
+        --font-body: Arial, Helvetica, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --fg: #ececec;
+          --bg: #14161a;
+          --muted: #a3a8b3;
+          --line: #d8dade;
+          --line-soft: #34373f;
+          --panel: #1b1e24;
+          --id: #8ab4ff;
+          --green-bg: #123821; --green-fg: #6fe39a;
+          --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
+          --red-bg: #3a1414; --red-fg: #f28b82;
+          --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+          --gray-bg: #24272d; --gray-fg: #c2c6cc;
+        }
+      }
+      :root[data-theme="dark"] {
+        --fg: #ececec;
+        --bg: #14161a;
+        --muted: #a3a8b3;
+        --line: #d8dade;
+        --line-soft: #34373f;
+        --panel: #1b1e24;
+        --id: #8ab4ff;
+        --green-bg: #123821; --green-fg: #6fe39a;
+        --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
+        --red-bg: #3a1414; --red-fg: #f28b82;
+        --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+        --gray-bg: #24272d; --gray-fg: #c2c6cc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: var(--font-body);
+        color: var(--fg);
+        background: var(--bg);
+        line-height: 1.6;
+      }
+      h1, h2, h3 {
+        font-family: var(--font-head);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+      header.site {
+        border-bottom: 3px solid var(--line);
+      }
+      header.site .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+      header.site a.brand {
+        font-family: var(--font-head);
+        font-weight: 800;
+        font-size: 1.2rem;
+        letter-spacing: 0.01em;
+        color: var(--fg);
+        text-decoration: none;
+      }
+      header.site a.brand::before {
+        content: "■ ";
+        color: var(--id);
+      }
+      nav.site a {
+        color: var(--muted);
+        text-decoration: none;
+        margin-left: 1.5rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      nav.site a:hover { color: var(--id); }
+      /* Global focus-visible for links -- SubmitTool.astro's inputs/button
+         already use this exact --id outline treatment; no anchor tag
+         anywhere had an equivalent, so every link on the site fell back to
+         the plain browser-default ring. Extends the existing convention
+         site-wide rather than introducing a new one. */
+      a:focus-visible {
+        outline: 2px solid var(--id);
+        outline-offset: 2px;
+      }
+      main { padding: 2rem 0 3rem; }
+      footer.site {
+        border-top: 3px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      footer.site .wrap { padding: 1.5rem 1.25rem; }
+      @media (max-width: 480px) {
+        header.site .wrap { flex-direction: column; align-items: flex-start; }
+        nav.site a { margin-left: 0; margin-right: 1.25rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="/">POLICYPEEK</a>
+        <nav class="site">
+          <a href="/tools">Tools</a>
+          <a href="/about">Methodology</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>.
+      </div>
+    </footer>
+  </body>
+</html>

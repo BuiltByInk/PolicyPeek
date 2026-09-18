@@ -3,17 +3,48 @@ import Layout from "../../layouts/Layout.astro";
 import Badge from "../../components/Badge.astro";
 import SubmitTool from "../../components/SubmitTool.astro";
 import type { Tool } from "../../types";
+import { VERDICTS, reasonFor } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 
 const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
+const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
+// Rank used by the "Verdict" sort: things worth a second look first.
+const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
 ---
 <Layout
   title="Tools"
   description="Every tool PolicyPeek has checked, with a compliant / compliant with caveats / not compliant / unrated badge and the one-line reason behind it."
 >
   <h1>Tools</h1>
+  <p class="sub">
+    {tools.length} tool{tools.length === 1 ? "" : "s"} checked against their own privacy policies.{" "}
+    <a href="#submit">Not listed? Check a new one ↓</a>
+  </p>
 
-  <SubmitTool />
+  <section class="controls" aria-label="Find a tool" id="controls">
+    <div class="ctl-row">
+      <label class="search">
+        <span>Search by name or domain</span>
+        <input type="search" id="q" placeholder="e.g. chatgpt or openai.com" autocomplete="off" spellcheck="false" />
+      </label>
+      <label class="sort">
+        <span>Sort</span>
+        <select id="sort">
+          <option value="name">Name (A–Z)</option>
+          <option value="verdict">Verdict (concerns first)</option>
+        </select>
+      </label>
+    </div>
+    <div class="chips" role="group" aria-label="Filter by verdict">
+      {VERDICTS.map((v) => (
+        <button type="button" class="chip" data-status={v.status} aria-pressed="false">
+          <span class={`swatch ${v.swatch}`} aria-hidden="true"></span>
+          {v.short} <span class="n">{counts[v.status]}</span>
+        </button>
+      ))}
+    </div>
+    <p id="count" class="count" role="status" aria-live="polite">Showing all {tools.length}.</p>
+  </section>
 
   {tools.length === 0 && (
     <p class="empty">
@@ -22,83 +53,243 @@ const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(
     </p>
   )}
 
-  <ul class="tool-list">
-    {tools.map((tool) => (
-      <li class="tool-card">
-        <a href={`/tools/${tool.domain}`}>
-          <div class="tool-card-head">
-            <span class="tool-name">{tool.name}</span>
-            <Badge status={tool.compliance_status} />
+  <ul class="register" id="register">
+    {tools.map((tool) => {
+      const reason = reasonFor(tool);
+      const loud = tool.compliance_status === "not_compliant" || tool.compliance_status === "unrated" || tool.compliance_status === "shared_domain_unverified";
+      return (
+        <li
+          class="row"
+          data-name={tool.name.toLowerCase()}
+          data-domain={tool.domain.toLowerCase()}
+          data-status={tool.compliance_status}
+          data-rank={rank[tool.compliance_status]}
+        >
+          <div class="who">
+            <a class="tool-name" href={`/tools/${tool.domain}/`}>{tool.name}</a>
+            {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <span class="dom">{tool.domain}</span>}
           </div>
-          {tool.shared_domain ? (
-            <p class="reason shared-domain-note">
-              {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
-            </p>
-          ) : (
-            <p class="reason">{tool.summary || "No summary available for this tool yet."}</p>
-          )}
-        </a>
-      </li>
-    ))}
+          <div class="verdict"><Badge status={tool.compliance_status} /></div>
+          {/* Amber and red reasons are never clipped (charter: the reason a tool is flagged is always visible); the quieter statuses clamp to keep rows even. */}
+          <p class:list={["reason", { loud, shared: tool.compliance_status === "shared_domain_unverified" }]}>
+            {reason ?? "No summary available for this tool yet."}
+          </p>
+        </li>
+      );
+    })}
   </ul>
+
+  <div id="no-match" class="no-match" hidden>
+    <p class="nm-head">No match for “<span id="nm-q"></span>”.</p>
+    <p>We haven't checked that one yet. It's free to add — <a href="#submit" id="nm-add">check it now</a>.</p>
+    <p><button type="button" id="nm-clear" class="linklike">Clear the search and filters</button></p>
+  </div>
+
+  <SubmitTool />
 </Layout>
 
 <style>
+  .sub { color: var(--muted); margin: 0.25rem 0 1.5rem; }
   .empty { color: var(--muted); }
-  .tool-list {
+
+  /* ---- controls ---- */
+  .controls { margin: 0 0 1.25rem; }
+  .ctl-row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: end; }
+  .search { flex: 1 1 18rem; }
+  .sort { flex: 0 0 auto; }
+  .controls label { display: flex; flex-direction: column; gap: 0.3rem; }
+  .controls label > span {
+    font-family: var(--font-head);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .controls input, .controls select {
+    font: inherit;
+    font-size: 1rem; /* 16px+ so iOS Safari doesn't zoom on focus */
+    padding: 0.55rem 0.7rem;
+    border: 2px solid var(--line);
+    background: var(--bg);
+    color: var(--fg);
+    border-radius: 0;
+    min-height: 2.75rem;
+  }
+  .controls input { font-family: var(--font-mono); font-size: 0.95rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+  .chip {
+    font: inherit;
+    font-family: var(--font-head);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.7rem;
+    min-height: 2.25rem;
+    color: var(--fg);
+    background: var(--bg);
+    border: 2px solid var(--line);
+    border-radius: 0;
+    cursor: pointer;
+  }
+  .chip:hover { background: var(--panel); }
+  .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  .chip .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; opacity: 0.8; }
+  .swatch { width: 0.7rem; height: 0.7rem; border: 1.5px solid currentColor; display: inline-block; }
+  .swatch.green { background: var(--green-fg); }
+  .swatch.red { background: var(--red-fg); }
+  .swatch.amber { background: var(--amber-fg); }
+  .swatch.caveat { background: var(--caveat-fg); }
+  .swatch.gray { background: var(--gray-fg); }
+  .count { margin: 0.75rem 0 0; font-size: 0.85rem; color: var(--muted); min-height: 1.3em; }
+
+  /* ---- register (one row per tool, fixed columns so a column reads as a
+     column: name | verdict | reason). This replaced a 3-up card grid where the
+     badge floated to a different spot on every card. ---- */
+  .register {
     list-style: none;
     padding: 0;
-    margin: 1.5rem 0 0;
+    margin: 0;
+    border-top: 3px solid var(--line);
+    border-bottom: 3px solid var(--line);
+  }
+  .row {
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1px;
-    background: var(--line-soft);
-    border: 1px solid var(--line-soft);
+    gap: 0.35rem 1.25rem;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--line-soft);
   }
-  .tool-card a {
-    display: block;
-    background: var(--bg);
-    padding: 1rem 1.1rem;
-    text-decoration: none;
+  .row:last-child { border-bottom: none; }
+  .row[hidden] { display: none; }
+  .row:hover { background: var(--panel); }
+  .row:focus-within { outline: 2px solid var(--id); outline-offset: -2px; }
+  .who { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+  .tool-name {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.35rem;
+    line-height: 1.15;
     color: var(--fg);
-    height: 100%;
+    text-decoration: none;
+    overflow-wrap: anywhere;
   }
-  .tool-card a:hover,
-  .tool-card a:focus-visible {
-    background: var(--panel);
-  }
-  /* Negative offset so the ring sits inside the card rather than getting
-     visually clipped by the 1px grid gap between cards. */
-  .tool-card a:focus-visible { outline: 2px solid var(--id); outline-offset: -2px; }
-  .tool-card-head {
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.5rem 0.6rem;
-    margin-bottom: 0.5rem;
-  }
-  .tool-name { font-family: var(--font-head); font-weight: 700; }
+  /* Stretch the name link over the whole row: one big click target, but the
+     link's accessible name is just the tool name. */
+  .tool-name::after { content: ""; position: absolute; inset: 0; }
+  .tool-name:focus-visible { outline: none; }
+  .row:hover .tool-name { text-decoration: underline; text-decoration-thickness: 2px; }
+  .dom { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
+  .verdict { align-self: start; }
   .reason {
     margin: 0;
     color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 0.88rem;
-    line-height: 1.35;
-    /* Fixed to a 3-line slot, present on every card (even the one tool with
-       no summary, which now gets a fallback string above) -- summary length
-       in tools.json ranges from ~64 to ~310 characters, which was the main
-       driver of visibly inconsistent card heights across grid rows. Clamps
-       long text with an ellipsis and reserves the same space for short
-       text via min-height, so every card in the grid ends up the same
-       height regardless of content length. Grid columns/reflow untouched. */
+    font-size: 0.92rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .reason:not(.loud) {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: calc(1.35em * 3);
   }
-  .reason.shared-domain-note {
-    color: var(--amber-fg);
+  /* Amber/red reasons are the one thing on the row that must be read:
+     full-contrast text colour and never clipped. */
+  .reason.loud { color: var(--fg); }
+  .reason.shared { color: var(--amber-fg); }
+  @media (min-width: 760px) {
+    .row { grid-template-columns: minmax(10rem, 14rem) 12rem 1fr; align-items: start; }
+  }
+
+  /* ---- no match ---- */
+  .no-match {
+    border: 3px solid var(--line);
+    padding: 1rem 1.1rem;
+    margin: 1.5rem 0 0;
+  }
+  .no-match p { margin: 0 0 0.5rem; }
+  .nm-head { font-family: var(--font-head); font-weight: 800; font-size: 1.4rem; overflow-wrap: anywhere; }
+  .no-match[hidden] { display: none; }
+  .linklike {
+    font: inherit; background: none; border: 0; padding: 0; color: var(--id);
+    text-decoration: underline; cursor: pointer;
   }
 </style>
+
+<script>
+  // Progressive enhancement: with JS off the whole list is simply visible.
+  // Everything below only shows/hides/reorders existing <li> nodes and sets
+  // textContent -- no innerHTML anywhere, and tool text is never re-parsed.
+  const list = document.getElementById("register") as HTMLUListElement | null;
+  if (list) {
+    const rows = Array.from(list.querySelectorAll<HTMLLIElement>("li.row"));
+    const q = document.getElementById("q") as HTMLInputElement;
+    const sort = document.getElementById("sort") as HTMLSelectElement;
+    const chips = Array.from(document.querySelectorAll<HTMLButtonElement>(".chip"));
+    const count = document.getElementById("count")!;
+    const noMatch = document.getElementById("no-match")!;
+    const nmQ = document.getElementById("nm-q")!;
+    const total = rows.length;
+    const original = rows.slice(); // A–Z order from the build
+    let status = "";
+
+    const params = new URLSearchParams(location.search);
+    const validStatuses = new Set(chips.map((c) => c.dataset.status));
+    if (params.get("q")) q.value = params.get("q")!.slice(0, 100);
+    const v = params.get("v") || "";
+    if (validStatuses.has(v)) status = v;
+    if (params.get("sort") === "verdict") sort.value = "verdict";
+
+    function apply(updateUrl: boolean) {
+      const needle = q.value.trim().toLowerCase();
+      let shown = 0;
+      for (const row of rows) {
+        const hay = (row.dataset.name ?? "") + " " + (row.dataset.domain ?? "");
+        const ok = (!needle || hay.includes(needle)) && (!status || row.dataset.status === status);
+        row.hidden = !ok;
+        if (ok) shown++;
+      }
+      const ordered = sort.value === "verdict"
+        ? original.slice().sort((a, b) => Number(a.dataset.rank) - Number(b.dataset.rank) || original.indexOf(a) - original.indexOf(b))
+        : original;
+      for (const row of ordered) list!.appendChild(row);
+      for (const c of chips) c.setAttribute("aria-pressed", String(c.dataset.status === status));
+      count.textContent = shown === total ? `Showing all ${total}.` : `Showing ${shown} of ${total}.`;
+      noMatch.hidden = shown !== 0;
+      nmQ.textContent = needle || (status ? "this filter" : "");
+      if (updateUrl) {
+        const u = new URL(location.href);
+        needle ? u.searchParams.set("q", needle) : u.searchParams.delete("q");
+        status ? u.searchParams.set("v", status) : u.searchParams.delete("v");
+        sort.value === "verdict" ? u.searchParams.set("sort", "verdict") : u.searchParams.delete("sort");
+        history.replaceState(null, "", u);
+      }
+    }
+
+    q.addEventListener("input", () => apply(true));
+    sort.addEventListener("change", () => apply(true));
+    for (const c of chips) {
+      c.addEventListener("click", () => {
+        status = status === c.dataset.status ? "" : (c.dataset.status ?? "");
+        apply(true);
+      });
+    }
+    document.getElementById("nm-clear")?.addEventListener("click", () => {
+      q.value = ""; status = ""; apply(true); q.focus();
+    });
+    // "Check it now": carry what they typed into the submit form's domain
+    // field when it looks like a domain, then move focus there.
+    document.getElementById("nm-add")?.addEventListener("click", () => {
+      const dom = document.querySelector<HTMLInputElement>("#submit-form input[name=domain]");
+      const typed = q.value.trim();
+      if (dom && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(typed) && !dom.value) dom.value = typed.toLowerCase();
+      setTimeout(() => dom?.focus(), 0);
+    });
+    apply(false);
+  }
+</script>

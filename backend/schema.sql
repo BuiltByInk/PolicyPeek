@@ -13,7 +13,11 @@ CREATE TABLE IF NOT EXISTS tools (
   -- `npm run db:migrate:local`. Do not run this against any real/deployed
   -- database.
   compliance_status TEXT NOT NULL DEFAULT 'unrated'
-    CHECK (compliance_status IN ('not_compliant', 'compliant', 'compliant_with_caveats', 'unrated', 'shared_domain_unverified')),
+    -- 'not_ai_tool' added 2026-09-18: site extracted cleanly but isn't an AI
+    -- product (rules.ts::detectNotAiTool). Existing databases need
+    -- migrations/2026-09-18-add-not-ai-tool-status.sql -- same in-place-CHECK
+    -- limitation as the 'compliant_with_caveats' note above.
+    CHECK (compliance_status IN ('not_compliant', 'compliant', 'compliant_with_caveats', 'unrated', 'shared_domain_unverified', 'not_ai_tool')),
   data_retention TEXT,
   trains_on_user_data INTEGER CHECK (trains_on_user_data IN (0, 1)),
   gdpr_mentioned INTEGER CHECK (gdpr_mentioned IN (0, 1)),

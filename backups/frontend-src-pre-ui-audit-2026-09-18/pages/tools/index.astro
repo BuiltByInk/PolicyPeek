@@ -1,0 +1,104 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Badge from "../../components/Badge.astro";
+import SubmitTool from "../../components/SubmitTool.astro";
+import type { Tool } from "../../types";
+import toolsData from "../../../data/tools.json";
+
+const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
+---
+<Layout
+  title="Tools"
+  description="Every tool PolicyPeek has checked, with a compliant / compliant with caveats / not compliant / unrated badge and the one-line reason behind it."
+>
+  <h1>Tools</h1>
+
+  <SubmitTool />
+
+  {tools.length === 0 && (
+    <p class="empty">
+      Nothing published yet — checks are reviewed by a human before they show up here.
+      See <a href="/about">how ratings get made</a>.
+    </p>
+  )}
+
+  <ul class="tool-list">
+    {tools.map((tool) => (
+      <li class="tool-card">
+        <a href={`/tools/${tool.domain}`}>
+          <div class="tool-card-head">
+            <span class="tool-name">{tool.name}</span>
+            <Badge status={tool.compliance_status} />
+          </div>
+          {tool.shared_domain ? (
+            <p class="reason shared-domain-note">
+              {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
+            </p>
+          ) : (
+            <p class="reason">{tool.summary || "No summary available for this tool yet."}</p>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
+
+<style>
+  .empty { color: var(--muted); }
+  .tool-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+  }
+  .tool-card a {
+    display: block;
+    background: var(--bg);
+    padding: 1rem 1.1rem;
+    text-decoration: none;
+    color: var(--fg);
+    height: 100%;
+  }
+  .tool-card a:hover,
+  .tool-card a:focus-visible {
+    background: var(--panel);
+  }
+  /* Negative offset so the ring sits inside the card rather than getting
+     visually clipped by the 1px grid gap between cards. */
+  .tool-card a:focus-visible { outline: 2px solid var(--id); outline-offset: -2px; }
+  .tool-card-head {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .tool-name { font-family: var(--font-head); font-weight: 700; }
+  .reason {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    line-height: 1.35;
+    /* Fixed to a 3-line slot, present on every card (even the one tool with
+       no summary, which now gets a fallback string above) -- summary length
+       in tools.json ranges from ~64 to ~310 characters, which was the main
+       driver of visibly inconsistent card heights across grid rows. Clamps
+       long text with an ellipsis and reserves the same space for short
+       text via min-height, so every card in the grid ends up the same
+       height regardless of content length. Grid columns/reflow untouched. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.35em * 3);
+  }
+  .reason.shared-domain-note {
+    color: var(--amber-fg);
+  }
+</style>

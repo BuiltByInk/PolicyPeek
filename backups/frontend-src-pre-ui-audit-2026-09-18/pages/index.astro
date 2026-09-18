@@ -1,0 +1,118 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SubmitTool from "../components/SubmitTool.astro";
+import type { Tool } from "../types";
+import toolsData from "../../data/tools.json";
+
+const tools = toolsData as Tool[];
+const notCompliantCount = tools.filter((t) => t.compliance_status === "not_compliant").length;
+---
+<Layout
+  title="Does it train on your data?"
+  description="PolicyPeek checks AI tools' own privacy policies and tells you, in one line, whether they train on your data — sourced from the policy itself, not a guess."
+>
+  <section class="hero">
+    <p class="eyebrow">Data Practices Disclosure</p>
+    <h1>Does it train on your data?</h1>
+    <p class="lede">
+      PolicyPeek reads privacy policies so you don't have to, and turns them into a
+      one-line, sourced answer: does this tool train on what you give it, or not.
+    </p>
+    <a class="cta" href="/tools">Browse {tools.length} tool{tools.length === 1 ? "" : "s"}</a>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      <span class="k">Tools Tracked</span>
+      <strong>{tools.length}</strong>
+    </div>
+    <div class="stat">
+      <span class="k">No Opt&#8209;Out</span>
+      <strong>{notCompliantCount}</strong>
+    </div>
+  </section>
+
+  <section class="how">
+    <h2>How a rating gets made</h2>
+    <ol>
+      <li>We pull facts from the tool's own published policy — never a guess.</li>
+      <li>A fixed rule (not an AI opinion) turns those facts into compliant / compliant with caveats / not compliant / unrated.</li>
+      <li>A human reviews it before it's published.</li>
+    </ol>
+    <a href="/about">Read the full methodology →</a>
+  </section>
+
+  <SubmitTool />
+</Layout>
+
+<style>
+  .hero { padding: 1rem 0 2rem; }
+  .eyebrow {
+    font-family: var(--font-head);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--id);
+    margin: 0 0 0.6rem;
+  }
+  .hero h1 {
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    line-height: 1.05;
+    margin: 0 0 0.75rem;
+  }
+  .lede {
+    font-family: var(--font-body);
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 40em;
+  }
+  .cta {
+    display: inline-block;
+    margin-top: 1.1rem;
+    padding: 0.65rem 1.2rem;
+    background: var(--fg);
+    color: var(--bg);
+    border: 2px solid var(--fg);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  /* Was the site's most prominent interactive element with zero hover/focus
+     feedback -- invert using the same two tokens already on the element,
+     no new color introduced. */
+  .cta:hover,
+  .cta:focus-visible {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin: 1.75rem 0;
+    border: 3px solid var(--line);
+    border-right: none;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem 1.2rem;
+    border-right: 3px solid var(--line);
+  }
+  .stat .k {
+    font-family: var(--font-head);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+  .stat strong {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.9rem;
+  }
+  .how ol { padding-left: 1.25rem; font-family: var(--font-body); }
+  .how li { margin-bottom: 0.4rem; }
+</style>

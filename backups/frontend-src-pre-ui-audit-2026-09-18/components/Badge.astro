@@ -1,0 +1,79 @@
+---
+export interface Props {
+  status:
+    | "compliant"
+    | "not_compliant"
+    | "compliant_with_caveats"
+    | "unrated"
+    | "shared_domain_unverified"
+    | "not_ai_tool";
+}
+
+const { status } = Astro.props;
+
+// compliant = green (doesn't train on your data, or lets you opt out).
+// not_compliant = red (trains by default, no opt-out).
+// compliant_with_caveats = solid teal, a hue of its own -- NOT a green/amber
+// mix and not reused from either. The tool trains on your data by default,
+// but a real opt-out exists. That's a weaker guarantee than plain
+// "compliant" (GDPR wants opt-in, not "opt-out if you can find it"), so it
+// must never render as the same green. It is also a different epistemic
+// state than amber: amber means "we don't know," this means "we DO know,
+// and it's conditional -- read the caveat."
+// unrated = solid amber (genuinely unclear from the source policy) — amber
+// means "we don't know," not "somewhere in between."
+// shared_domain_unverified = OUTLINED amber, deliberately not solid — this
+// isn't "unclear," it's "the policy we read covers a whole company, not
+// this product specifically," and must be impossible to mistake for a real
+// unrated/amber verdict at a glance.
+// not_ai_tool = solid gray, its own neutral hue reused from nowhere else —
+// this isn't a compliance verdict at all (not on the green/amber/red/caveat
+// spectrum), it's "the submitted site doesn't look like an AI/ML product,"
+// so it must read as clearly outside that spectrum, not as a milder amber.
+const copy: Record<Props["status"], { label: string; cls: string }> = {
+  compliant: { label: "Compliant", cls: "badge green" },
+  not_compliant: { label: "Not compliant", cls: "badge red" },
+  compliant_with_caveats: { label: "Compliant with caveats", cls: "badge caveat" },
+  unrated: { label: "Unrated", cls: "badge amber" },
+  shared_domain_unverified: { label: "Company-wide policy — not product-verified", cls: "badge amber-outline" },
+  not_ai_tool: { label: "Not an AI tool", cls: "badge gray" },
+};
+
+const { label, cls } = copy[status];
+---
+<span class={cls}>{label}</span>
+
+<style>
+  /* Rendered as a literal disclosure tag -- sharp corners, a full border,
+     uppercase tracked type -- rather than a soft pill, to match the rest
+     of the site's "regulatory label" language (see Layout.astro). */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.22rem 0.6rem;
+    border: 1.5px solid currentColor;
+    font-family: var(--font-head);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge.green { background: var(--green-bg); color: var(--green-fg); }
+  .badge.amber { background: var(--amber-bg); color: var(--amber-fg); }
+  .badge.red { background: var(--red-bg); color: var(--red-fg); }
+  .badge.caveat {
+    background: var(--caveat-bg);
+    color: var(--caveat-fg);
+    /* double rule instead of a single keyline -- reads as "qualified," the
+       same way a nutrition label uses a double rule above a subtotal, and
+       keeps this from being mistaken for the plain solid badges at a glance. */
+    border-style: double;
+    border-width: 4px;
+  }
+  .badge.amber-outline {
+    background: transparent;
+    color: var(--amber-fg);
+    border-style: dashed;
+  }
+  .badge.gray { background: var(--gray-bg); color: var(--gray-fg); }
+</style>

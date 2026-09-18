@@ -2,10 +2,29 @@
 export interface Props {
   title: string;
   description: string;
+  /** Keep this page out of search results (also keep it out of the sitemap -- see astro.config.mjs). */
+  noindex?: boolean;
+  /** Path or absolute URL of the social-share image. Defaults to the site-wide card. */
+  ogImage?: string;
+  /** schema.org structured data for the page: one object or an array. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const { title, description } = Astro.props;
+const { title, description, noindex = false, ogImage = "/og-image.png", jsonLd } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(ogImage, Astro.site);
+const path = Astro.url.pathname;
+
+// Structured data is built from tools.json, which holds LLM-extracted text
+// (tool names etc.), so it is untrusted. JSON.stringify alone doesn't make it
+// safe inside a <script> block: a "</script>" in a string would end the block
+// early. Escaping "<" (and the two JS line separators) as \uXXXX keeps the
+// JSON identical for parsers but can never close the tag.
+const jsonLdString = jsonLd
+  ? JSON.stringify(jsonLd)
+      .replace(/</g, "\\u003c")
+      .replace(new RegExp("[\\u2028\\u2029]", "g"), (c) => "\\u" + c.charCodeAt(0).toString(16))
+  : null;
 ---
 <html lang="en">
   <head>
@@ -14,17 +33,70 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <title>{title} · PolicyPeek</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalURL} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PolicyPeek" />
     <meta property="og:title" content={`${title} · PolicyPeek`} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PolicyPeek: Does it train on your data? Plain-English verdicts on AI tools, sourced from each tool's own privacy policy." />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${title} · PolicyPeek`} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
 
-    <style>
+    {/* Same-origin fonts (no third-party request). Only the two files used above the fold on every page are preloaded. */}
+    <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+
+    <style is:global>
+      /* Headline face: Barlow Condensed (SIL OFL 1.1, licence in
+         /fonts/OFL-BarlowCondensed.txt), self-hosted, Latin subset, 700 + 800
+         only (~22 KB each). Replaces the old "Helvetica Neue Condensed / Arial
+         Narrow" system-font gamble, which only condensed on Apple and
+         Windows/Office. display: swap so text is never held back.
+         The fallback face below is Arial Bold scaled to Barlow Condensed's
+         measured average width (measured 74% over 8 mixed sample strings: 6052 vs 8137 units;
+         77% chosen after checking real page heights, lowercase-heavy
+         headlines run wider in Barlow than the average, see
+         research/ui_audit_2026-09-18.md) with its ascent/descent divided by
+         the same factor (Barlow: 1.00 / 0.20), so a slow font load changes line
+         breaks and page height as little as possible when the swap happens. */
+      @font-face {
+        font-family: "Barlow Condensed";
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url("/fonts/barlow-condensed-latin-700-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Barlow Condensed";
+        font-style: normal;
+        font-weight: 800;
+        font-display: swap;
+        src: url("/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Barlow Condensed Fallback";
+        font-style: normal;
+        font-weight: 700 800;
+        src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("Arimo Bold");
+        size-adjust: 77%;
+        ascent-override: 130%;
+        descent-override: 26%;
+        line-gap-override: 0%;
+      }
+      /* NOTE (2026-09-18 UI audit): this block is is:global on purpose. It was
+         scoped before, which meant Astro only applied h1/h2/h3, a:focus-visible
+         and box-sizing to elements written in THIS file -- never to headings
+         or links inside page slot content, so every page heading rendered in
+         plain Arial 700 and page-level links had no custom focus ring.
+         Page/component <style> blocks stay scoped. */
       /* Design direction: "Compliance Label" -- modeled on nutrition-facts /
          energy-rating panels. Black keylines instead of soft grey borders,
          a condensed headline face for the regulatory-document voice,
@@ -53,7 +125,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
            "this question doesn't apply here." Must read as clearly outside
            the compliant/caveats/not_compliant/unrated spectrum. */
         --gray-bg: #eceef0; --gray-fg: #40464f;
-        --font-head: "Helvetica Neue Condensed", "Arial Narrow", Arial, sans-serif;
+        --font-head: "Barlow Condensed", "Barlow Condensed Fallback", "Arial Narrow", Arial, sans-serif;
         --font-body: Arial, Helvetica, sans-serif;
         --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
       }
@@ -98,9 +170,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       h1, h2, h3 {
         font-family: var(--font-head);
         font-weight: 800;
-        letter-spacing: -0.01em;
+        letter-spacing: 0;
+        line-height: 1.1;
         text-wrap: balance;
       }
+      /* Barlow Condensed sets narrower than Arial at the same size; these
+         defaults keep headings the visual weight they had. */
+      h1 { font-size: clamp(2.4rem, 6.5vw, 3.2rem); }
+      h2 { font-size: 1.7rem; }
       .wrap {
         max-width: 880px;
         margin: 0 auto;
@@ -121,8 +198,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       header.site a.brand {
         font-family: var(--font-head);
         font-weight: 800;
-        font-size: 1.2rem;
+        font-size: 1.6rem;
         letter-spacing: 0.01em;
+        line-height: 1.2;
         color: var(--fg);
         text-decoration: none;
       }
@@ -139,17 +217,40 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         text-transform: uppercase;
         letter-spacing: 0.06em;
       }
-      nav.site a:hover { color: var(--id); }
+      nav.site a { display: inline-block; padding: 0.4rem 0; }
+      nav.site a:hover, nav.site a[aria-current="page"] { color: var(--fg); }
+      nav.site a[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--id); }
+      /* Body links: navy (--id) + underline. Before this, in-page links fell
+         back to the browser default (#0000ee blue / purple visited), the only
+         off-palette colour on the site. Underline stays so links are not
+         distinguished by colour alone (WCAG 1.4.1). */
+      a { color: var(--id); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+      a:hover { text-decoration-thickness: 2px; }
+      nav.site a, header.site a.brand { text-decoration: none; }
       /* Global focus-visible for links -- SubmitTool.astro's inputs/button
-         already use this exact --id outline treatment; no anchor tag
-         anywhere had an equivalent, so every link on the site fell back to
-         the plain browser-default ring. Extends the existing convention
-         site-wide rather than introducing a new one. */
-      a:focus-visible {
+         use this exact --id outline treatment; extends the convention
+         site-wide. */
+      a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
         outline: 2px solid var(--id);
         outline-offset: 2px;
       }
-      main { padding: 2rem 0 3rem; }
+      /* Browser-default placeholder grey (#757575) is 3.9:1 on the dark page
+         background; --muted is 6.8:1 (light) and 7.6:1 (dark). */
+      ::placeholder { color: var(--muted); opacity: 1; }
+      .skip {
+        position: absolute; left: 0.5rem; top: -4rem;
+        background: var(--fg); color: var(--bg);
+        padding: 0.6rem 0.9rem; font-weight: 700; z-index: 10;
+      }
+      .skip:focus { top: 0.5rem; }
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
+      /* Was `main { padding: 2rem 0 3rem }`, which lost to `.wrap { padding: 0
+         1.25rem }` on specificity -- computed padding-top/bottom was 0px, so
+         page content butted against the header and footer rules. */
+      main.wrap { padding-top: 2rem; padding-bottom: 3rem; }
       footer.site {
         border-top: 3px solid var(--line);
         color: var(--muted);
@@ -160,19 +261,34 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         header.site .wrap { flex-direction: column; align-items: flex-start; }
         nav.site a { margin-left: 0; margin-right: 1.25rem; }
       }
+      /* Print: a checked result is something people save or print for a
+         colleague/relative. Drop chrome and forms, force black-on-white, and
+         show link targets so a printed source list is still usable. */
+      @media print {
+        :root { --fg: #000; --bg: #fff; --muted: #333; --line: #000; --id: #000; }
+        header.site nav, footer.site, .skip, .submit-panel, form, .no-print { display: none !important; }
+        header.site, footer.site { border-color: #000; }
+        a { text-decoration: underline; }
+        body { font-size: 11pt; }
+      }
     </style>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {jsonLdString && <script type="application/ld+json" set:html={jsonLdString} />}
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
     <header class="site">
       <div class="wrap">
         <a class="brand" href="/">POLICYPEEK</a>
-        <nav class="site">
-          <a href="/tools">Tools</a>
-          <a href="/about">Methodology</a>
+        <nav class="site" aria-label="Main">
+          <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
+          <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
         </nav>
       </div>
     </header>
-    <main class="wrap">
+    <main class="wrap" id="main">
       <slot />
     </main>
     <footer class="site">

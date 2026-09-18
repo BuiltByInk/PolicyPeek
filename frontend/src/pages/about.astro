@@ -25,10 +25,12 @@ import Layout from "../layouts/Layout.astro";
       <strong>A fixed rule, not an opinion, decides the badge.</strong>
       The facts above run through one fixed rule, the same for every tool:
       <ul>
-        <li><strong>Compliant</strong> — doesn't train on user data, or lets you opt out.</li>
+        <li><strong>Compliant</strong> — doesn't train on your data by default, or only trains on it if you opt in.</li>
         <li><strong>Compliant with caveats</strong> — trains on your data <em>by default</em>, but a real opt-out exists somewhere in the policy.</li>
         <li><strong>Not compliant</strong> — trains on your data by default, with no opt-out.</li>
         <li><strong>Unrated</strong> — the policy is genuinely unclear either way. This is not a middle grade — it means we don't know, not that the tool is "somewhat okay."</li>
+        <li><strong>Company-wide policy</strong> — the only policy we could find is published for a whole company (for example a Google or Microsoft policy), not for this one product. We don't rate the product from a policy that isn't about it.</li>
+        <li><strong>Not an AI tool</strong> — the site's policy shows no sign it's an AI product, so the question of training on your data doesn't apply. This isn't a compliance verdict at all.</li>
       </ul>
     </li>
     <li>
@@ -50,9 +52,9 @@ import Layout from "../layouts/Layout.astro";
     consent, not an opt-out you have to go find in a settings page or a
     support form. So when a tool trains on your data unless you take action,
     PolicyPeek shows a distinct teal "Compliant with caveats" badge rather
-    than the plain green "Compliant" one — same shape and border weight as
-    every other badge on the site, deliberately not green, and paired with a
-    one-line note on the tool's page explaining what the caveat actually is.
+    than the plain green "Compliant" one — the same size and shape as every
+    other badge, with a double border, deliberately not green, and paired with
+    a one-line note on the tool's page explaining what the caveat actually is.
     It is also not a shade of amber: amber on this site always means "we
     don't know." Compliant with caveats means the opposite — we know exactly
     what the policy says, and it's a middle case, not an unknown one.
@@ -78,6 +80,9 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <style>
+  /* Cap the measure: the wrapper is 880px wide, which is ~100 characters of
+     body text per line -- too long to read comfortably. */
+  h1 + p, .steps, h2 + p { max-width: 68ch; }
   .steps { padding-left: 1.25rem; }
   .steps li { margin-bottom: 1rem; }
   .steps ul { margin-top: 0.4rem; }

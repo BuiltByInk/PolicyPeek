@@ -87,7 +87,7 @@ one.
 | not in catalog (`404 not_found` from lookup) | no equivalent on the site (site only lists catalogued tools) | new, extension-only: neutral/gray icon state |
 
 Tooltip/title text on hover should reuse the exact site copy per state
-(e.g. `"Company-wide policy — not product-verified"` for
+(e.g. `"Company-wide policy"` for
 `shared_domain_unverified`, pulled from `Badge.astro`'s `copy` map) rather
 than writing new wording — keeps the two surfaces consistent and avoids
 re-litigating label copy in a second place.

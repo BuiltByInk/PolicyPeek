@@ -1,0 +1,174 @@
+---
+// Free, unlimited checks are the catalog's growth loop (see CLAUDE.md's
+// "Business Model & ICP") -- this is the only place on the actual website
+// a visitor can use that loop; before this, it only existed via the raw
+// API and the browser extension. Posts straight to the backend's
+// POST /v1/check from the client, no server round-trip of our own since
+// this is a static site.
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
+---
+<div class="submit-panel">
+  <p class="lp-head">Don't see a tool?</p>
+  <p class="intro">
+    Submit its domain and a link to its privacy policy. It's free and unlimited (one submission every
+    24 hours) — the check runs automatically, and either publishes right away or joins the review queue.
+  </p>
+  <form id="submit-form" data-api-base={apiBase ?? ""}>
+    <label>
+      <span>Domain</span>
+      <input type="text" name="domain" placeholder="example.com" required />
+    </label>
+    <label>
+      <span>Link to their privacy policy</span>
+      <input type="url" name="source_url" placeholder="https://example.com/privacy" required />
+    </label>
+    <button type="submit">Check this tool</button>
+  </form>
+  <p id="submit-status" role="status" aria-live="polite"></p>
+</div>
+
+<style>
+  .submit-panel {
+    margin: 1.75rem 0 2.25rem;
+    border: 3px solid var(--line);
+  }
+  .lp-head {
+    margin: 0;
+    padding: 0.6rem 1rem;
+    border-bottom: 3px solid var(--line);
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .intro {
+    margin: 0;
+    padding: 1rem 1rem 0.25rem;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    max-width: 60ch;
+  }
+  form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+    align-items: end;
+    padding: 0.75rem 1rem 1.1rem;
+  }
+  label { display: flex; flex-direction: column; gap: 0.3rem; font-family: var(--font-body); }
+  label span {
+    font-family: var(--font-head);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  input {
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.6rem;
+    border: 1.5px solid var(--line);
+    background: var(--bg);
+    color: var(--fg);
+  }
+  input:focus-visible { outline: 2px solid var(--id); outline-offset: 1px; }
+  button {
+    font: inherit;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.6rem 1rem;
+    background: var(--fg);
+    color: var(--bg);
+    border: 2px solid var(--fg);
+    cursor: pointer;
+    height: fit-content;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  /* Same invert-on-hover treatment as the homepage .cta button -- these two
+     already share the exact same fg/bg/border colors, just had no hover
+     state defined here. */
+  button:hover:not(:disabled) {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  button:focus-visible { outline: 2px solid var(--id); outline-offset: 2px; }
+  #submit-status {
+    margin: 0;
+    padding: 0 1rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    min-height: 1.2em;
+  }
+  #submit-status[data-tone="error"] { color: var(--red-fg); }
+  #submit-status[data-tone="ok"] { color: var(--green-fg); }
+</style>
+
+<script>
+  const form = document.getElementById("submit-form") as HTMLFormElement | null;
+  const status = document.getElementById("submit-status");
+  if (form && status) {
+    const apiBase = form.dataset.apiBase;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const button = form.querySelector("button") as HTMLButtonElement;
+      const data = new FormData(form);
+      const domain = String(data.get("domain") ?? "").trim();
+      const sourceUrl = String(data.get("source_url") ?? "").trim();
+
+      status.dataset.tone = "";
+      if (!apiBase) {
+        status.dataset.tone = "error";
+        status.textContent = "Submissions aren't connected yet — check back soon.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Checking…";
+
+      try {
+        const res = await fetch(`${apiBase}/v1/check`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ domain, source_url: sourceUrl }),
+        });
+        const body = await res.json();
+
+        if (res.status === 202) {
+          status.dataset.tone = "ok";
+          status.textContent = body.is_recheck
+            ? `Re-checking ${domain} — it's already in the catalog, this refreshes it.`
+            : `Submitted. ${domain} is being checked now and will show up in the catalog once it clears review.`;
+          form.reset();
+        } else if (res.status === 429) {
+          status.dataset.tone = "error";
+          status.textContent = "You've already submitted a check in the last 24 hours — free tier is one per day, try again tomorrow.";
+        } else if (res.status === 400 && body.error === "source_url_domain_mismatch") {
+          status.dataset.tone = "error";
+          status.textContent = "That policy link doesn't belong to the domain you entered.";
+        } else if (res.status === 400) {
+          status.dataset.tone = "error";
+          status.textContent = "Check the domain and policy link — one of them doesn't look right.";
+        } else if (res.status === 502) {
+          status.dataset.tone = "error";
+          status.textContent = "Couldn't fetch that policy page — double check the link, or the site may be blocking automated checks.";
+        } else {
+          status.dataset.tone = "error";
+          status.textContent = "Something went wrong — try again in a moment.";
+        }
+      } catch {
+        status.dataset.tone = "error";
+        status.textContent = "Couldn't reach the checking service — try again in a moment.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+</script>

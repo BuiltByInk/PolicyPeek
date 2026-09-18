@@ -1,0 +1,84 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout
+  title="Methodology"
+  description="How PolicyPeek turns a privacy policy into a compliant / compliant with caveats / not compliant / unrated badge — where the facts come from, and how the verdict is decided."
+>
+  <h1>How a rating gets made</h1>
+
+  <p>
+    Every badge on PolicyPeek traces back to three separate steps, kept
+    deliberately separate so no single step can quietly turn an opinion into a
+    fact.
+  </p>
+
+  <ol class="steps">
+    <li>
+      <strong>Facts, extracted from the tool's own policy.</strong>
+      We fetch the privacy policy the tool itself publishes and pull out a
+      handful of factual claims — does it say it trains on your data, is there
+      a stated retention period, does it mention GDPR. This step is not
+      allowed to make a judgment call; it only reports what the text says.
+    </li>
+    <li>
+      <strong>A fixed rule, not an opinion, decides the badge.</strong>
+      The facts above run through one fixed rule, the same for every tool:
+      <ul>
+        <li><strong>Compliant</strong> — doesn't train on user data, or lets you opt out.</li>
+        <li><strong>Compliant with caveats</strong> — trains on your data <em>by default</em>, but a real opt-out exists somewhere in the policy.</li>
+        <li><strong>Not compliant</strong> — trains on your data by default, with no opt-out.</li>
+        <li><strong>Unrated</strong> — the policy is genuinely unclear either way. This is not a middle grade — it means we don't know, not that the tool is "somewhat okay."</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Clean results publish automatically; anything uncertain goes to a human first.</strong>
+      When the extracted facts are complete and the rule above lands on an
+      unambiguous verdict, the badge publishes to the <a href="/tools">tools
+      list</a> right away. If a fact needed to decide the badge is missing,
+      the source looks unreliable (e.g. an archived snapshot instead of the
+      live page), or a recheck would flip an existing badge, it's held for
+      someone to check the extracted facts against the actual source before
+      it goes live.
+    </li>
+  </ol>
+
+  <h2>Why "compliant with caveats" isn't just a green pass</h2>
+  <p>
+    An opt-out is a real, meaningful protection — but it's a weaker one than
+    "doesn't train on your data by default." GDPR generally expects opt-in
+    consent, not an opt-out you have to go find in a settings page or a
+    support form. So when a tool trains on your data unless you take action,
+    PolicyPeek shows a distinct teal "Compliant with caveats" badge rather
+    than the plain green "Compliant" one — same shape and border weight as
+    every other badge on the site, deliberately not green, and paired with a
+    one-line note on the tool's page explaining what the caveat actually is.
+    It is also not a shade of amber: amber on this site always means "we
+    don't know." Compliant with caveats means the opposite — we know exactly
+    what the policy says, and it's a middle case, not an unknown one.
+  </p>
+
+  <h2>Why unrated isn't a guess</h2>
+  <p>
+    If a policy doesn't clearly say one way or the other, PolicyPeek marks it
+    unrated rather than rounding it up or down. An amber badge means "read the
+    source yourself before you decide," not "probably fine" — and it is a
+    different kind of uncertainty than "compliant with caveats" above:
+    unrated means we couldn't tell from the policy, while compliant with
+    caveats means the policy told us exactly what happens and it's a
+    conditional pass.
+  </p>
+
+  <h2>Sources</h2>
+  <p>
+    Every tool page links the exact policy page(s) the rating was built from.
+    If a source is stale or wrong, that's a bug in our data, not the tool's
+    fault — the fix is to re-check the source, not to guess.
+  </p>
+</Layout>
+
+<style>
+  .steps { padding-left: 1.25rem; }
+  .steps li { margin-bottom: 1rem; }
+  .steps ul { margin-top: 0.4rem; }
+</style>

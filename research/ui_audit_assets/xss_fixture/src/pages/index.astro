@@ -1,0 +1,162 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SubmitTool from "../components/SubmitTool.astro";
+import Badge from "../components/Badge.astro";
+import type { Tool } from "../types";
+import { VERDICTS } from "../verdicts";
+import toolsData from "../../data/tools.json";
+
+const tools = toolsData as Tool[];
+const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
+---
+<Layout
+  title="Does it train on your data?"
+  description="PolicyPeek checks AI tools' own privacy policies and tells you, in one line, whether they train on your data — sourced from the policy itself, not a guess."
+>
+  <section class="hero">
+    <p class="eyebrow">Data Practices Disclosure</p>
+    <h1>Does it train on your data?</h1>
+    <p class="lede">
+      PolicyPeek reads privacy policies so you don't have to, and turns them into a
+      one-line, sourced answer: does this tool train on what you give it, or not.
+    </p>
+    <form class="find" action="/tools/" method="get" role="search">
+      <label for="home-q">Look up a tool</label>
+      <div class="find-row">
+        <input id="home-q" name="q" type="search" placeholder="e.g. chatgpt, cursor, otter.ai"
+          autocomplete="off" spellcheck="false" />
+        <button type="submit">Look it up</button>
+      </div>
+    </form>
+    <p class="alt"><a href="/tools/">Browse all {tools.length} tool{tools.length === 1 ? "" : "s"}</a></p>
+  </section>
+
+  <section class="register" aria-labelledby="reg-h">
+    <h2 id="reg-h">What we've found so far</h2>
+    <p class="reg-sub">{tools.length} tool{tools.length === 1 ? "" : "s"} checked. Each verdict, what it means, and how many tools have it.</p>
+    <ul>
+      {VERDICTS.map((v) => (
+        <li class="reg-row">
+          <span class="n">{counts[v.status]}</span>
+          <span class="b"><Badge status={v.status} /></span>
+          <span class="m">{v.meaning}</span>
+          <a class="go" href={`/tools/?v=${v.status}`} aria-label={`See the ${counts[v.status]} tools rated ${v.short}`}>See them →</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="how">
+    <h2>How a rating gets made</h2>
+    <ol>
+      <li>We pull facts from the tool's own published privacy policy. We don't guess.</li>
+      <li>One fixed rule, the same for every tool, turns those facts into a verdict. It isn't an AI's opinion.</li>
+      <li>Clear-cut results publish automatically. Anything uncertain gets a person's eyes first.</li>
+    </ol>
+    <p><a href="/about">Read the full methodology →</a></p>
+  </section>
+
+  <SubmitTool />
+</Layout>
+
+<style>
+  .hero { padding: 0.5rem 0 1.5rem; }
+  .eyebrow {
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--id);
+    margin: 0 0 0.6rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    line-height: 1.02;
+    margin: 0 0 0.75rem;
+  }
+  .lede {
+    font-family: var(--font-body);
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 40em;
+  }
+  /* The one thing most visitors came to do is look a tool up, so the lookup
+     is the hero's main control rather than a "Browse" button. Plain GET
+     form: works without JavaScript, /tools/ reads ?q= on load. */
+  .find { margin-top: 1.4rem; max-width: 34rem; }
+  .find label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .find-row { display: flex; gap: 0; }
+  .find input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    padding: 0.7rem 0.8rem;
+    border: 3px solid var(--line);
+    border-right: none;
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .find button {
+    flex: 0 0 auto;
+    font: inherit;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.7rem 1.1rem;
+    background: var(--fg);
+    color: var(--bg);
+    border: 3px solid var(--fg);
+    border-radius: 0;
+    cursor: pointer;
+  }
+  .find button:hover { background: var(--bg); color: var(--fg); border-color: var(--line); }
+  .alt { margin: 0.8rem 0 0; font-size: 0.92rem; }
+
+  /* ---- verdict register: doubles as the legend for the badge vocabulary ---- */
+  .register { margin: 1.5rem 0 2rem; }
+  .register h2 { margin: 0; font-size: 1.35rem; }
+  .reg-sub { margin: 0.3rem 0 0.9rem; color: var(--muted); font-size: 0.92rem; }
+  .register ul { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--line); border-bottom: 3px solid var(--line); }
+  .reg-row {
+    display: grid;
+    grid-template-columns: 2.6rem 1fr;
+    gap: 0.2rem 0.9rem;
+    align-items: start;
+    padding: 0.75rem 0.25rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .reg-row:last-child { border-bottom: none; }
+  .reg-row .n {
+    grid-row: 1 / span 3;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 1.7rem;
+    line-height: 1.1;
+    text-align: right;
+  }
+  .reg-row .m { color: var(--muted); font-size: 0.92rem; }
+  .reg-row .go { font-size: 0.88rem; }
+  @media (min-width: 760px) {
+    .reg-row { grid-template-columns: 2.6rem 13.5rem 1fr auto; align-items: center; }
+    .reg-row .n { grid-row: auto; }
+  }
+
+  .how ol { padding-left: 1.25rem; font-family: var(--font-body); max-width: 62ch; }
+  .how li { margin-bottom: 0.4rem; }
+</style>

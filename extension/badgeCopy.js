@@ -16,7 +16,7 @@ export const BADGE_COPY = {
   },
   unrated: { label: "Unrated", shape: "solid", color: "amber" },
   shared_domain_unverified: {
-    label: "Company-wide policy — not product-verified",
+    label: "Company-wide policy",
     shape: "ring",
     color: "amber",
   },

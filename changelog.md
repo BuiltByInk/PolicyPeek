@@ -12,6 +12,81 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-18 (SEO pass + batch-submit script — built and checked locally; not deployed)
+
+**SEO** (`frontend/`), done on top of the UI audit's final `Layout.astro` /
+`[domain].astro`:
+- Tool-page meta descriptions are now a template ("Does X train on your data?
+  <verdict>: <plain meaning> Sourced from its own privacy policy.", tail
+  dropped past 160 chars) instead of the raw policy quote in `summary`, which
+  was cut off in results and sometimes unrelated to the question. All 33 are
+  unique, 119-156 chars. The summary itself still shows on the page.
+- `not_ai_tool` pages (hancocyber.com) are `noindex, follow` and excluded from
+  the sitemap (`astro.config.mjs` filters them using `tools.json`, so the two
+  can't drift). New `noindex` / `ogImage` / `jsonLd` props on `Layout.astro`.
+- Social card: `og-image.png` (1200x630, rendered from
+  `research/seo/og-image.html`), `og:image` + `twitter:image`, card type
+  `summary_large_image`, `og:site_name`.
+- Icons: `favicon.ico` and `apple-touch-icon.png` generated from the UI
+  audit's final `favicon.svg` (`research/seo/render-icons.mjs`).
+- Structured data: `BreadcrumbList` on tool pages, `WebSite` on the home page.
+  Built from `tools.json` (LLM-extracted, untrusted), so `<` is escaped as
+  `<` inside the `<script>` block; tested with a `</script>` payload.
+- `404.astro` added (noindex). Believed, not confirmed live, that Cloudflare
+  Pages otherwise serves the home page with a 200 for unknown URLs.
+- **Deliberately skipped**: sitemap `lastmod`. `tools.json` has no accurate
+  per-page content date (D1's `updated_at` changes on any row write), and a
+  wrong `lastmod` trains search engines to ignore it.
+- Known minor: titles for long tool names reach 75 chars (results truncate
+  near 60).
+
+**Batch submission** (`scripts/batch-submit.mjs`, dry run only so far): submits
+the 26 researched-but-never-submitted tools through `POST /v1/check` with a
+paid-tier key (exempt from the free daily cap) in paced batches, logging to
+`research/batch_submissions.jsonl`. 22 eligible; 4 held with reasons: Adobe
+Firefly (shared adobe.com domain), Devin (policy on cognition.com needs a
+`crossDomainSources.ts` entry + deploy; same policy covers Windsurf), Suno
+(suno.ai vs suno.com identity), Character.ai (client-rendered legal pages).
+
+## 2026-09-18 (UI audit + fixes — built and verified in a real browser; not deployed)
+
+Elliot asked for the UI to be checked for bugs and quirks and for research on
+distinctive verdict/label design. Real Chromium screenshots at 375/768/1280,
+light and dark, all six verdict types; the live API was mocked, never called.
+Full report, research sources and screenshots: `research/ui_audit_2026-09-18.md`
+and `research/ui_audit_assets/`. Pre-change copy of `frontend/src` is in
+`backups/frontend-src-pre-ui-audit-2026-09-18/`.
+
+**Fixed (files: `layouts/Layout.astro`, `pages/index.astro`, `pages/about.astro`,
+`pages/tools/index.astro`, `pages/tools/[domain].astro`,
+`components/{Badge,SubmitTool}.astro`, new `src/verdicts.ts`, new
+`public/favicon.svg`):**
+- The site-wide CSS was scoped to `Layout.astro` only, so page headings never
+  got the condensed-head styling and page links had no custom focus ring;
+  `main` had 0 vertical padding (specificity clash). Both fixed.
+- Zoom AI Companion (unrated, empty summary) showed a badge with no reason on its
+  page, and an empty meta description. Amber/red now always show a reason.
+- /tools/ is now a fixed-column register (name / verdict / reason) with search,
+  verdict filter, sort and a "not found, check it" state; red/amber reasons are no
+  longer clipped. Home hero is now a tool lookup plus a verdict register.
+- SubmitTool accepts pasted full URLs, gives per-field plain messages, uses
+  `resets_at` on the daily limit, handles non-JSON errors and times out cleanly.
+- Copy: about page said "Compliant = ... or lets you opt out" (wrong, that is
+  caveats) and omitted two verdicts; home said "a human reviews it" (no longer
+  true). hancocyber.com now reads "Not applicable" and gets its own title.
+- Untrusted text: no XSS gap found (checked with a hostile-fixture build); added a
+  scheme check so only http(s) source URLs become links.
+- Accessibility: skip link, nav labels/current page, 44 px targets, themed links,
+  placeholder contrast in dark mode (3.9:1 to 6.8:1+), print stylesheet.
+
+**Proposed, not built (decisions for Elliot):** verdict-as-biggest-type tool page
+("Option A", mock in `research/ui_mocks/tool_page_options.html`), self-hosted
+Barlow Condensed so the headline face is the same on every device, and shortening
+the "Company-wide policy — not product-verified" badge label. Note: the static
+site does not show a newly auto-published tool until it is rebuilt.
+
+---
+
 ## 2026-09-18 (new `not_ai_tool` verdict category — designed, approved, implemented; not yet deployed)
 
 Triggered by the `hancocyber.com` case (`pending_checks` id 10): a generic

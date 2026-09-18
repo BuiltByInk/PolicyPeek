@@ -197,6 +197,21 @@
     "shared_domain": false
   },
   {
+    "name": "hancocyber.com",
+    "domain": "hancocyber.com",
+    "compliance_status": "not_ai_tool",
+    "summary": "If you leave a comment, the comment and its metadata are retained indefinitely.",
+    "data_retention": "Comments and metadata retained indefinitely; comment opt-in cookies last one year; login cookies last two days; screen options cookies last one year; 'Remember Me' login persists two weeks; post edit cookie expires after 1 day",
+    "trains_on_user_data": null,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://hancocyber.com/privacy-policy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false
+  },
+  {
     "name": "HeyGen",
     "domain": "heygen.com",
     "compliance_status": "compliant_with_caveats",

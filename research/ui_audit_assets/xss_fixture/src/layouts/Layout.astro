@@ -1,0 +1,223 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname;
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · PolicyPeek</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} · PolicyPeek`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={`${title} · PolicyPeek`} />
+    <meta name="twitter:description" content={description} />
+
+    <style is:global>
+      /* NOTE (2026-09-18 UI audit): this block is is:global on purpose. It was
+         scoped before, which meant Astro only applied h1/h2/h3, a:focus-visible
+         and box-sizing to elements written in THIS file -- never to headings
+         or links inside page slot content, so every page heading rendered in
+         plain Arial 700 and page-level links had no custom focus ring.
+         Page/component <style> blocks stay scoped. */
+      /* Design direction: "Compliance Label" -- modeled on nutrition-facts /
+         energy-rating panels. Black keylines instead of soft grey borders,
+         a condensed headline face for the regulatory-document voice,
+         tabular monospace for every number, sharp corners throughout (no
+         rounded-lg default). See DECISIONS_NEEDED.md (2026-08-17 UI entry)
+         for the other two directions this was picked over. */
+      :root {
+        color-scheme: light dark;
+        --fg: #111318;
+        --bg: #ffffff;
+        --muted: #565b66;
+        --line: #111318;
+        --line-soft: #d6d8dc;
+        --panel: #f7f7f5;
+        --id: #1f3a5f;
+        --green-bg: #e6f4ea; --green-fg: #1e7a34;
+        --amber-bg: #fef3e2; --amber-fg: #92600a;
+        --red-bg: #fce8e6; --red-fg: #b3261e;
+        /* caveat = a genuinely separate hue (teal), not a green/amber blend --
+           this is "we DO know, and it's conditional," a different epistemic
+           state than amber's "we don't know." Never reuse green/amber/red
+           here or it reads as a rounding of one of those states. */
+        --caveat-bg: #e2eef4; --caveat-fg: #12586f;
+        /* gray = not_ai_tool. Deliberately neutral, not a shade of green/
+           amber/red/teal -- this isn't a compliance verdict at all, it's
+           "this question doesn't apply here." Must read as clearly outside
+           the compliant/caveats/not_compliant/unrated spectrum. */
+        --gray-bg: #eceef0; --gray-fg: #40464f;
+        --font-head: "Helvetica Neue Condensed", "Arial Narrow", Arial, sans-serif;
+        --font-body: Arial, Helvetica, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --fg: #ececec;
+          --bg: #14161a;
+          --muted: #a3a8b3;
+          --line: #d8dade;
+          --line-soft: #34373f;
+          --panel: #1b1e24;
+          --id: #8ab4ff;
+          --green-bg: #123821; --green-fg: #6fe39a;
+          --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
+          --red-bg: #3a1414; --red-fg: #f28b82;
+          --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+          --gray-bg: #24272d; --gray-fg: #c2c6cc;
+        }
+      }
+      :root[data-theme="dark"] {
+        --fg: #ececec;
+        --bg: #14161a;
+        --muted: #a3a8b3;
+        --line: #d8dade;
+        --line-soft: #34373f;
+        --panel: #1b1e24;
+        --id: #8ab4ff;
+        --green-bg: #123821; --green-fg: #6fe39a;
+        --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
+        --red-bg: #3a1414; --red-fg: #f28b82;
+        --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+        --gray-bg: #24272d; --gray-fg: #c2c6cc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: var(--font-body);
+        color: var(--fg);
+        background: var(--bg);
+        line-height: 1.6;
+      }
+      h1, h2, h3 {
+        font-family: var(--font-head);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+      header.site {
+        border-bottom: 3px solid var(--line);
+      }
+      header.site .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+      header.site a.brand {
+        font-family: var(--font-head);
+        font-weight: 800;
+        font-size: 1.2rem;
+        letter-spacing: 0.01em;
+        color: var(--fg);
+        text-decoration: none;
+      }
+      header.site a.brand::before {
+        content: "■ ";
+        color: var(--id);
+      }
+      nav.site a {
+        color: var(--muted);
+        text-decoration: none;
+        margin-left: 1.5rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      nav.site a { display: inline-block; padding: 0.4rem 0; }
+      nav.site a:hover, nav.site a[aria-current="page"] { color: var(--fg); }
+      nav.site a[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--id); }
+      /* Body links: navy (--id) + underline. Before this, in-page links fell
+         back to the browser default (#0000ee blue / purple visited), the only
+         off-palette colour on the site. Underline stays so links are not
+         distinguished by colour alone (WCAG 1.4.1). */
+      a { color: var(--id); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+      a:hover { text-decoration-thickness: 2px; }
+      nav.site a, header.site a.brand { text-decoration: none; }
+      /* Global focus-visible for links -- SubmitTool.astro's inputs/button
+         use this exact --id outline treatment; extends the convention
+         site-wide. */
+      a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 2px solid var(--id);
+        outline-offset: 2px;
+      }
+      .skip {
+        position: absolute; left: 0.5rem; top: -4rem;
+        background: var(--fg); color: var(--bg);
+        padding: 0.6rem 0.9rem; font-weight: 700; z-index: 10;
+      }
+      .skip:focus { top: 0.5rem; }
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
+      /* Was `main { padding: 2rem 0 3rem }`, which lost to `.wrap { padding: 0
+         1.25rem }` on specificity -- computed padding-top/bottom was 0px, so
+         page content butted against the header and footer rules. */
+      main.wrap { padding-top: 2rem; padding-bottom: 3rem; }
+      footer.site {
+        border-top: 3px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      footer.site .wrap { padding: 1.5rem 1.25rem; }
+      @media (max-width: 480px) {
+        header.site .wrap { flex-direction: column; align-items: flex-start; }
+        nav.site a { margin-left: 0; margin-right: 1.25rem; }
+      }
+      /* Print: a checked result is something people save or print for a
+         colleague/relative. Drop chrome and forms, force black-on-white, and
+         show link targets so a printed source list is still usable. */
+      @media print {
+        :root { --fg: #000; --bg: #fff; --muted: #333; --line: #000; --id: #000; }
+        header.site nav, footer.site, .skip, .submit-panel, form, .no-print { display: none !important; }
+        header.site, footer.site { border-color: #000; }
+        a { text-decoration: underline; }
+        body { font-size: 11pt; }
+      }
+    </style>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="/">POLICYPEEK</a>
+        <nav class="site" aria-label="Main">
+          <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
+          <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap" id="main">
+      <slot />
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>.
+      </div>
+    </footer>
+  </body>
+</html>
