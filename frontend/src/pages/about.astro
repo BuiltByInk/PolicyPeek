@@ -32,9 +32,14 @@ import Layout from "../layouts/Layout.astro";
       </ul>
     </li>
     <li>
-      <strong>A human reviews it before it's published.</strong>
-      Nothing reaches the <a href="/tools">tools list</a> without someone
-      checking the extracted facts against the actual source before approving it.
+      <strong>Clean results publish automatically; anything uncertain goes to a human first.</strong>
+      When the extracted facts are complete and the rule above lands on an
+      unambiguous verdict, the badge publishes to the <a href="/tools">tools
+      list</a> right away. If a fact needed to decide the badge is missing,
+      the source looks unreliable (e.g. an archived snapshot instead of the
+      live page), or a recheck would flip an existing badge, it's held for
+      someone to check the extracted facts against the actual source before
+      it goes live.
     </li>
   </ol>
 

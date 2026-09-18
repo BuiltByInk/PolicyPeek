@@ -12,6 +12,55 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-18 (`ADMIN_TOKEN` 401s on live Worker — found, fixed, verified)
+
+**What broke**: admin actions (`/v1/admin/pending/:id/approve`, `/reject`)
+were 401ing against the live Worker despite `ADMIN_TOKEN` showing up in
+`wrangler secret list` — the secret was set, but the *value* Elliot was
+sending in `X-Admin-Token` didn't match it. Root cause: the token he was
+using was 62 hex characters, not the 64 `openssl rand -hex 32` actually
+produces — dropped 2 characters somewhere in copy/paste between generating
+it and setting it with `wrangler secret put`.
+
+**This is the blocker referenced in yesterday's entry** ("the actual
+current blocker for the 3 remaining pre-ruling tools — Ideogram/JetBrains/
+Luma AI — is the admin token").
+
+**Fixed**: Elliot regenerated a fresh token, explicitly checked `${#TOKEN}`
+== 64 before piping it into `wrangler secret put ADMIN_TOKEN` (via `printf`,
+not `echo`, to avoid a trailing-newline mismatch — the same failure mode,
+different symptom, as this same bug could also produce). Verified live:
+`GET /v1/admin/pending` with the new token returns `200`.
+
+**Queue cleared same session, once auth was confirmed working**:
+- Approved id 4 (ideogram.ai) → published as `tool_id 2`, `not_compliant`
+  (trains on user data by default, no opt-out).
+- Approved id 5 (jetbrains.com) → published as `tool_id 1`, `not_compliant`
+  (same shape; policy does mention GDPR but no opt-out changes the verdict).
+- Approved id 6 (lumalabs.ai) → published as `tool_id 4`, `not_compliant`
+  (same shape).
+- Rejected ids 7, 8, 9 — all dead rows from the `ANTHROPIC_API_KEY` outage
+  (openai.com id 7 never re-extracted; hancocyber.com ids 8/9 superseded by
+  the successful id 10 extraction). Elliot's call, not auto-decided.
+- **Left id 10 (hancocyber.com) untouched, not approved or rejected** —
+  `trains_on_user_data` came back `null` and the source text read as
+  generic WordPress boilerplate rather than an actual privacy policy.
+  Elliot: the site owner submitted it with him to test, and he's raising
+  the extraction issue with them directly rather than publishing or
+  rejecting it here.
+
+**Cleanup, same session**: deleted the leftover misspelled
+`Anthrophic_api_key` secret from the day-before outage via `wrangler
+secret delete`. Live Worker secrets now just `ADMIN_TOKEN` and
+`ANTHROPIC_API_KEY`.
+
+**Process note for next time a secret needs setting**: don't paste raw
+token values into chat/logs to debug a mismatch — length and generation
+method (`echo` vs `printf`) are enough to diagnose without ever exposing
+the value itself. This pass had the value pasted once mid-debugging; it
+was treated as burned and rotated immediately, but the safer path is to
+never paste it in the first place.
+
 ## 2026-09-18 (production outage: ANTHROPIC_API_KEY never set — found, fixed, verified)
 
 **What broke**: the real deployed Worker never had an `ANTHROPIC_API_KEY`
