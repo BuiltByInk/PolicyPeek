@@ -1,5 +1,70 @@
 # Decisions Needed
 
+## Resolved (2026-09-18): `not_ai_tool` verdict category — signal 3 tightened, implemented, awaiting live deploy + hanco re-approve
+
+Elliot's sign-off (2026-09-18, Telegram) approved the design below with two
+changes, both done:
+
+1. **Signal 3 tightened** to require hits across **at least 2 distinct**
+   `GENERIC_CONTENT_CATEGORIES` (not just 1 keyword match total). Re-verified
+   against hanco's real facts: still triggers correctly (`comments_social`
+   from "leave a comment", `cookie_session` from "cookies" in the same
+   clause set — 2 distinct categories, unrelated to each other). Also added
+   a regression test (`rules.test.ts`) for the exact false-positive Elliot
+   named: a thin real-AI policy with only ONE generic-category hit (a single
+   boilerplate cookie-consent line) now correctly stays `unrated`, not
+   `not_ai_tool`.
+2. **Follow-up flagged, not built**: revisit whether keyword-matching should
+   be replaced by a dedicated `ai_product_evidence: boolean | null`
+   extraction field, once the keyword version has run against a real batch
+   of tools and we can see how often it would disagree with what a cleaner
+   extracted-fact version would say. Not scheduled — just making sure "the
+   keyword list is fine forever" isn't the default outcome by omission.
+
+**Implemented** (`backend/src/rules.ts`): `not_ai_tool` added to
+`ComplianceStatus`; `detectNotAiTool()` holds the 3-signal logic;
+`computeVerdict()` consults it only on the existing `trains_on_user_data
+=== null` branch (same gate `unrated` already used — `not_ai_tool` is a
+narrower carve-out of that branch, not a new sibling path). 10 new/updated
+tests in `rules.test.ts`, full backend suite (73 tests) passing.
+
+**Implemented end to end** (the compliant_with_caveats gap from earlier
+didn't get repeated):
+- `frontend/src/types.ts` — `Tool.compliance_status` union.
+- `frontend/src/layouts/Layout.astro` — new `--gray-bg`/`--gray-fg` tokens,
+  light + both dark blocks. Deliberately neutral, no green/amber/red/caveat
+  hue reused — this isn't a point on the compliance spectrum.
+- `frontend/src/components/Badge.astro` — `not_ai_tool` → "Not an AI tool",
+  solid gray.
+- `extension/badgeCopy.js` — same label/shape, kept in sync by hand per its
+  own header comment.
+- `frontend/src/pages/tools/[domain].astro` — reasonClass + CSS, and a
+  fixed explanatory sentence instead of `tool.summary` (the raw first
+  extracted quote reads as confusing out of context for this state).
+- Frontend build (`astro build`) verified clean, 35 pages generated.
+
+**Known gap, same as the compliant_with_caveats precedent**: extension
+toolbar icon assets (`icons/not_ai_tool-{16,32,48}.png`) don't exist yet —
+`badgeCopy.js`'s `iconPathsFor()` will reference missing files. Needs real
+icon art, not fixable in this pass, same open item as caveat's icons.
+
+**Not yet done — needs Elliot, same pattern as every prior deploy step**:
+1. `wrangler deploy` (backend) — ships the new `rules.ts` logic. Off-limits
+   for an agent per the charter.
+2. `npx wrangler pages deploy dist` (frontend, from `frontend/` after
+   `npm run build`) — ships the badge/copy changes.
+3. Once (1) is live: re-run `POST /v1/admin/pending/10/approve` against
+   hanco (`pending_checks` id 10) as the first and only test case — this is
+   an ordinary approve call, no special recheck endpoint needed, since id
+   10 was never approved or rejected. Its verdict will now compute as
+   `not_ai_tool` instead of `unrated`.
+4. Per instruction: **no other already-published tool gets re-verdicted
+   under this logic** without its own separate explicit pass — the 32
+   currently-published tools stay untouched by this change unless
+   individually rechecked later.
+
+---
+
 ## Resolved (2026-09-18): `ANTHROPIC_API_KEY` fixed and verified — `openai.com` recheck (id 7) still outstanding
 
 Discovered while checking the status of a real submission (`hancocyber.com`,

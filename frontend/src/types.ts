@@ -1,7 +1,13 @@
 export interface Tool {
   name: string;
   domain: string;
-  compliance_status: "compliant" | "not_compliant" | "compliant_with_caveats" | "unrated" | "shared_domain_unverified";
+  compliance_status:
+    | "compliant"
+    | "not_compliant"
+    | "compliant_with_caveats"
+    | "unrated"
+    | "shared_domain_unverified"
+    | "not_ai_tool";
   summary: string | null;
   data_retention: string | null;
   trains_on_user_data: boolean | null;

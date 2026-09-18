@@ -12,6 +12,32 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-18 (new `not_ai_tool` verdict category — designed, approved, implemented; not yet deployed)
+
+Triggered by the `hancocyber.com` case (`pending_checks` id 10): a generic
+WordPress privacy-policy template got extracted cleanly but has nothing to
+say about AI/data-training practices, and `unrated` had no way to
+distinguish "not an AI product at all" from "real AI tool, genuinely
+unclear policy." Full design proposal, false-positive risk, and Elliot's
+two requested changes (tighten to 2+ distinct generic-content categories;
+flag a future `ai_product_evidence` extraction-field follow-up rather than
+treat keyword-matching as permanent) are in `DECISIONS_NEEDED.md`.
+
+**Implemented**: `not_ai_tool` added to `ComplianceStatus` end to end —
+`rules.ts` (`detectNotAiTool()` + `computeVerdict()`), `types.ts`,
+`Layout.astro` (new neutral gray tokens), `Badge.astro`, `badgeCopy.js`
+(extension, kept in sync by hand), `[domain].astro`. 10 new/updated backend
+tests, full suite (73 tests) passing; frontend build verified clean.
+
+**Known gap carried over from the caveat precedent**: extension toolbar
+icon assets for this state don't exist yet, same as `compliant_with_caveats`
+before it.
+
+**Not deployed**: needs `wrangler deploy` (backend) and `wrangler pages
+deploy` (frontend), both Elliot's call per the charter. Once live, hanco
+(id 10) gets approved as the first real test case — no other published
+tool is re-verdicted under this logic without its own separate pass.
+
 ## 2026-09-18 (`ADMIN_TOKEN` 401s on live Worker — found, fixed, verified)
 
 **What broke**: admin actions (`/v1/admin/pending/:id/approve`, `/reject`)

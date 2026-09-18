@@ -48,6 +48,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
            state than amber's "we don't know." Never reuse green/amber/red
            here or it reads as a rounding of one of those states. */
         --caveat-bg: #e2eef4; --caveat-fg: #12586f;
+        /* gray = not_ai_tool. Deliberately neutral, not a shade of green/
+           amber/red/teal -- this isn't a compliance verdict at all, it's
+           "this question doesn't apply here." Must read as clearly outside
+           the compliant/caveats/not_compliant/unrated spectrum. */
+        --gray-bg: #eceef0; --gray-fg: #40464f;
         --font-head: "Helvetica Neue Condensed", "Arial Narrow", Arial, sans-serif;
         --font-body: Arial, Helvetica, sans-serif;
         --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
@@ -65,6 +70,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
           --red-bg: #3a1414; --red-fg: #f28b82;
           --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+          --gray-bg: #24272d; --gray-fg: #c2c6cc;
         }
       }
       :root[data-theme="dark"] {
@@ -79,6 +85,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         --amber-bg: #3a2c0d; --amber-fg: #f2c14e;
         --red-bg: #3a1414; --red-fg: #f28b82;
         --caveat-bg: #0f2e38; --caveat-fg: #7fd4ec;
+        --gray-bg: #24272d; --gray-fg: #c2c6cc;
       }
       * { box-sizing: border-box; }
       body {

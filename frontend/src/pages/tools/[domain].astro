@@ -18,7 +18,11 @@ const reasonClass =
   tool.compliance_status === "compliant_with_caveats" ? "reason prominent caveat" :
   tool.compliance_status === "unrated" ? "reason prominent amber" :
   tool.compliance_status === "shared_domain_unverified" ? "reason prominent amber-outline" :
+  tool.compliance_status === "not_ai_tool" ? "reason prominent gray" :
   "reason";
+
+const notAiToolFallback =
+  "PolicyPeek's compliance check doesn't apply here — the policy we found shows no sign this is an AI/ML product.";
 ---
 <Layout
   title={tool.name}
@@ -40,6 +44,12 @@ const reasonClass =
     <p class={reasonClass}>
       {tool.summary || `Policy text is shared across multiple company products, so this badge doesn't reflect ${tool.name}-specific data handling.`}
     </p>
+  ) : tool.compliance_status === "not_ai_tool" ? (
+    // Always the fixed explanation, not tool.summary -- summary here is
+    // just the first extracted quote (e.g. a comment-retention clause),
+    // which reads as confusing/out-of-context without the "why" this
+    // badge exists at all. See detectNotAiTool in backend/src/rules.ts.
+    <p class={reasonClass}>{notAiToolFallback}</p>
   ) : (
     tool.summary && <p class={reasonClass}>{tool.summary}</p>
   )}
@@ -106,6 +116,7 @@ const reasonClass =
     background: transparent;
     color: var(--amber-fg);
   }
+  .reason.prominent.gray { border-left: 3px solid var(--gray-fg); background: var(--gray-bg); }
   .label-panel {
     margin: 1.75rem 0;
     border: 3px solid var(--line);

@@ -20,6 +20,10 @@ export const BADGE_COPY = {
     shape: "ring",
     color: "amber",
   },
+  // Own neutral color, not reused from any compliance state -- this isn't a
+  // verdict on the green/amber/red/caveat spectrum, it's "doesn't look like
+  // an AI/ML product." Ported from Badge.astro's solid-gray treatment.
+  not_ai_tool: { label: "Not an AI tool", shape: "solid", color: "gray" },
   not_in_catalog: { label: "Not in catalog yet", shape: "solid", color: "gray" },
   loading: { label: "Checking…", shape: "ring", color: "gray" },
 };

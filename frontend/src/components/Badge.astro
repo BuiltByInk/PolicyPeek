@@ -1,6 +1,12 @@
 ---
 export interface Props {
-  status: "compliant" | "not_compliant" | "compliant_with_caveats" | "unrated" | "shared_domain_unverified";
+  status:
+    | "compliant"
+    | "not_compliant"
+    | "compliant_with_caveats"
+    | "unrated"
+    | "shared_domain_unverified"
+    | "not_ai_tool";
 }
 
 const { status } = Astro.props;
@@ -20,12 +26,17 @@ const { status } = Astro.props;
 // isn't "unclear," it's "the policy we read covers a whole company, not
 // this product specifically," and must be impossible to mistake for a real
 // unrated/amber verdict at a glance.
+// not_ai_tool = solid gray, its own neutral hue reused from nowhere else —
+// this isn't a compliance verdict at all (not on the green/amber/red/caveat
+// spectrum), it's "the submitted site doesn't look like an AI/ML product,"
+// so it must read as clearly outside that spectrum, not as a milder amber.
 const copy: Record<Props["status"], { label: string; cls: string }> = {
   compliant: { label: "Compliant", cls: "badge green" },
   not_compliant: { label: "Not compliant", cls: "badge red" },
   compliant_with_caveats: { label: "Compliant with caveats", cls: "badge caveat" },
   unrated: { label: "Unrated", cls: "badge amber" },
   shared_domain_unverified: { label: "Company-wide policy — not product-verified", cls: "badge amber-outline" },
+  not_ai_tool: { label: "Not an AI tool", cls: "badge gray" },
 };
 
 const { label, cls } = copy[status];
@@ -64,4 +75,5 @@ const { label, cls } = copy[status];
     color: var(--amber-fg);
     border-style: dashed;
   }
+  .badge.gray { background: var(--gray-bg); color: var(--gray-fg); }
 </style>
