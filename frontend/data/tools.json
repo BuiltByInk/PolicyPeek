@@ -214,16 +214,16 @@
   {
     "name": "Ideogram",
     "domain": "ideogram.ai",
-    "compliance_status": "compliant",
+    "compliance_status": "not_compliant",
     "summary": "We use User Input and other information you submit to the Services because it is in our legitimate interest to administer and improve the Services and improve and develop our products and technology.",
-    "data_retention": "We retain your information for as long as is reasonably necessary for the purposes specified in this Privacy Policy. When determining the length of time to retain information, we consider various criteria, including whether we need the information to continue to administer your account, provide the Services, resolve a dispute, enforce our contractual agreements, prevent harm, promote safety, security and integrit",
+    "data_retention": "We retain your information for as long as is reasonably necessary for the purposes specified in this Privacy Policy. When determining the length of time to retain information, we consider various criteria, including whether we need the information to continue to administer your account, provide the Services, resolve a dispute, enforce our contractual agreements, prevent harm",
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
       "https://ideogram.ai/legal/privacy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -244,7 +244,7 @@
   {
     "name": "JetBrains AI Assistant",
     "domain": "jetbrains.com",
-    "compliance_status": "compliant",
+    "compliance_status": "not_compliant",
     "summary": "We may use collected data to develop and test products and services.",
     "data_retention": null,
     "trains_on_user_data": true,
@@ -253,7 +253,7 @@
       "https://www.jetbrains.com/legal/docs/privacy/privacy/"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
@@ -274,7 +274,7 @@
   {
     "name": "Luma AI (Dream Machine)",
     "domain": "lumalabs.ai",
-    "compliance_status": "compliant",
+    "compliance_status": "not_compliant",
     "summary": "Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services",
     "data_retention": null,
     "trains_on_user_data": true,
@@ -283,7 +283,7 @@
       "https://lumalabs.ai/legal/privacy-policy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false
   },
   {
