@@ -70,6 +70,17 @@ each over Telegram on 2026-09-19:
    cron being completely dead (an alert sent by the cron can't report that);
    an outside uptime monitor pinging a health URL would.
 
+7. **Telling people when a submission will appear — ruled A.** Built (see
+   `changelog.md`): the form and popup poll `/v1/lookup` and show the verdict
+   when it publishes, otherwise say there's no set time. Ruled out: a public
+   queue (would expose what individuals are checking), a timer/ETA (no honest
+   number for manual review), email notification (collects addresses).
+   **Open, only if people find the wording too vague:** a small status endpoint
+   (submission id + domain -> processing / published / in review / failed).
+   **Known limit:** the website's tool list is static, so a published tool only
+   appears there after the next site rebuild and deploy; the API and extension
+   show it immediately.
+
 **Not deployed:** everything above needs `wrangler deploy` (backend),
 `wrangler pages deploy` (frontend, after `npm run build`), and reloading the
 extension. Elliot's call per the charter.

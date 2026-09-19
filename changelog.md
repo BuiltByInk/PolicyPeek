@@ -47,6 +47,30 @@ Nothing was run against production and nothing was deployed.
   row that just crossed 30 minutes stuck, with its failure reason. Stateless (no
   migration). Does nothing until `ALERT_BOT_TOKEN` and `ALERT_CHAT_ID` secrets
   are set; steps in `DECISIONS_NEEDED.md`.
+- **Cleanup pass, no behavior change**: the five identical `pending_checks`
+  error-recording queries in `check.ts` are one `recordExtractionError()`;
+  `admin.ts`'s two publish paths (human approve and auto-publish) now share
+  `buildPublishFields()` instead of duplicating the verdict/summary/source/fact
+  derivation (checked by running the old and new code side by side over 216
+  fact/shared/archive/existing-row combinations and comparing every SQL
+  statement and bind, identical); unused `request` params dropped from
+  `handleApprove`/`handleReject`; `CLAUDE.md` updated for the sixth verdict
+  (`not_ai_tool`) and the removed `requireApiKey` gate. `tsc` clean with
+  `--noUnusedLocals --noUnusedParameters`.
+- **Submission feedback (Elliot's option A)**: after a new submission is
+  accepted, the site form (`SubmitTool.astro`) and the extension popup poll the
+  existing public `/v1/lookup` every 3 seconds (about a minute on the site,
+  30 seconds in the popup) and show the verdict as soon as it publishes. A hit
+  only counts if `matched_domain` equals what was submitted, since lookup also
+  matches parent domains. If nothing publishes, both say plainly that clear
+  results appear within a minute, anything else is checked by a person first
+  with no set time, and the site list updates on the next site refresh. The
+  extension also clears its cached "not in catalog" entry on submit, and no
+  longer says "this goes to review" (often wrong since auto-publish). No
+  backend change, no migration. Checked in a real headless browser against
+  mocked API responses (published on the 3rd poll, never published, parent
+  domain match ignored, recheck, unknown status string; popup submits without
+  the query string). No public queue and no timer, by decision.
 - Backend tests 73 -> 110, all passing; `tsc --noEmit` clean.
 - **Stale items noted**: the "/about claims 100% human review" entry is already
   fixed in `about.astro` (it now says clean results publish automatically); the

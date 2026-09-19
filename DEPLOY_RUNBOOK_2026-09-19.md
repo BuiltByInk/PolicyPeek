@@ -1,0 +1,155 @@
+# Deploy runbook — 2026-09-19 (everything built locally since 2026-09-18)
+
+Written for Elliot to run at his computer. Nothing here has been deployed.
+Run the steps in order; each has a check and a way back. Anything marked
+**(prod)** touches live infrastructure.
+
+What is being shipped: the `not_ai_tool` verdict (built 2026-09-18) plus the
+2026-09-19 security hardening, redirect-to-review rule, global daily ceiling,
+paid-only names, stuck-pending alert, submission feedback on the site and
+extension, and a frontend dependency upgrade (astro 7.1.6 -> 7.3.3). Details:
+`changelog.md` (2026-09-19) and `DECISIONS_NEEDED.md` (top entry).
+
+## 0. Before anything (local, safe)
+
+```bash
+cd ~/policypeek/backend && npm test && npx tsc --noEmit    # expect 110 passing, no errors
+cd ../frontend && npm run build                            # expect "37 page(s) built"
+```
+
+## 1. Database migration **(prod)** — must come BEFORE the backend deploy
+
+Why first: the new backend can produce `not_ai_tool`, and the live table's
+CHECK constraint may not allow it yet. Old backend + new schema is harmless
+(the new CHECK is a superset), so the safe order is schema first.
+
+```bash
+cd ~/policypeek/backend
+# 1a. Is it already applied? (read-only)
+npx wrangler d1 execute policypeek-db --remote \
+  --command "SELECT sql FROM sqlite_master WHERE name='tools'"
+#     -> if the compliance_status CHECK list contains 'not_ai_tool', SKIP 1b-1c.
+
+# 1b. Back up first
+npx wrangler d1 export policypeek-db --remote --output ../backups/policypeek-db-pre-not-ai-tool-2026-09-19.sql
+
+# 1c. Apply
+npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-18-add-not-ai-tool-status.sql
+
+# 1d. Check it
+npx wrangler d1 execute policypeek-db --remote \
+  --command "SELECT COUNT(*) AS tools FROM tools"        # same number as before the migration
+npx wrangler d1 execute policypeek-db --remote \
+  --command "SELECT sql FROM sqlite_master WHERE name='tools'"   # now lists 'not_ai_tool'
+```
+
+Rehearsed locally on 2026-09-19 against a throwaway copy of the old schema
+with sample rows: all rows, ids, changelog rows, both triggers and the index
+survived, foreign-key check clean, an approve of a not_ai_tool tool worked
+afterwards, and the rollback file and a re-apply both worked. (Local
+SQLite/miniflare, not the real D1, so the backup in 1b is still the safety net.)
+
+**Way back:** `npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-18-add-not-ai-tool-status.rollback.sql`
+(maps any `not_ai_tool` rows back to `unrated`), or restore the export from 1b.
+
+## 2. Optional secrets for the stuck-pending alert **(prod)**
+
+In BotFather create a separate alert bot (not the bot Claude Code uses), press
+Start on it once from your account, then:
+
+```bash
+cd ~/policypeek/backend
+npx wrangler secret put ALERT_BOT_TOKEN     # the new bot's token
+npx wrangler secret put ALERT_CHAT_ID       # your Telegram user id
+```
+Skip it and the alert simply stays off; nothing else depends on it.
+
+## 3. Backend deploy **(prod)**
+
+```bash
+cd ~/policypeek/backend && npx wrangler deploy
+```
+Checks (all read-only, or rejected before they cost anything):
+```bash
+curl -s https://api.getpolicypeek.com/health                          # {"ok":true,...}
+curl -s "https://api.getpolicypeek.com/v1/lookup?domain=openai.com"   # normal verdict JSON
+curl -s https://api.getpolicypeek.com/v1/admin/pending                # 401 unauthorized
+curl -s -X POST https://api.getpolicypeek.com/v1/check -H 'content-type: application/json' -d '[]'
+                                                                       # 400 invalid_json (does not use up your daily check)
+```
+**Way back:** `npx wrangler rollback` (previous Worker version), or the
+Deployments tab in the dashboard.
+
+## 4. Re-approve hancocyber.com **(prod)**
+
+```bash
+curl -s -X POST -H "X-Admin-Token: $ADMIN_TOKEN" \
+  https://api.getpolicypeek.com/v1/admin/pending/10/approve
+# expect: {"tool_id":...,"domain":"hancocyber.com","compliance_status":"not_ai_tool"}
+curl -s "https://api.getpolicypeek.com/v1/lookup?domain=hancocyber.com"   # compliance_status: not_ai_tool
+```
+If the approve fails with a CHECK constraint error, step 1 was not applied.
+
+## 4b. Other rows waiting on a live-database write **(prod)**
+
+Recorded in the logs, not verifiable from here (I can't read production).
+Look at the queue first, then decide row by row:
+
+```bash
+curl -s -H "X-Admin-Token: $ADMIN_TOKEN" https://api.getpolicypeek.com/v1/admin/pending
+```
+- **Ids 11-15** (zed.dev, warp.dev, fathom.ai, krisp.ai, tldv.io): submitted by
+  the batch script on 2026-09-18 evening, all accepted (202). Each either
+  auto-published or is sitting in the queue with a stated reason. Approve or
+  reject the queued ones. 17 more eligible tools are still unsubmitted
+  (`node scripts/batch-submit.mjs` is a dry run until you pass `--go`; default
+  5 per run, and it uses your paid key, so the new 200/day ceiling doesn't apply).
+- **Ids 4, 5, 6** (Ideogram, JetBrains AI Assistant, Luma AI): your 2026-09-13
+  ruling was that `opt_out_available` should be false for all three, making them
+  `not_compliant`. The correction was never written. Exact commands are in
+  `DECISIONS_NEEDED.md` ("Blocked on you ... JetBrains / Ideogram / Luma AI"):
+  one `UPDATE pending_checks ... WHERE id IN (4, 5, 6)`, then a normal approve
+  for each. Only do this if that ruling still stands.
+- **openai.com recheck** (previous id 7, rejected as a dead row from the API-key
+  outage): never resubmitted. Submit it again once the backend is deployed.
+- **Held, need a decision, not submitted:** Adobe Firefly, Devin, Suno,
+  Character.ai (reasons in `scripts/batch-submit.mjs`).
+
+## 5. Site **(prod)**
+
+```bash
+cd ~/policypeek
+node scripts/refresh-site.mjs --deploy
+```
+It pulls the live catalog, shows the diff, builds, checks that the
+not_ai_tool pages are `noindex` and out of the sitemap, and only deploys after
+its own confirm. Then open the live site: `/tools/hancocyber.com/` shows
+"Not an AI tool", and try the submit form.
+**Way back:** Cloudflare dashboard -> Pages -> Deployments -> roll back to the
+previous one.
+
+## 6. Extension
+
+Reload the unpacked extension (or build and submit the new version). It now:
+strips the query string from submitted URLs, polls for the verdict after a
+submit, has the `not_ai_tool` toolbar icons. Try it on any site not in the
+catalog.
+
+## 7. By hand in dashboards (not code)
+
+- **Cloudflare -> Security -> WAF -> Rate limiting rules** (free plan allows
+  very few, so in this order): `/v1/admin/*` 10 per minute per IP;
+  `/v1/check` POST 5 per minute per IP; `/v1/lookup` 120 per minute per IP.
+- **Anthropic console:** set a monthly spend limit and an email usage alert
+  (the backstop for the 200-checks-a-day ceiling).
+- **Confirm `ADMIN_TOKEN` is long and random** (`openssl rand -hex 32`). If
+  unsure: `npx wrangler secret put ADMIN_TOKEN`, then use the new value.
+
+## 8. Afterwards
+
+- `cd ~/policypeek/backend && npx wrangler tail` for a few minutes while
+  loading the site and running one submit: no errors.
+- Workers Logs is now on (dashboard -> Workers -> policypeek-backend -> Logs).
+- If a tool's policy legitimately redirects to another domain, its monthly
+  recheck will queue for review instead of auto-updating; add the domain to
+  `crossDomainSources.ts` if it is the same company.

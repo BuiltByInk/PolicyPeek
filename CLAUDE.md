@@ -19,9 +19,9 @@ A separate deterministic rules layer (`backend/src/rules.ts`) converts facts
 into verdicts. No agent may let the LLM step emit a legal-sounding badge
 directly.
 
-### The five verdict buckets (`ComplianceStatus`)
+### The six verdict buckets (`ComplianceStatus`)
 
-The only five values `computeVerdict()` in `backend/src/rules.ts` can
+The only six values `computeVerdict()` in `backend/src/rules.ts` can
 return — this is the canonical description; if a doc elsewhere disagrees
 with this list, `rules.ts` is the source of truth, fix the doc:
 
@@ -51,6 +51,12 @@ with this list, `rules.ts` is the source of truth, fix the doc:
   product-specific *source page* on that same shared domain does not
   resolve this — see the Amazon Q Developer precedent in
   `DECISIONS_NEEDED.md`.
+- **`not_ai_tool`** — the policy shows no sign the submitted site is an
+  AI/ML product at all (see `detectNotAiTool` in `rules.ts`). A narrow
+  carve-out of `unrated`, only reachable via the same "training practice
+  unknown" path; rendered neutral gray, not a point on the
+  green/amber/red spectrum. Added 2026-09-18 (the hancocyber.com case);
+  keyword-based, flagged in `DECISIONS_NEEDED.md` as interim.
 
 ---
 
@@ -89,10 +95,11 @@ later. See `.claude/agents/manager.md`.
   is a potential catalog contribution via the existing submission →
   extraction → auto-publish-or-human-review → publish pipeline (see
   `backend/src/autoPublish.ts`). **Do not gate the check itself behind
-  premium** — that throttles catalog growth. (Confirmed already true in
-  code: `requireApiKey` in `backend/src/auth.ts` accepts any valid,
-  non-revoked key regardless of `tier` — free-tier keys can call
-  `/v1/check`, only a missing/invalid key is rejected.) The growth loop
+  premium** — that throttles catalog growth. (True in code: `/v1/check` resolves
+  tier like `/v1/lookup` does, so a missing or invalid key just means
+  "free, rate-limited" — one check per client per day plus a global daily
+  ceiling, `backend/src/rateLimit.ts` — never a paywall. The older
+  `requireApiKey` gate no longer exists.) The growth loop
   now has a real front door on the website itself (`SubmitTool.astro` on
   `/tools`), not just the API/extension — see `DECISIONS_NEEDED.md`'s
   2026-08-17 night entry for the `PUBLIC_API_BASE_URL` wiring it still
