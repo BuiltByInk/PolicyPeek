@@ -74,6 +74,20 @@ with this list, `rules.ts` is the source of truth, fix the doc:
 finishes a milestone. Read access everywhere, write access only to docs
 files.
 
+**Marketing Agent (support role, added 2026-09-19 at Elliot's request):**
+research and drafting only — competitor and channel research, positioning,
+launch/SEO plans, store-listing and post drafts, measurement ideas. Writes
+only under `research/marketing/` and `research/marketing_strategy_2026-09-19.md`.
+**Never posts, publishes, submits, contacts anyone, or spends money** — every
+output is a draft for Elliot to send himself — and never edits code, the
+frontend, or the extension (product or wording changes go into
+`DECISIONS_NEEDED.md`). Same honesty rules as the product: no claim beyond what
+the code does today, no "human reviewed", no legal-compliance claims, every
+third-party fact cited or marked unverified. Definition:
+`.claude/agents/marketing.md`. Added in response to a first draft strategy
+(`research/marketing_strategy_2026-09-19.md`) produced by a general-purpose
+agent, since no marketing role existed.
+
 **Manager Agent (added 2026-09-13, orchestration only):** queues and
 sequences work across the five agents above for a batch backlog run —
 never writes code or touches D1/Wrangler itself, and inherits every
