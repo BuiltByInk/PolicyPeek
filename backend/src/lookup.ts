@@ -14,6 +14,7 @@ interface ToolRow {
   verified: number;
   summary: string | null;
   shared_domain: number;
+  last_checked_at?: string | null;
 }
 
 // Most-specific to least-specific, e.g. "checkout.shop.example.com" ->
@@ -103,6 +104,9 @@ export async function handleLookup(request: Request, env: Env, tier: Tier): Prom
     // client that doesn't know about the "shared_domain_unverified" status
     // string still can't mistake this for a real product-specific verdict.
     shared_domain: Boolean(match.shared_domain),
+    // When the policy page was last read and the result confirmed (null for an
+    // entry that predates the column and hasn't been rechecked).
+    last_checked_at: match.last_checked_at ?? null,
   };
 
   if (tier === "free") {

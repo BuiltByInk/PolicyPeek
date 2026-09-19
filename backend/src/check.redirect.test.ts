@@ -51,7 +51,7 @@ describe("runExtraction with an off-domain redirect", () => {
     const { env, statements } = makeEnv();
     await runExtraction(env, 42, "acme.com", null, "https://acme.com/redirect", false, false, false, "policy text", "evil.example");
 
-    expect(statements.some((s) => s.sql.includes("INSERT INTO tools") || s.sql.includes("UPDATE tools"))).toBe(false);
+    expect(statements.some((s) => s.sql.includes("INSERT INTO tools") || s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
     expect(note).toBeDefined();
     expect(String(note!.args[0])).toContain("evil.example");
@@ -62,7 +62,7 @@ describe("runExtraction with an off-domain redirect", () => {
     const { env, statements } = makeEnv({ id: 5, compliance_status: "compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) });
     await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null);
 
-    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(true);
+    expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
   });
 
   it("queues a favourable first result for a brand-new domain instead of publishing it", async () => {
@@ -80,16 +80,20 @@ describe("runExtraction when the source host differs from the published entry's"
     const { env, statements } = makeEnv(existing);
     await runExtraction(env, 50, "acme.com", null, "https://tenant.acme.com/privacy", true, false, false, "policy text", null);
 
-    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(false);
+    expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
     expect(String(note!.args[0])).toContain("tenant.acme.com");
+    // the tool keeps its old "last checked" and records why, instead of claiming a fresh check
+    const toolNote = statements.find((s) => s.sql.includes("last_check_note = ?"));
+    expect(String(toolNote!.args[0])).toContain("awaiting review");
+    expect(toolNote!.args[1]).toBe("acme.com");
   });
 
   it("still auto-updates when the new source is on the same host", async () => {
     const { env, statements } = makeEnv(existing);
     await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy-2026", true, false, false, "policy text", null);
 
-    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(true);
+    expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
   });
 });
 

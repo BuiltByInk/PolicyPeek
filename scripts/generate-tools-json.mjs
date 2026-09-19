@@ -21,7 +21,7 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = process.argv[2] ?? join(REPO, "frontend/data/tools.generated.json");
 
 const raw = execSync(
-  `npx wrangler d1 execute policypeek-db --remote --json --command "SELECT name, domain, compliance_status, summary, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, auto_published, shared_domain FROM tools;"`,
+  `npx wrangler d1 execute policypeek-db --remote --json --command "SELECT name, domain, compliance_status, summary, data_retention, trains_on_user_data, gdpr_mentioned, source_urls, verified, auto_published, shared_domain, last_checked_at FROM tools;"`,
   { cwd: join(REPO, "backend"), encoding: "utf8", maxBuffer: 10_000_000 }
 );
 const rows = JSON.parse(raw)[0].results;
@@ -43,6 +43,7 @@ const tools = rows
     verified: toBool01(r.verified),
     auto_published: toBool01(r.auto_published),
     shared_domain: toBool01(r.shared_domain),
+    last_checked_at: r.last_checked_at ?? null,
   }))
   .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 

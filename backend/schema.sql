@@ -47,7 +47,12 @@ CREATE TABLE IF NOT EXISTS tools (
   sourced_from_archive INTEGER NOT NULL DEFAULT 0 CHECK (sourced_from_archive IN (0, 1)),
   summary TEXT, -- one-line reason shown alongside the badge
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  -- Recheck bookkeeping (migrations/2026-09-19-add-last-checked.sql). On the
+  -- live table these were added by ALTER, so they sit last there too.
+  last_checked_at TEXT, -- policy page last read and result confirmed/accepted
+  last_attempt_at TEXT, -- last recheck attempt, successful or not
+  last_check_note TEXT  -- why the last attempt didn't confirm the entry, else NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_tools_domain ON tools (domain);

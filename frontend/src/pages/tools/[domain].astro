@@ -48,6 +48,14 @@ const retention = tool.data_retention && tool.data_retention.trim() ? tool.data_
 // Short values keep the mono treatment (they read like label numerals);
 // sentences read better in the body face than in bold monospace.
 const retentionIsLong = retention.length > 48;
+// "Last checked" = the last time the policy page was read and the result
+// confirmed or accepted. Shown as a plain UTC date; missing for data generated
+// before the column existed.
+const lastCheckedDate = tool.last_checked_at ? new Date(tool.last_checked_at) : null;
+const lastCheckedValid = lastCheckedDate !== null && !Number.isNaN(lastCheckedDate.getTime());
+const lastCheckedText = lastCheckedValid
+  ? lastCheckedDate!.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+  : "Not recorded yet";
 
 const sources = tool.source_urls
   .map((raw) => ({ raw, href: safeHttpUrl(raw) }));
@@ -131,6 +139,10 @@ const breadcrumbs = {
       <div>
         <dt>GDPR mentioned</dt>
         <dd>{yesNo(tool.gdpr_mentioned)}</dd>
+      </div>
+      <div>
+        <dt>Last checked</dt>
+        <dd>{lastCheckedValid ? <time datetime={lastCheckedDate!.toISOString().slice(0, 10)}>{lastCheckedText}</time> : lastCheckedText}</dd>
       </div>
       <div>
         <dt>Reviewed by a human</dt>

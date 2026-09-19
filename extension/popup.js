@@ -170,7 +170,7 @@ async function submitCheck(tab, hostname, button) {
     showMessage("Submitted. Checking now. Some results publish within about a minute; a good verdict for a new tool is always checked by a person first.");
     const published = await pollForPublished(hostname);
     if (published) {
-      await setCachedLookup(hostname, { state: published.compliance_status, name: published.name, summary: published.summary });
+      await setCachedLookup(hostname, { state: published.compliance_status, name: published.name, summary: published.summary, last_checked_at: published.last_checked_at });
       applyLookupResult(tab, hostname, published.compliance_status, published);
       return;
     }
@@ -194,7 +194,15 @@ async function submitCheck(tab, hostname, button) {
   showMessage(describeCheckError(res.status, data.error, data.reason));
 }
 
-function applyLookupResult(tab, hostname, state, { name, summary } = {}) {
+// "19 Sep 2026" from an ISO timestamp; empty string if missing or unparseable.
+function formatChecked(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+function applyLookupResult(tab, hostname, state, { name, summary, last_checked_at } = {}) {
   if (state === "not_in_catalog") {
     renderBadge("not_in_catalog");
     setTabIcon(tab.id, "not_in_catalog");
@@ -205,7 +213,8 @@ function applyLookupResult(tab, hostname, state, { name, summary } = {}) {
 
   renderBadge(state, summary || undefined);
   setTabIcon(tab.id, state);
-  showMessage(name ? `${name} — ${hostname}` : hostname);
+  const checked = formatChecked(last_checked_at);
+  showMessage((name ? `${name} — ${hostname}` : hostname) + (checked ? ` · checked ${checked}` : ""));
 }
 
 async function runLookup(tab, hostname) {
@@ -246,7 +255,7 @@ async function runLookup(tab, hostname) {
     return;
   }
 
-  await setCachedLookup(hostname, { state, name: data.name, summary: data.summary });
+  await setCachedLookup(hostname, { state, name: data.name, summary: data.summary, last_checked_at: data.last_checked_at });
   applyLookupResult(tab, hostname, state, data);
 }
 

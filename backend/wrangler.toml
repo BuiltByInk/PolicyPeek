@@ -21,9 +21,9 @@ database_id = "95eb15f7-cce3-4d50-bba4-ffa2f3163f8c"
 
 [triggers]
 # */15 * * * * -- stuck-pending observability check (checkStuckPending)
-# 0 3 1 * *    -- monthly re-check of every published tool (runMonthlyRecheck)
+# 0 4 * * *    -- daily re-check of the most overdue published tools, a few per run (runDueRechecks)
 # 30 3 * * *   -- daily purge of old client IPs from anonymous_check_log (purgeOldAnonymousChecks)
-crons = ["*/15 * * * *", "0 3 1 * *", "30 3 * * *"]
+crons = ["*/15 * * * *", "0 4 * * *", "30 3 * * *"]
 
 # Persist Worker logs (console.warn from the cron's stuck-pending and monthly
 # recheck checks) so they can be searched in the dashboard afterwards.

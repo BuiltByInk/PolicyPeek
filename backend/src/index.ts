@@ -2,15 +2,15 @@ import { handleLookup } from "./lookup";
 import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
 import { handleListPending, handleApprove, handleReject, handleDemote } from "./admin";
-import { checkStuckPending, runMonthlyRecheck } from "./cron";
+import { checkStuckPending, runDueRechecks } from "./cron";
 import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
 
-export type CronJob = "monthly-recheck" | "purge-ips" | "stuck-check";
+export type CronJob = "due-rechecks" | "purge-ips" | "stuck-check";
 
 // Keep in step with `crons` in wrangler.toml.
 export function cronJobFor(cron: string): CronJob | null {
-  if (cron === "0 3 1 * *") return "monthly-recheck";
+  if (cron === "0 4 * * *") return "due-rechecks";
   if (cron === "30 3 * * *") return "purge-ips";
   if (cron === "*/15 * * * *") return "stuck-check";
   return null;
@@ -77,8 +77,8 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     switch (cronJobFor(controller.cron)) {
-      case "monthly-recheck":
-        ctx.waitUntil(runMonthlyRecheck(env));
+      case "due-rechecks":
+        ctx.waitUntil(runDueRechecks(env));
         return;
       case "purge-ips":
         ctx.waitUntil(purgeOldAnonymousChecks(env));

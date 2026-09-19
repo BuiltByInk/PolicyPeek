@@ -23,6 +23,11 @@ export interface Tool {
   // a human" on the tool detail page must read this field, inverted --
   // not `verified`, which both paths set identically.
   auto_published: boolean;
+  // When PolicyPeek last read this tool's policy page and confirmed or accepted
+  // the result (ISO 8601, UTC). Optional/null for data generated before the
+  // column existed. NOT advanced by a recheck that found a change waiting for
+  // review, so it never claims a check that didn't confirm the entry.
+  last_checked_at?: string | null;
   // true when the only public policy for this tool lives on a domain shared
   // with unrelated products (e.g. a Google/Microsoft AI feature policy
   // hosted on the parent company's apex domain) -- badge shows a distinct

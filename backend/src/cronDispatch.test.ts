@@ -4,7 +4,7 @@ import { cronJobFor } from "./index";
 describe("cronJobFor", () => {
   it("maps each schedule in wrangler.toml to exactly one job", () => {
     expect(cronJobFor("*/15 * * * *")).toBe("stuck-check");
-    expect(cronJobFor("0 3 1 * *")).toBe("monthly-recheck");
+    expect(cronJobFor("0 4 * * *")).toBe("due-rechecks");
     expect(cronJobFor("30 3 * * *")).toBe("purge-ips");
   });
 

@@ -12,6 +12,7 @@ import { allowedCrossDomainSource } from "./crossDomainSources";
 import { evaluateAutoPublish } from "./autoPublish";
 import { tryAutoPublishAtomic } from "./admin";
 import { tryWaybackFallback } from "./waybackFallback";
+import { markToolAttempt } from "./toolCheckState";
 
 const MAX_BODY_BYTES = 16_384;
 const MAX_SOURCE_URL_CHARS = 2_048;
@@ -210,6 +211,7 @@ export async function runExtraction(
 ): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
     await recordExtractionError(env, pendingId, "ANTHROPIC_API_KEY not configured");
+    await markToolAttempt(env, domain, "recheck failed: extraction key not configured");
     return;
   }
 
@@ -222,7 +224,9 @@ export async function runExtraction(
       .bind(JSON.stringify(facts), pendingId)
       .run();
   } catch (err) {
-    await recordExtractionError(env, pendingId, String(err instanceof Error ? err.message : err));
+    const message = String(err instanceof Error ? err.message : err);
+    await recordExtractionError(env, pendingId, message);
+    await markToolAttempt(env, domain, `recheck failed: ${message}`);
     return;
   }
 
@@ -233,6 +237,7 @@ export async function runExtraction(
   // uses to surface a queued row in GET /v1/admin/pending).
   if (redirectedOffDomainTo) {
     await recordExtractionError(env, pendingId, `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`);
+    await markToolAttempt(env, domain, `awaiting review: the policy page redirected to ${redirectedOffDomainTo}`);
     return;
   }
 
@@ -277,6 +282,7 @@ export async function runExtraction(
     const changedHost = freshExisting ? sourceHostChanged(freshExisting.source_urls, sourceUrl) : null;
     if (changedHost) {
       await recordExtractionError(env, pendingId, `queued_for_review: the source page host (${changedHost}) differs from the published entry's source -- never auto-published`);
+      await markToolAttempt(env, domain, `awaiting review: the source page moved to ${changedHost}`);
       return;
     }
     // Same idea for a first publish: only a source on the domain itself
@@ -292,6 +298,13 @@ export async function runExtraction(
       existingStatus: freshExisting?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
       sourcedFromArchive,
     });
+
+    if (!decision.eligible && freshExisting) {
+      // A recheck that can't confirm the published entry by itself (for
+      // example the verdict would change): keep the reason on the tool so
+      // "last checked" isn't advanced and the review queue has context.
+      await markToolAttempt(env, domain, `awaiting review: ${decision.reason}`);
+    }
 
     if (decision.eligible) {
       const result = await tryAutoPublishAtomic(
@@ -317,10 +330,13 @@ export async function runExtraction(
         // same way a genuine verdict-flip would, rather than risking an
         // unreviewed publish or silently dropping this submission.
         await recordExtractionError(env, pendingId, "auto_publish_raced: another concurrent submission changed this domain's row first; queued for manual review instead of risking an unreviewed verdict");
+        await markToolAttempt(env, domain, "awaiting review: another update changed this entry at the same time");
       }
     }
   } catch (err) {
-    await recordExtractionError(env, pendingId, `auto_publish_failed: ${String(err instanceof Error ? err.message : err)}`);
+    const reason = String(err instanceof Error ? err.message : err);
+    await recordExtractionError(env, pendingId, `auto_publish_failed: ${reason}`);
+    await markToolAttempt(env, domain, `recheck failed: ${reason}`).catch(() => {});
   }
 }
 
