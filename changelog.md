@@ -71,7 +71,39 @@ Nothing was run against production and nothing was deployed.
   mocked API responses (published on the 3rd poll, never published, parent
   domain match ignored, recheck, unknown status string; popup submits without
   the query string). No public queue and no timer, by decision.
-- Backend tests 73 -> 110, all passing; `tsc --noEmit` clean.
+- **Old client IPs are now deleted daily** (Elliot's OK): new cron `30 3 * * *`
+  runs `purgeOldAnonymousChecks` (`rateLimit.ts`), which deletes
+  `anonymous_check_log` rows from before today's UTC day. Only today's rows are
+  needed for the one-check-a-day cap. Also `[observability.logs]
+  invocation_logs = false` in `wrangler.toml`, so Workers Logs keeps only the
+  Worker's own log lines, not per-request metadata. Not deployed; the first run
+  after deploy clears the backlog.
+- **Drafts, not published**: `research/privacy_policy_draft_2026-09-19.md` (site
+  and extension privacy policy, written from what the code does) and
+  `research/extension_store_listing_2026-09-19.md` (listing copy, permission
+  justifications, data-disclosure wording, asset checklist). The old drafted
+  disclosure sentence "No other data is collected" is not accurate for the
+  "Check this site" path and is replaced there.
+- **Extension status**: no evidence it is in any store. Nothing in the repo
+  records a submission; a web search and Mozilla's public add-on search found no
+  PolicyPeek listing (Firefox has an unrelated "Peek-a-Policy"). Chrome's
+  Developer Dashboard can't be checked from here. The manifest still uses the
+  grey "loading" ring as the extension icon, which needs a real store icon.
+- **`not_ai_tool` matching tightened** (`rules.ts`, Elliot's OK): generic-content
+  categories now match whole words (with optional plural/verb endings) instead of
+  substrings, and the bare word "order" is replaced by specific phrases ("your
+  order", "place an order", ...). Found by testing: "in order to" (in nearly every
+  legal text) plus any cookie line was enough to turn a thin AI-tool policy into
+  `not_ai_tool`, and "cart" fired inside "cartography". `AI_VOCAB` stays
+  substring-based on purpose (stems like "train", "generat"; over-matching there
+  is the safe direction). The hancocyber.com case is unchanged. 5 new regression
+  tests. **Still open:** everyday SaaS boilerplate such as "payment" plus a cookie
+  line can still reach two categories on a thin AI policy; see DECISIONS_NEEDED.
+- **Marketing agent added** (`.claude/agents/marketing.md`, org chart in
+  `CLAUDE.md`): research and drafting only, never posts or contacts anyone.
+  First output: `research/marketing_strategy_2026-09-19.md` (draft; third-party
+  claims cited or marked unverified).
+- Backend tests 73 -> 116, all passing; `tsc --noEmit` clean.
 - **Stale items noted**: the "/about claims 100% human review" entry is already
   fixed in `about.astro` (it now says clean results publish automatically); the
   "domain/policy-link validator too strict on subdomains" entry looks fixed

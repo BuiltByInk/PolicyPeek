@@ -7,13 +7,14 @@ Run the steps in order; each has a check and a way back. Anything marked
 What is being shipped: the `not_ai_tool` verdict (built 2026-09-18) plus the
 2026-09-19 security hardening, redirect-to-review rule, global daily ceiling,
 paid-only names, stuck-pending alert, submission feedback on the site and
-extension, and a frontend dependency upgrade (astro 7.1.6 -> 7.3.3). Details:
+extension, a daily purge of stored client IPs, a whole-word fix to the
+`not_ai_tool` keyword matching, and a frontend dependency upgrade (astro 7.1.6 -> 7.3.3). Details:
 `changelog.md` (2026-09-19) and `DECISIONS_NEEDED.md` (top entry).
 
 ## 0. Before anything (local, safe)
 
 ```bash
-cd ~/policypeek/backend && npm test && npx tsc --noEmit    # expect 110 passing, no errors
+cd ~/policypeek/backend && npm test && npx tsc --noEmit    # expect 116 passing, no errors
 cd ../frontend && npm run build                            # expect "37 page(s) built"
 ```
 
@@ -79,6 +80,22 @@ curl -s -X POST https://api.getpolicypeek.com/v1/check -H 'content-type: applica
 ```
 **Way back:** `npx wrangler rollback` (previous Worker version), or the
 Deployments tab in the dashboard.
+
+### 3b. New this afternoon: daily IP purge and quieter logs
+
+The backend deploy also adds a third cron (`30 3 * * *`, daily) that deletes
+`anonymous_check_log` rows from before today (client IPs), and turns off
+per-request invocation logs (`[observability.logs] invocation_logs = false`) so
+only the Worker's own log lines are stored. After deploying:
+```bash
+npx wrangler d1 execute policypeek-db --remote \
+  --command "SELECT day_bucket, COUNT(*) AS n FROM anonymous_check_log GROUP BY day_bucket"
+```
+Old days remain until 03:30 UTC the next morning; run it again after that and only
+today's row(s) should be left. In the dashboard Logs view, confirm you see
+your cron `[cron] ...` lines but not one entry per page request. **Only then**
+is it accurate for the privacy policy to say IPs are deleted daily and request
+details aren't kept.
 
 ## 4. Re-approve hancocyber.com **(prod)**
 

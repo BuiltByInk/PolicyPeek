@@ -8,7 +8,7 @@ repo, not about what is deployed. Elliot asked for the audit and for the
 safe items to be fixed in the same pass (Telegram, 2026-09-19), so the
 "Fixed" items were patched directly rather than filed as diffs.
 
-Backend tests: 73 -> 110 passing. `tsc --noEmit` clean. Frontend builds
+Backend tests: 73 -> 116 passing. `tsc --noEmit` clean. Frontend builds
 (37 pages).
 
 ## Fixed in this pass (local, not deployed)

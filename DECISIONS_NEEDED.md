@@ -81,6 +81,26 @@ each over Telegram on 2026-09-19:
    appears there after the next site rebuild and deploy; the API and extension
    show it immediately.
 
+8. **`not_ai_tool` false positives — whole-word fix ruled and built** (see
+   `changelog.md`). **Still open, your call (`rules.ts` boundary logic):** ordinary
+   SaaS boilerplate — "payment"/"purchase" in the ecommerce category, plus a
+   cookie or login line — can still hit two categories on a thin AI-tool policy
+   whose extracted quotes happen to contain no AI words. Such a row never
+   auto-publishes (training stance is null, so it queues for you), but it would
+   show a computed "Not an AI tool" for you to approve. Options: require at least
+   one category that a real SaaS product wouldn't have (comments, booking,
+   embedded media, newsletter), stop counting cookie/login and payment terms
+   toward the two categories, or add the dedicated `ai_product_evidence`
+   extraction field you already flagged. Until ruled, look at the computed verdict
+   before approving any `not_ai_tool` row.
+9. **Marketing (from `research/marketing_strategy_2026-09-19.md`):** a permanent
+   marketing agent now exists (`.claude/agents/marketing.md`). Decisions it flags
+   for you: the badge word "Compliant" can read as a legal verdict; the name is
+   close to PolicyPak and PolicyPeak (and Firefox's Peek-a-Policy); spot-check
+   auto-published badges before anything public; single badges can hide
+   consumer/business tier splits (DeepL, GitHub Copilot, Gamma). Full list in
+   that file's section 6.
+
 **Not deployed:** everything above needs `wrangler deploy` (backend),
 `wrangler pages deploy` (frontend, after `npm run build`), and reloading the
 extension. Elliot's call per the charter.
