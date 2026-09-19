@@ -34,8 +34,11 @@ npx wrangler d1 execute policypeek-db --remote \
 # 1b. Back up first
 npx wrangler d1 export policypeek-db --remote --output ../backups/policypeek-db-pre-not-ai-tool-2026-09-19.sql
 
-# 1c. Apply
+# 1c. Apply, IN THIS ORDER (each only if not already applied)
 npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-18-add-not-ai-tool-status.sql
+npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-19-add-last-checked.sql
+#     (the second adds last_checked_at / last_attempt_at / last_check_note; it must come
+#      AFTER the first, which rebuilds the table and would drop them, and BEFORE the backend deploy)
 
 # 1d. Check it
 npx wrangler d1 execute policypeek-db --remote \
@@ -50,8 +53,12 @@ survived, foreign-key check clean, an approve of a not_ai_tool tool worked
 afterwards, and the rollback file and a re-apply both worked. (Local
 SQLite/miniflare, not the real D1, so the backup in 1b is still the safety net.)
 
-**Way back:** `npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-18-add-not-ai-tool-status.rollback.sql`
-(maps any `not_ai_tool` rows back to `unrated`), or restore the export from 1b.
+**Way back:** roll the backend back first, then undo the migrations in the REVERSE order:
+`npx wrangler d1 execute policypeek-db --remote --file migrations/2026-09-19-add-last-checked.rollback.sql`
+(drops the three new columns), then, only if you also need to,
+`.../2026-09-18-add-not-ai-tool-status.rollback.sql` (maps any `not_ai_tool` rows back to
+`unrated`). Undoing them in the other order breaks the second rollback, because the
+not-ai-tool rebuild recreates the table without the new columns. Or restore the export from 1b.
 
 ## 2. Optional secrets for the stuck-pending alert **(prod)**
 
@@ -80,6 +87,22 @@ curl -s -X POST https://api.getpolicypeek.com/v1/check -H 'content-type: applica
 ```
 **Way back:** `npx wrangler rollback` (previous Worker version), or the
 Deployments tab in the dashboard.
+
+### 3a. Rechecks and "last checked" (new tonight)
+
+The old monthly all-at-once recheck is replaced by a daily job (04:00 UTC, `0 4 * * *`)
+that rechecks the 5 most overdue published tools (not confirmed for 30 days, and not
+attempted in the last 3 days). Unchanged results advance `last_checked_at`; a changed
+verdict queues for you and does NOT advance it; failures are recorded in
+`last_check_note`. Every Monday it sends the alert bot a message if any tool hasn't been
+re-confirmed for 60 days. The tool pages, the API (`last_checked_at`) and the extension
+popup show the date. Existing entries start with `last_checked_at = updated_at`
+(an approximation, noted in the migration). After the first day check:
+```bash
+npx wrangler d1 execute policypeek-db --remote \
+  --command "SELECT domain, last_checked_at, last_attempt_at, last_check_note FROM tools ORDER BY last_checked_at LIMIT 10"
+```
+The static site only shows new dates after step 5.
 
 ### 3b. New this afternoon: daily IP purge and quieter logs
 
