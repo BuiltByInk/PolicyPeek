@@ -167,14 +167,14 @@ async function submitCheck(tab, hostname, button) {
   // is cached, so clear it or reopening the popup would show that stale state.
   if (res.status === 202) {
     await clearCachedLookup(hostname);
-    showMessage("Submitted. Checking now. Clear results are published within about a minute.");
+    showMessage("Submitted. Checking now. Some results publish within about a minute; a good verdict for a new tool is always checked by a person first.");
     const published = await pollForPublished(hostname);
     if (published) {
       await setCachedLookup(hostname, { state: published.compliance_status, name: published.name, summary: published.summary });
       applyLookupResult(tab, hostname, published.compliance_status, published);
       return;
     }
-    showMessage("Submitted. No verdict yet. Clear results appear within a minute; anything else is checked by a person first, with no set time. Reopen this popup later to see it.");
+    showMessage("Submitted. No verdict yet. Some results appear within a minute; a good verdict for a new tool, and anything unclear, is checked by a person first, with no set time. Reopen this popup later to see it.");
     return;
   }
 

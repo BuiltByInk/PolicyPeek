@@ -11,8 +11,8 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
   <h2 class="lp-head">Don't see a tool?</h2>
   <p class="intro">
     Give us its website and a link to its privacy policy. It's free — one check every 24 hours.
-    The check runs automatically, and the result is either published straight away or held for a
-    person to look at first.
+    The check runs automatically. Some results publish straight away; a good verdict for a
+    brand-new tool always waits for a person to look at it first.
   </p>
   <form id="submit-form" data-api-base={apiBase ?? ""} novalidate>
     <label>
@@ -194,7 +194,7 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
     async function waitForVerdict(domain: string) {
       const POLL_MS = 3_000;
       const POLL_TRIES = 20;
-      show("", `Got it. Checking ${domain} now. Clear results are published within about a minute.`);
+      show("", `Got it. Checking ${domain} now. Some results publish within about a minute; a good verdict for a new tool is always checked by a person first.`);
       for (let i = 0; i < POLL_TRIES; i++) {
         await new Promise((r) => setTimeout(r, POLL_MS));
         try {
@@ -209,7 +209,7 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
           }
         } catch { /* a failed poll is just tried again */ }
       }
-      show("ok", `We haven't published a verdict for ${domain} yet. Clear results appear within a minute; anything else is checked by a person first, and there's no set time for that. The browser extension shows the verdict as soon as it's published. The list on this site updates the next time the site is refreshed.`);
+      show("ok", `We haven't published a verdict for ${domain} yet. Some results appear within a minute; a good verdict for a new tool, and anything unclear, is checked by a person first, and there's no set time for that. The browser extension shows the verdict as soon as it's published. The list on this site updates the next time the site is refreshed.`);
     }
 
     form.addEventListener("submit", async (e) => {
