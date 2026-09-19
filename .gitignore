@@ -4,3 +4,7 @@ node_modules/
 .wrangler/
 dist/
 .astro/
+
+# Local database dumps can contain client IP addresses (anonymous_check_log). Keep them on disk, not in git.
+backend/backup.sql
+backups/*.sql
