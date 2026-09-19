@@ -264,6 +264,11 @@ const jsonLdString = jsonLd
       /* Print: a checked result is something people save or print for a
          colleague/relative. Drop chrome and forms, force black-on-white, and
          show link targets so a printed source list is still usable. */
+      /* Nothing on the site animates today; this keeps it that way if something
+         is added later without remembering the preference. */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      }
       @media print {
         :root { --fg: #000; --bg: #fff; --muted: #333; --line: #000; --id: #000; }
         header.site nav, footer.site, .skip, .submit-panel, form, .no-print { display: none !important; }

@@ -26,7 +26,8 @@ export interface Tool {
   // true when the only public policy for this tool lives on a domain shared
   // with unrelated products (e.g. a Google/Microsoft AI feature policy
   // hosted on the parent company's apex domain) -- badge shows a distinct
-  // "not product-verified" state instead of a normal compliant/amber/red one.
+  // "Company-wide policy" state (badge label; the reason line says the policy
+  // isn't verified for this product) instead of a normal compliant/amber/red one.
   shared_domain: boolean;
   // true when source_urls[0] is a Wayback Machine snapshot rather than the
   // live page (the live page blocks automated checks) -- already folded

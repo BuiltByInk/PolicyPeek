@@ -162,3 +162,43 @@ describe("safeFetchText — DNS-resolution SSRF defense", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("isBlockedIpLiteral — additional non-public IPv4 ranges", () => {
+  it("blocks CGNAT, benchmarking, multicast and reserved/broadcast addresses", () => {
+    for (const ip of ["100.64.0.1", "100.127.255.254", "198.18.0.1", "198.19.255.255", "224.0.0.1", "240.0.0.1", "255.255.255.255"]) {
+      expect(isBlockedIpLiteral(ip)).toBe(true);
+    }
+  });
+
+  it("still allows public neighbours of those ranges", () => {
+    for (const ip of ["100.63.255.255", "100.128.0.1", "198.17.0.1", "198.20.0.1", "223.255.255.255"]) {
+      expect(isBlockedIpLiteral(ip)).toBe(false);
+    }
+  });
+
+  it("applies the same ranges to IPv4-mapped IPv6", () => {
+    expect(isBlockedIpLiteral("::ffff:100.64.0.1")).toBe(true);
+  });
+});
+
+describe("safeFetchText — URL shape restrictions", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects non-default ports before making any request", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    for (const url of ["https://example.com:22/x", "http://example.com:8080/x", "https://example.com:6379/"]) {
+      await expect(safeFetchText(url)).rejects.toThrow(/blocked_port/);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects credentials embedded in the URL", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    await expect(safeFetchText("https://user:pass@example.com/privacy")).rejects.toThrow(/blocked_credentials_in_url/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

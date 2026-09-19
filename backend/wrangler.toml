@@ -23,3 +23,8 @@ database_id = "95eb15f7-cce3-4d50-bba4-ffa2f3163f8c"
 # */15 * * * * -- stuck-pending observability check (checkStuckPending)
 # 0 3 1 * *    -- monthly re-check of every published tool (runMonthlyRecheck)
 crons = ["*/15 * * * *", "0 3 1 * *"]
+
+# Persist Worker logs (console.warn from the cron's stuck-pending and monthly
+# recheck checks) so they can be searched in the dashboard afterwards.
+[observability]
+enabled = true

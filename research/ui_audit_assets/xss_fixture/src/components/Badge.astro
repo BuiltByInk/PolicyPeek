@@ -1,4 +1,5 @@
 ---
+import { VERDICTS } from "../verdicts";
 export interface Props {
   status:
     | "compliant"
@@ -30,14 +31,19 @@ const { status } = Astro.props;
 // this isn't a compliance verdict at all (not on the green/amber/red/caveat
 // spectrum), it's "the submitted site doesn't look like an AI/ML product,"
 // so it must read as clearly outside that spectrum, not as a milder amber.
-const copy: Record<Props["status"], { label: string; cls: string }> = {
-  compliant: { label: "Compliant", cls: "badge green" },
-  not_compliant: { label: "Not compliant", cls: "badge red" },
-  compliant_with_caveats: { label: "Compliant with caveats", cls: "badge caveat" },
-  unrated: { label: "Unrated", cls: "badge amber" },
-  shared_domain_unverified: { label: "Company-wide policy — not product-verified", cls: "badge amber-outline" },
-  not_ai_tool: { label: "Not an AI tool", cls: "badge gray" },
+// Labels come from verdicts.ts (single source, wording unchanged); only the
+// CSS class stays here.
+const cls_by_status: Record<Props["status"], string> = {
+  compliant: "badge green",
+  not_compliant: "badge red",
+  compliant_with_caveats: "badge caveat",
+  unrated: "badge amber",
+  shared_domain_unverified: "badge amber-outline",
+  not_ai_tool: "badge gray",
 };
+const copy = Object.fromEntries(
+  VERDICTS.map((v) => [v.status, { label: v.label, cls: cls_by_status[v.status] }])
+) as Record<Props["status"], { label: string; cls: string }>;
 
 const { label, cls } = copy[status];
 ---
@@ -53,13 +59,14 @@ const { label, cls } = copy[status];
     padding: 0.22rem 0.6rem;
     border: 1.5px solid currentColor;
     font-family: var(--font-head);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.045em;
+    text-wrap: balance;
     line-height: 1.3;
-    /* Let the long "Company-wide policy — not product-verified" label wrap
-       inside its container instead of forcing width. */
+    /* Labels wrap inside their container instead of forcing width (matters
+       at 375px for "Compliant with caveats" next to a long tool name). */
     max-width: 100%;
   }
   .badge.green { background: var(--green-bg); color: var(--green-fg); }

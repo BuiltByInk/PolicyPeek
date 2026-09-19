@@ -12,6 +12,82 @@ real record, not an empty log.
 
 ---
 
+## 2026-09-19 (local security audit and hardening pass — not deployed)
+
+Elliot asked for a full review and security audit while away from his
+machine, local-only. Full write-up: `security/review-2026-09-19-local-audit.md`.
+Nothing was run against production and nothing was deployed.
+
+- **Extraction output is validated** (`extraction.ts` `sanitizeFacts`): facts
+  must be real booleans else `null`; free text is control-char-stripped and
+  length-capped. The model's JSON is untrusted, since the page it reads is
+  attacker-influenceable.
+- **`POST /v1/check` input limits** (`check.ts`): 10 KB body cap (413), fields
+  type-checked, `name` capped at 100 chars, `source_url` capped and its
+  fragment dropped.
+- **IPv6 clients rate-limited by /64** (`auth.ts` `normalizeIpForRateLimit`),
+  so one machine can't mint a fresh daily slot per address.
+- **SSRF wrapper** (`ssrf.ts`): also blocks CGNAT, benchmarking, multicast and
+  reserved IPv4, non-80/443 ports, and credentials in the URL.
+- **Extension** no longer sends the query string, fragment or credentials of
+  the current tab's URL as `source_url`. New `extension/icons/not_ai_tool-*.png`
+  (stopgap art, closes the known icon gap).
+- **Frontend deps**: `npm audit fix` took 6 advisories to 0 (astro 7.1.6 ->
+  7.3.3). Build verified, 37 pages, hancocyber still noindex and out of the
+  sitemap.
+- **Elliot's rulings on the audit decisions, built the same day** (details in
+  `DECISIONS_NEEDED.md`): (1) a redirect off the submitted domain never
+  auto-publishes and queues for review with the reason; (2) global ceiling of
+  200 free-tier checks/day, 429 `daily_capacity_reached`, with its own message
+  on the site and in the extension; (3) only paid-key callers can set a tool's
+  name. Rate limits on `/v1/lookup`, `/v1/check` and `/v1/admin/*` are
+  Cloudflare-dashboard rules, recorded but not applied.
+- **Stuck-pending alerting** (`alert.ts`, `cron.ts`, `wrangler.toml`): Workers
+  Logs turned on, and the 15-minute cron now sends a Telegram message for each
+  row that just crossed 30 minutes stuck, with its failure reason. Stateless (no
+  migration). Does nothing until `ALERT_BOT_TOKEN` and `ALERT_CHAT_ID` secrets
+  are set; steps in `DECISIONS_NEEDED.md`.
+- Backend tests 73 -> 110, all passing; `tsc --noEmit` clean.
+- **Stale items noted**: the "/about claims 100% human review" entry is already
+  fixed in `about.astro` (it now says clean results publish automatically); the
+  "domain/policy-link validator too strict on subdomains" entry looks fixed
+  in the current frontend and backend (both allow subdomains) but can't be
+  confirmed against the live deploy from here.
+
+---
+
+## 2026-09-18 (Option A tool page, self-hosted Barlow Condensed, shorter company-wide badge — built and verified in a real browser; not deployed)
+
+Elliot's three UI decisions from the audit, all implemented on top of the SEO
+pass (SEO head output unchanged: 37 pages diffed, 0 differences; 33 tool pages
+still have one valid JSON-LD block, description and og:image; hancocyber.com
+still noindex). Details, measurements and screenshots:
+`research/ui_audit_2026-09-18.md` section 7. Pre-change copy:
+`backups/frontend-src-pre-option-a-2026-09-18/`.
+
+- **Tool page (Option A):** the verdict is now the biggest type on the page,
+  with a "Why" row for the one-line reason (always shown for amber/red). Unrated
+  is a hatched block with a solid sticker reading "UNRATED / We don't know."
+  (text, not pattern or colour, carries the meaning). Caveats keeps its own teal
+  with a double rule; not-an-AI-tool stays neutral gray with the earlier wording.
+- **Fonts:** Barlow Condensed 700 and 800 self-hosted from `/fonts/` (SIL OFL
+  licence alongside), `font-display: swap`, metric-matched fallback, both files
+  preloaded, no third-party request. Adds about 45 KB on a first page view,
+  cached after (`public/_headers`, one-year immutable, Cloudflare Pages syntax).
+  Tool pages themselves got about 2 KB lighter.
+- **Badge label:** "Company-wide policy — not product-verified" is now
+  "Company-wide policy" (`verdicts.ts` is the single copy; `Badge.astro` reads it;
+  `about.astro` updated). Per-tool summaries in `tools.json` untouched.
+- Checked at 375/768/1280, light and dark, all six verdicts plus a long-value
+  stress case: no overflow, no AA contrast failures (lowest 4.76:1). Print and
+  reduced-motion handled. Not verified: `_headers` on real Cloudflare Pages,
+  Safari/Firefox/real devices/screen readers.
+- **Extension copy** (done by the main session, outside `frontend/`):
+  `extension/badgeCopy.js` and the example in `extension/SCOPE.md` now say
+  "Company-wide policy" too, so the toolbar/popup matches the site.
+
+---
+
 ## 2026-09-18 (SEO pass + batch-submit script — built and checked locally; not deployed)
 
 **SEO** (`frontend/`), done on top of the UI audit's final `Layout.astro` /
@@ -30,8 +106,10 @@ real record, not an empty log.
 - Icons: `favicon.ico` and `apple-touch-icon.png` generated from the UI
   audit's final `favicon.svg` (`research/seo/render-icons.mjs`).
 - Structured data: `BreadcrumbList` on tool pages, `WebSite` on the home page.
-  Built from `tools.json` (LLM-extracted, untrusted), so `<` is escaped as
-  `<` inside the `<script>` block; tested with a `</script>` payload.
+  Built from `tools.json` (LLM-extracted, untrusted), so every `<` is
+  written as the six-character JSON escape (backslash, u, 0, 0, 3, c) inside the
+  `<script>` block, and the two Unicode line separators likewise; tested with a
+  `</script>` payload.
 - `404.astro` added (noindex). Believed, not confirmed live, that Cloudflare
   Pages otherwise serves the home page with a 200 for unknown URLs.
 - **Deliberately skipped**: sitemap `lastmod`. `tools.json` has no accurate

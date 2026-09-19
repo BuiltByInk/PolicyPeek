@@ -1,4 +1,5 @@
 import type { Env } from "./index";
+import { expandIpv6 } from "./ssrf";
 
 export type Tier = "free" | "paid";
 
@@ -43,12 +44,25 @@ export async function resolveTier(request: Request, env: Env): Promise<Tier> {
 // DECISIONS_NEEDED.md for why IP was chosen over a client-supplied token.
 export function getClientIp(request: Request): string {
   const cfIp = request.headers.get("CF-Connecting-IP");
-  if (cfIp) return cfIp;
+  if (cfIp) return normalizeIpForRateLimit(cfIp.trim());
 
   const forwardedFor = request.headers.get("X-Forwarded-For");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  if (forwardedFor) return normalizeIpForRateLimit(forwardedFor.split(",")[0].trim());
 
   return "unknown";
+}
+
+// One residential or hosting customer typically controls an entire IPv6 /64,
+// i.e. billions of distinct addresses. Keying the daily cap on the full
+// address would let a single machine mint a fresh "identity" per request and
+// bypass it (each one costing a real LLM call). Collapse IPv6 to its /64
+// prefix so the cap applies per network, the same way one IPv4 address does.
+// IPv4 and anything unparseable pass through unchanged.
+export function normalizeIpForRateLimit(ip: string): string {
+  if (!ip.includes(":")) return ip;
+  const groups = expandIpv6(ip);
+  if (!groups) return ip;
+  return `${groups.slice(0, 4).map((g) => g.toString(16)).join(":")}::/64`;
 }
 
 // Constant-time comparison. Hashing both sides first means the byte-compare

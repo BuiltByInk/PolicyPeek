@@ -100,7 +100,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
   .controls label { display: flex; flex-direction: column; gap: 0.3rem; }
   .controls label > span {
     font-family: var(--font-head);
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -121,7 +121,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
   .chip {
     font: inherit;
     font-family: var(--font-head);
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -172,7 +172,8 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
   .tool-name {
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.35rem;
+    line-height: 1.15;
     color: var(--fg);
     text-decoration: none;
     overflow-wrap: anywhere;
@@ -202,7 +203,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
   .reason.loud { color: var(--fg); }
   .reason.shared { color: var(--amber-fg); }
   @media (min-width: 760px) {
-    .row { grid-template-columns: minmax(10rem, 14rem) 13.5rem 1fr; align-items: start; }
+    .row { grid-template-columns: minmax(10rem, 14rem) 12rem 1fr; align-items: start; }
   }
 
   /* ---- no match ---- */
@@ -212,7 +213,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
     margin: 1.5rem 0 0;
   }
   .no-match p { margin: 0 0 0.5rem; }
-  .nm-head { font-family: var(--font-head); font-weight: 800; font-size: 1.15rem; overflow-wrap: anywhere; }
+  .nm-head { font-family: var(--font-head); font-weight: 800; font-size: 1.4rem; overflow-wrap: anywhere; }
   .no-match[hidden] { display: none; }
   .linklike {
     font: inherit; background: none; border: 0; padding: 0; color: var(--id);

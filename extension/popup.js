@@ -92,6 +92,23 @@ function renderCheckButton(tab, hostname) {
   actionsEl.appendChild(hint);
 }
 
+// Drops the query string and fragment before the URL leaves the browser.
+// Those parts routinely carry session tokens, share links or personal
+// identifiers, and this URL is stored and later shown as a public source link
+// -- a privacy tool shouldn't be the thing that leaks them.
+function urlWithoutQueryOrHash(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    url.search = "";
+    url.hash = "";
+    url.username = "";
+    url.password = "";
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
 // Submits the CURRENT tab's own URL as source_url, not a discovered policy
 // link (out of MVP scope per SCOPE.md's "Non-goals") -- this also happens
 // to be exactly what isSourceHostAllowedForDomain requires (source_url's
@@ -106,7 +123,7 @@ async function submitCheck(tab, hostname, button) {
     res = await fetch(`${API_BASE_URL}/v1/check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain: hostname, source_url: tab.url }),
+      body: JSON.stringify({ domain: hostname, source_url: urlWithoutQueryOrHash(tab.url) }),
     });
   } catch {
     clearActions();
@@ -122,6 +139,11 @@ async function submitCheck(tab, hostname, button) {
   // gate before it ever becomes a real badge.
   if (res.status === 202) {
     showMessage("Submitted! This goes to review — check back later for a verdict.");
+    return;
+  }
+
+  if (data.error === "daily_capacity_reached") {
+    showMessage("PolicyPeek has reached its check limit for today. Your own daily check is unused, so try again tomorrow.");
     return;
   }
 

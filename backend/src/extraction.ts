@@ -12,6 +12,41 @@ export interface ExtractedFacts {
   relevant_clauses: string[];
 }
 
+const MAX_DATA_RETENTION_CHARS = 300;
+const MAX_CLAUSE_CHARS = 500;
+const MAX_CLAUSES = 10;
+
+function boundedText(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
+  if (trimmed.length === 0) return null;
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
+}
+
+// The model's output is derived from an attacker-influenceable page (anyone
+// can submit a domain they control), so it's untrusted input, not a schema-
+// checked one. Everything downstream (rules.ts, D1 binds, tools.json, the
+// site, the extension popup) assumes the shape in ExtractedFacts, so enforce
+// it here: a fact that isn't a real boolean becomes null (which routes to
+// human review or "unrated", never to a confident verdict), and free text is
+// length-capped and stripped of control characters.
+export function sanitizeFacts(parsed: unknown): ExtractedFacts {
+  const obj = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
+  const bool = (v: unknown): boolean | null => (typeof v === "boolean" ? v : null);
+  const clauses = Array.isArray(obj.relevant_clauses) ? obj.relevant_clauses : [];
+
+  return {
+    trains_on_user_data: bool(obj.trains_on_user_data),
+    data_retention: boundedText(obj.data_retention, MAX_DATA_RETENTION_CHARS),
+    gdpr_mentioned: bool(obj.gdpr_mentioned),
+    opt_out_available: bool(obj.opt_out_available),
+    relevant_clauses: clauses
+      .map((c) => boundedText(c, MAX_CLAUSE_CHARS))
+      .filter((c): c is string => c !== null)
+      .slice(0, MAX_CLAUSES),
+  };
+}
+
 const MODEL = "claude-haiku-4-5-20251001";
 
 const SYSTEM_PROMPT = `You extract factual data-handling claims from privacy policy text. Output ONLY facts stated in the text, never a compliance judgment or verdict. Respond with strict JSON matching this shape:
@@ -71,12 +106,5 @@ export async function extractFacts(rawText: string, apiKey: string): Promise<Ext
   }
   const jsonSlice = text.slice(start, end + 1);
 
-  const parsed = JSON.parse(jsonSlice) as ExtractedFacts;
-  return {
-    trains_on_user_data: parsed.trains_on_user_data ?? null,
-    data_retention: parsed.data_retention ?? null,
-    gdpr_mentioned: parsed.gdpr_mentioned ?? null,
-    opt_out_available: parsed.opt_out_available ?? null,
-    relevant_clauses: Array.isArray(parsed.relevant_clauses) ? parsed.relevant_clauses : [],
-  };
+  return sanitizeFacts(JSON.parse(jsonSlice));
 }

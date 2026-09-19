@@ -9,6 +9,9 @@ export interface Env {
   DB: D1Database;
   ANTHROPIC_API_KEY?: string;
   ADMIN_TOKEN?: string;
+  // Optional: enable stuck-pending push alerts (see alert.ts).
+  ALERT_BOT_TOKEN?: string;
+  ALERT_CHAT_ID?: string;
 }
 
 export default {

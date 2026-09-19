@@ -226,6 +226,9 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
             ? `${domain} is already in the catalog. We're re-checking it now.`
             : `Got it. We're checking ${domain} now. If it passes the automatic checks it's published; otherwise a person reviews it first. New results can take a while to show up in the list on this site.`);
           form.reset();
+        } else if (err === "daily_capacity_reached") {
+          // The service-wide daily ceiling, not this person's own limit.
+          show("error", "We've reached the number of checks we can run today. Nothing you did wrong, and your own daily check is unused. Please try again tomorrow.");
         } else if (res.status === 429 || err === "daily_check_limit_reached") {
           const when = resetTime(body?.resets_at);
           show("error", when

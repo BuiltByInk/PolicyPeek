@@ -42,6 +42,9 @@ const DOH_RECORD_TYPES = ["A", "AAAA"] as const;
 export class SsrfBlockedError extends Error {}
 
 function isBlockedIpv4(a: number, b: number): boolean {
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64.0.0/10
+  if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking 198.18.0.0/15
+  if (a >= 224) return true; // multicast, reserved, broadcast
   if (a === 127) return true; // loopback
   if (a === 10) return true; // RFC1918
   if (a === 172 && b >= 16 && b <= 31) return true; // RFC1918
@@ -56,7 +59,7 @@ function isBlockedIpv4(a: number, b: number): boolean {
 // (e.g. hostname.startsWith("fe80:")) misses equivalent forms of the same
 // address — this normalizes first so every representation of the same
 // address gets the same verdict.
-function expandIpv6(hostname: string): number[] | null {
+export function expandIpv6(hostname: string): number[] | null {
   if (!hostname.includes(":")) return null;
   const parts = hostname.split("::");
   if (parts.length > 2) return null;
@@ -198,6 +201,14 @@ async function assertSafeUrl(rawUrl: string): Promise<URL> {
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new SsrfBlockedError("blocked_protocol");
   }
+  // A policy page is always on the default web ports. Refusing anything else
+  // stops a submitted URL from being used to probe other services on a host.
+  if (url.port !== "" && url.port !== "80" && url.port !== "443") {
+    throw new SsrfBlockedError("blocked_port");
+  }
+  if (url.username !== "" || url.password !== "") {
+    throw new SsrfBlockedError("blocked_credentials_in_url");
+  }
   const hostname = url.hostname.replace(/^\[|\]$/g, "");
   if (BLOCKED_HOSTNAMES.has(hostname.toLowerCase()) || isBlockedIpLiteral(hostname)) {
     throw new SsrfBlockedError("blocked_target");
@@ -212,6 +223,14 @@ async function assertSafeUrl(rawUrl: string): Promise<URL> {
 }
 
 export async function safeFetchText(rawUrl: string): Promise<string> {
+  return (await safeFetchTextWithFinalUrl(rawUrl)).text;
+}
+
+// Same fetch, but also reports the URL the body actually came from after any
+// redirects, so a caller can tell whether the content is from the host that
+// was submitted or from somewhere a redirect sent us (see check.ts's
+// fetchPolicyText).
+export async function safeFetchTextWithFinalUrl(rawUrl: string): Promise<{ text: string; finalUrl: string }> {
   let currentUrl = await assertSafeUrl(rawUrl);
 
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
@@ -241,7 +260,7 @@ export async function safeFetchText(rawUrl: string): Promise<string> {
     }
 
     const reader = response.body?.getReader();
-    if (!reader) return "";
+    if (!reader) return { text: "", finalUrl: currentUrl.toString() };
     const chunks: Uint8Array[] = [];
     let total = 0;
     while (total < MAX_BODY_BYTES) {
@@ -259,7 +278,7 @@ export async function safeFetchText(rawUrl: string): Promise<string> {
       buf.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    return new TextDecoder().decode(buf);
+    return { text: new TextDecoder().decode(buf), finalUrl: currentUrl.toString() };
   }
 
   throw new SsrfBlockedError("too_many_redirects");

@@ -1,8 +1,8 @@
 import type { Env } from "./index";
 import { isValidDomain } from "./lookup";
-import { safeFetchText, SsrfBlockedError } from "./ssrf";
+import { safeFetchTextWithFinalUrl, SsrfBlockedError } from "./ssrf";
 import { extractFacts, type ExtractedFacts } from "./extraction";
-import { getClientIp, resolveTier } from "./auth";
+import { getClientIp, resolveTier, type Tier } from "./auth";
 import { cleanHtmlToText } from "./htmlClean";
 import { tryReserveDailySlot, releaseDailySlot } from "./rateLimit";
 import { isKnownSharedDomain } from "./sharedDomains";
@@ -10,6 +10,30 @@ import { allowedCrossDomainSource } from "./crossDomainSources";
 import { evaluateAutoPublish } from "./autoPublish";
 import { tryAutoPublishAtomic } from "./admin";
 import { tryWaybackFallback } from "./waybackFallback";
+
+const MAX_BODY_CHARS = 10_000;
+const MAX_SOURCE_URL_CHARS = 2_048;
+const MAX_NAME_CHARS = 100;
+
+// `name` comes straight from an anonymous caller and, for a brand-new domain
+// that auto-publishes, becomes the tool's public display name. Keep it a
+// short plain string: no control characters, bounded length, and null (falls
+// back to the domain) if nothing usable is left.
+export function cleanSubmittedName(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+  if (cleaned.length === 0) return null;
+  return cleaned.slice(0, MAX_NAME_CHARS);
+}
+
+// Only a paid-key caller (in practice: Elliot's batch-submit script) may set
+// a tool's display name. The website form and the extension never send one,
+// so an anonymous caller supplying a name is someone hitting the API
+// directly -- the tool then just shows its domain. (2026-09-19, Elliot's
+// ruling: option A on the name question in DECISIONS_NEEDED.md.)
+export function nameForTier(tier: Tier, raw: unknown): string | null {
+  return tier === "paid" ? cleanSubmittedName(raw) : null;
+}
 
 interface CheckBody {
   domain?: string;
@@ -46,6 +70,20 @@ export interface FetchedPolicy {
   rawHtml: string;
   sourcedFromArchive: boolean;
   archivedUrl: string | null;
+  // Set when a redirect carried the fetch to a host that isn't the submitted
+  // domain (or its subdomains / curated cross-domain source). The text then
+  // isn't proven to be that domain's own policy, so it never auto-publishes.
+  redirectedOffDomainTo: string | null;
+}
+
+// Decides whether the host a fetch ended up on is still "the same site" as
+// the submitted domain. A leading www. on either side is ignored, so
+// acme.com <-> www.acme.com never counts as leaving the domain. Otherwise
+// this is exactly the submit-time rule (exact, subdomain, or the curated
+// cross-domain source), applied to where the redirects landed.
+export function isSameSiteAfterRedirect(finalHost: string, domain: string): boolean {
+  const strip = (h: string) => h.toLowerCase().replace(/^www\./, "");
+  return isSourceHostAllowedForDomain(strip(finalHost), strip(domain));
 }
 
 // Shared by handleCheck and cron.ts's monthly recheck: try a live fetch
@@ -53,15 +91,21 @@ export interface FetchedPolicy {
 // live fetch genuinely fails to connect/respond (see waybackFallback.ts).
 // A SsrfBlockedError means the URL itself is illegitimate, not merely
 // unreachable -- that never falls back, it's a real rejection.
-export async function fetchPolicyText(sourceUrl: string): Promise<FetchedPolicy> {
+export async function fetchPolicyText(sourceUrl: string, domain: string): Promise<FetchedPolicy> {
   try {
-    const rawHtml = await safeFetchText(sourceUrl);
-    return { rawHtml, sourcedFromArchive: false, archivedUrl: null };
+    const { text: rawHtml, finalUrl } = await safeFetchTextWithFinalUrl(sourceUrl);
+    const finalHost = new URL(finalUrl).hostname;
+    return {
+      rawHtml,
+      sourcedFromArchive: false,
+      archivedUrl: null,
+      redirectedOffDomainTo: isSameSiteAfterRedirect(finalHost, domain) ? null : finalHost,
+    };
   } catch (err) {
     if (err instanceof SsrfBlockedError) throw err;
     const fallback = await tryWaybackFallback(sourceUrl);
     if (!fallback) throw err;
-    return { rawHtml: fallback.text, sourcedFromArchive: true, archivedUrl: fallback.archivedUrl };
+    return { rawHtml: fallback.text, sourcedFromArchive: true, archivedUrl: fallback.archivedUrl, redirectedOffDomainTo: null };
   }
 }
 
@@ -74,7 +118,8 @@ export async function runExtraction(
   isRecheck: boolean,
   sharedDomain: boolean,
   sourcedFromArchive: boolean,
-  rawText: string
+  rawText: string,
+  redirectedOffDomainTo: string | null = null
 ): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
     await env.DB.prepare(
@@ -98,6 +143,23 @@ export async function runExtraction(
       "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
     )
       .bind(String(err instanceof Error ? err.message : err), pendingId)
+      .run();
+    return;
+  }
+
+  // A redirect carried the fetch off the submitted domain (2026-09-19,
+  // Elliot's ruling: option B in DECISIONS_NEEDED.md). The extracted facts
+  // are kept, but this never auto-publishes -- a human sees it first, with
+  // the reason in extraction_error (the same channel auto_publish_raced
+  // uses to surface a queued row in GET /v1/admin/pending).
+  if (redirectedOffDomainTo) {
+    await env.DB.prepare(
+      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
+    )
+      .bind(
+        `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`,
+        pendingId
+      )
       .run();
     return;
   }
@@ -209,7 +271,10 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
         headers.set("Retry-After", String(retryAfterSeconds));
       }
       return Response.json(
-        { error: "daily_check_limit_reached", resets_at: reservation.resetsAt },
+        {
+          error: reservation.reason === "global_cap" ? "daily_capacity_reached" : "daily_check_limit_reached",
+          resets_at: reservation.resetsAt,
+        },
         { status: 429, headers }
       );
     }
@@ -221,30 +286,50 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
     return response;
   }
 
+  // A legitimate submission is three short strings. Read the body as text
+  // first so an oversized payload is refused before it's parsed or stored.
   let body: CheckBody;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (rawBody.length > MAX_BODY_CHARS) {
+      return failed(Response.json({ error: "payload_too_large" }, { status: 413 }));
+    }
+    const parsedBody: unknown = JSON.parse(rawBody);
+    if (!parsedBody || typeof parsedBody !== "object" || Array.isArray(parsedBody)) {
+      return failed(Response.json({ error: "invalid_json" }, { status: 400 }));
+    }
+    body = parsedBody as CheckBody;
   } catch {
     return failed(Response.json({ error: "invalid_json" }, { status: 400 }));
   }
 
-  const domain = body.domain?.trim().toLowerCase();
-  const sourceUrl = body.source_url?.trim();
-  const name = body.name?.trim() || null;
+  // typeof guards: a JSON body can put any type in these fields, and
+  // `.trim()` on a number/object would throw an unhandled 500 after the
+  // daily slot was already reserved.
+  const domain = typeof body.domain === "string" ? body.domain.trim().toLowerCase() : undefined;
+  const rawSourceUrl = typeof body.source_url === "string" ? body.source_url.trim() : undefined;
+  const name = nameForTier(tier, body.name);
 
   if (!domain || !isValidDomain(domain)) {
     return failed(Response.json({ error: "invalid_domain" }, { status: 400 }));
   }
-  if (!sourceUrl) {
+  if (!rawSourceUrl) {
     return failed(Response.json({ error: "missing_source_url" }, { status: 400 }));
+  }
+  if (rawSourceUrl.length > MAX_SOURCE_URL_CHARS) {
+    return failed(Response.json({ error: "invalid_source_url" }, { status: 400 }));
   }
 
   let parsedSource: URL;
   try {
-    parsedSource = new URL(sourceUrl);
+    parsedSource = new URL(rawSourceUrl);
   } catch {
     return failed(Response.json({ error: "invalid_source_url" }, { status: 400 }));
   }
+  // A fragment is never sent to the server, so it can't change what gets
+  // fetched -- but it would still be stored and later shown as a source link.
+  parsedSource.hash = "";
+  const sourceUrl = parsedSource.toString();
   // Belt-and-suspenders: see isSourceHostAllowedForDomain's comment.
   if (!isSourceHostAllowedForDomain(parsedSource.hostname, domain)) {
     return failed(Response.json({ error: "source_url_domain_mismatch" }, { status: 400 }));
@@ -252,7 +337,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
 
   let fetched: FetchedPolicy;
   try {
-    fetched = await fetchPolicyText(sourceUrl);
+    fetched = await fetchPolicyText(sourceUrl, domain);
   } catch (err) {
     if (err instanceof SsrfBlockedError) {
       return failed(Response.json({ error: "blocked_url", reason: err.message }, { status: 400 }));
@@ -305,7 +390,8 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
       Boolean(isRecheck),
       sharedDomain,
       fetched.sourcedFromArchive,
-      cleanedText
+      cleanedText,
+      fetched.redirectedOffDomainTo
     )
   );
 

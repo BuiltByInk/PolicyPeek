@@ -3,32 +3,65 @@ import { SsrfBlockedError } from "./ssrf";
 import { cleanHtmlToText } from "./htmlClean";
 import { isKnownSharedDomain } from "./sharedDomains";
 import { runExtraction, fetchPolicyText } from "./check";
+import { sendAlert } from "./alert";
 
 const STUCK_THRESHOLD_MINUTES = 30;
+// The cron fires every 15 minutes, so a row crosses the 30-minute mark in
+// exactly one run's window. The window is 16 minutes, not 15, so scheduler
+// jitter can only cause an occasional duplicate alert, never a missed one.
+// This is what lets alerting be stateless (no table, no migration): each
+// stuck row alerts about once, instead of every 15 minutes until fixed.
+const ALERT_WINDOW_MINUTES = 16;
+const MAX_ROWS_IN_ALERT = 10;
 
 interface StuckRow {
   id: number;
   domain: string;
   created_at: string;
+  extraction_error: string | null;
 }
 
-// Observability only — flags jobs that never made it out of "pending"
-// (extraction never ran or never finished) so a human notices, no
+export function formatStuckAlert(rows: StuckRow[]): string {
+  const shown = rows.slice(0, MAX_ROWS_IN_ALERT).map((r) => {
+    const why = r.extraction_error ? ` -- ${r.extraction_error.slice(0, 120)}` : "";
+    return `#${r.id} ${r.domain} (since ${r.created_at})${why}`;
+  });
+  const more = rows.length > MAX_ROWS_IN_ALERT ? `\n...and ${rows.length - MAX_ROWS_IN_ALERT} more` : "";
+  return `PolicyPeek: ${rows.length} check(s) stuck in pending for over ${STUCK_THRESHOLD_MINUTES} minutes.\n${shown.join("\n")}${more}`;
+}
+
+// Flags jobs that never made it out of "pending" (extraction never ran or
+// never finished). Everything stuck is logged (visible with Workers Logs on);
+// rows that only just crossed the threshold also push an alert to Elliot, so
+// an outage like the 3-day ANTHROPIC_API_KEY one can't go unnoticed. No
 // auto-retry or remediation.
 export async function checkStuckPending(env: Env): Promise<void> {
   const { results } = await env.DB.prepare(
-    `SELECT id, domain, created_at FROM pending_checks
+    `SELECT id, domain, created_at, extraction_error FROM pending_checks
      WHERE status = 'pending'
        AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)`
   )
     .bind(`-${STUCK_THRESHOLD_MINUTES} minutes`)
     .all<StuckRow>();
 
-  if (results.length > 0) {
-    console.warn(
-      `[cron] ${results.length} pending_checks stuck past ${STUCK_THRESHOLD_MINUTES}m:`,
-      results.map((r) => `#${r.id} ${r.domain} (since ${r.created_at})`).join("; ")
-    );
+  if (results.length === 0) return;
+
+  console.warn(
+    `[cron] ${results.length} pending_checks stuck past ${STUCK_THRESHOLD_MINUTES}m:`,
+    results.map((r) => `#${r.id} ${r.domain} (since ${r.created_at})`).join("; ")
+  );
+
+  const { results: newlyStuck } = await env.DB.prepare(
+    `SELECT id, domain, created_at, extraction_error FROM pending_checks
+     WHERE status = 'pending'
+       AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
+       AND created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)`
+  )
+    .bind(`-${STUCK_THRESHOLD_MINUTES} minutes`, `-${STUCK_THRESHOLD_MINUTES + ALERT_WINDOW_MINUTES} minutes`)
+    .all<StuckRow>();
+
+  if (newlyStuck.length > 0) {
+    await sendAlert(env, formatStuckAlert(newlyStuck));
   }
 }
 
@@ -60,7 +93,7 @@ export async function runMonthlyRecheck(env: Env): Promise<void> {
     if (!sourceUrl) continue;
 
     try {
-      const fetched = await fetchPolicyText(sourceUrl);
+      const fetched = await fetchPolicyText(sourceUrl, tool.domain);
       const cleanedText = cleanHtmlToText(fetched.rawHtml);
       const sharedDomain = isKnownSharedDomain(tool.domain);
 
@@ -88,7 +121,8 @@ export async function runMonthlyRecheck(env: Env): Promise<void> {
         true,
         sharedDomain,
         fetched.sourcedFromArchive,
-        cleanedText
+        cleanedText,
+        fetched.redirectedOffDomainTo
       );
       ok++;
     } catch (err) {

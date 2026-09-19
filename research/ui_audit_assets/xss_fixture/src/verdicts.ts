@@ -9,7 +9,9 @@ export type Status = Tool["compliance_status"];
 
 export interface VerdictInfo {
   status: Status;
-  /** Short label for filter chips / register rows (the full badge label lives in Badge.astro). */
+  /** Full badge label. Badge.astro and the tool-page verdict block both render this exact string. */
+  label: string;
+  /** Short label for filter chips / register rows. */
   short: string;
   /** One plain sentence. Mirrors the methodology page. */
   meaning: string;
@@ -19,17 +21,17 @@ export interface VerdictInfo {
 
 // Order = how a visitor scanning for trouble wants to read them.
 export const VERDICTS: VerdictInfo[] = [
-  { status: "not_compliant", short: "Not compliant", swatch: "red",
+  { status: "not_compliant", label: "Not compliant", short: "Not compliant", swatch: "red",
     meaning: "Trains on your data by default, with no opt-out." },
-  { status: "compliant_with_caveats", short: "With caveats", swatch: "caveat",
+  { status: "compliant_with_caveats", label: "Compliant with caveats", short: "With caveats", swatch: "caveat",
     meaning: "Trains on your data by default, but the policy gives you a real way to opt out." },
-  { status: "unrated", short: "Unrated", swatch: "amber",
+  { status: "unrated", label: "Unrated", short: "Unrated", swatch: "amber",
     meaning: "The policy doesn't say clearly either way. We don't know." },
-  { status: "shared_domain_unverified", short: "Company-wide policy", swatch: "amber",
+  { status: "shared_domain_unverified", label: "Company-wide policy", short: "Company-wide policy", swatch: "amber",
     meaning: "The only policy we found covers a whole company, not this product." },
-  { status: "compliant", short: "Compliant", swatch: "green",
+  { status: "compliant", label: "Compliant", short: "Compliant", swatch: "green",
     meaning: "Doesn't train on your data by default, or only if you opt in." },
-  { status: "not_ai_tool", short: "Not an AI tool", swatch: "gray",
+  { status: "not_ai_tool", label: "Not an AI tool", short: "Not an AI tool", swatch: "gray",
     meaning: "This doesn't look like an AI product, so the question doesn't apply." },
 ];
 

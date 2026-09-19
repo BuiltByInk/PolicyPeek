@@ -12,6 +12,22 @@ import type { Env } from "./index";
 interface ReserveResult {
   reserved: boolean;
   resetsAt?: string;
+  // Why a reservation was refused: this caller already used today's slot, or
+  // the whole service has hit its daily ceiling. The two need different
+  // messages -- the second isn't the caller's fault.
+  reason?: "already_used" | "global_cap";
+}
+
+// Global daily ceiling on free-tier checks across all callers (2026-09-19,
+// Elliot's ruling: option A in DECISIONS_NEEDED.md). Each check is one paid
+// LLM call, and the per-client cap alone can't bound spend against someone
+// with many IPv4 addresses. Far above real usage today; raise it when real
+// traffic needs it. Paid-tier callers never reserve a slot, so they're exempt.
+// Approximate on purpose: concurrent requests can overshoot it by a few.
+export const GLOBAL_DAILY_CHECK_CAP = 200;
+
+export function isOverGlobalCap(todayCount: number, cap: number = GLOBAL_DAILY_CHECK_CAP): boolean {
+  return todayCount > cap;
 }
 
 // Pure so it's unit-testable without a D1 mock -- matches the rest of this
@@ -51,10 +67,23 @@ export async function tryReserveDailySlot(env: Env, clientIp: string): Promise<R
     .bind(clientIp, bucket)
     .run();
 
-  if (result.meta.changes > 0) {
-    return { reserved: true };
+  if (result.meta.changes === 0) {
+    return { reserved: false, resetsAt: nextDayResetAt(), reason: "already_used" };
   }
-  return { reserved: false, resetsAt: nextDayResetAt() };
+
+  // Reserve first, then count, so concurrent requests can only overshoot the
+  // ceiling slightly rather than all reading "under" before any reserved.
+  // The count includes the slot just taken, hence > and not >=.
+  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM anonymous_check_log WHERE day_bucket = ?")
+    .bind(bucket)
+    .first<{ n: number }>();
+  if (isOverGlobalCap(row?.n ?? 0)) {
+    // Give the slot back: the caller didn't do anything wrong, so being
+    // turned away by the global ceiling must not burn their own daily check.
+    await releaseDailySlot(env, clientIp);
+    return { reserved: false, resetsAt: nextDayResetAt(), reason: "global_cap" };
+  }
+  return { reserved: true };
 }
 
 // Compensating action for a reservation that turned out not to correspond

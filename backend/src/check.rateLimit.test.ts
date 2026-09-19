@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Env } from "./index";
+import { GLOBAL_DAILY_CHECK_CAP, todayBucket } from "./rateLimit";
 
 // Verifies the boundary called out in the "anonymous /v1/check access +
 // server-side daily check cap" commit message: a validation failure (bad
@@ -14,6 +15,10 @@ import type { Env } from "./index";
 vi.mock("./ssrf", () => ({
   SsrfBlockedError: class SsrfBlockedError extends Error {},
   safeFetchText: vi.fn(async () => "<html><body>Some policy text.</body></html>"),
+  safeFetchTextWithFinalUrl: vi.fn(async (url: string) => ({
+    text: "<html><body>Some policy text.</body></html>",
+    finalUrl: url,
+  })),
 }));
 
 const { handleCheck } = await import("./check");
@@ -44,6 +49,10 @@ function makeFakeEnvWithLog() {
       async first<T>() {
         if (sql.includes("FROM api_keys")) return null;
         if (sql.includes("FROM tools")) return null;
+        if (sql.includes("COUNT(*) AS n FROM anonymous_check_log")) {
+          const day = boundArgs[0];
+          return { n: [...anonymousCheckLog.values()].filter((r) => r.day_bucket === day).length } as unknown as T;
+        }
         if (sql.includes("INSERT INTO pending_checks")) {
           const row = { id: nextId++, domain: boundArgs[0] };
           pendingChecks.push(row);
@@ -178,5 +187,43 @@ describe("handleCheck daily-cap boundary", () => {
     const statuses = [first.status, second.status].sort();
     expect(statuses).toEqual([202, 429]);
     expect(anonymousCheckLog.size).toBe(1);
+  });
+});
+
+describe("handleCheck global daily ceiling", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function fillToday(anonymousCheckLog: Map<string, { client_ip: string; day_bucket: string; checked_at: string }>, n: number) {
+    const day = todayBucket();
+    for (let i = 0; i < n; i++) {
+      anonymousCheckLog.set(`10.0.${Math.floor(i / 250)}.${i % 250}|${day}`, {
+        client_ip: `10.0.${Math.floor(i / 250)}.${i % 250}`,
+        day_bucket: day,
+        checked_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  it("still accepts the check that lands exactly on the ceiling", async () => {
+    const { env, anonymousCheckLog } = makeFakeEnvWithLog();
+    fillToday(anonymousCheckLog, GLOBAL_DAILY_CHECK_CAP - 1);
+    const res = await handleCheck(makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy" }), env, makeCtx());
+    expect(res.status).toBe(202);
+    expect(anonymousCheckLog.size).toBe(GLOBAL_DAILY_CHECK_CAP);
+  });
+
+  it("refuses with a capacity error once the ceiling is reached, and does not burn the caller's own slot", async () => {
+    const { env, anonymousCheckLog, pendingChecks } = makeFakeEnvWithLog();
+    fillToday(anonymousCheckLog, GLOBAL_DAILY_CHECK_CAP);
+    const res = await handleCheck(makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy" }, "7.7.7.7"), env, makeCtx());
+
+    expect(res.status).toBe(429);
+    expect(await res.json()).toMatchObject({ error: "daily_capacity_reached" });
+    expect(res.headers.get("Retry-After")).not.toBeNull();
+    expect(pendingChecks).toHaveLength(0);
+    expect(anonymousCheckLog.has(`7.7.7.7|${todayBucket()}`)).toBe(false);
+    expect(anonymousCheckLog.size).toBe(GLOBAL_DAILY_CHECK_CAP); // unchanged
   });
 });

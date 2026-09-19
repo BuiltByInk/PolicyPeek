@@ -1,5 +1,81 @@
 # Decisions Needed
 
+## Resolved (2026-09-19): security audit decisions — 1-3 and 6 built locally, 4 is dashboard-only, 5 still unverified
+
+Full detail in `security/review-2026-09-19-local-audit.md`. Elliot ruled on
+each over Telegram on 2026-09-19:
+
+1. **Redirects to other domains — ruled option B (soft).** A fetch that ends
+   up on a host other than the submitted domain (ignoring `www.`, counting
+   subdomains and the `crossDomainSources.ts` map as the same site) still
+   extracts, but never auto-publishes. It queues with
+   `extraction_error = "queued_for_review: the policy text came from a
+   different domain after a redirect (<host>) -- never auto-published"`, which
+   shows in `GET /v1/admin/pending`. Applies to the monthly recheck too.
+   Built: `ssrf.ts` `safeFetchTextWithFinalUrl`, `check.ts`
+   `isSameSiteAfterRedirect` / `fetchPolicyText(sourceUrl, domain)` /
+   `runExtraction(..., redirectedOffDomainTo)`, `cron.ts`. Tests in
+   `check.test.ts` and `check.redirect.test.ts`.
+   *Watch for:* a tool whose policy legitimately lives on another domain will
+   queue on every monthly recheck. That's noise, not breakage; add the domain
+   to `crossDomainSources.ts` if it's a genuine same-company host.
+2. **Global spend ceiling — ruled A + B.** `GLOBAL_DAILY_CHECK_CAP = 200`
+   free-tier checks a day across everyone (`rateLimit.ts`); past it,
+   `/v1/check` returns 429 `daily_capacity_reached` and the caller's own slot is
+   not burned. Paid keys are exempt. The site and extension show a distinct
+   message. Approximate on purpose (concurrent requests can overshoot by a few).
+   **Still to do by hand (Anthropic console, not code): set a monthly spend
+   limit and an email usage alert as the backstop.** Raise the constant when
+   real traffic needs it.
+3. **Who can name a new tool — ruled A.** `nameForTier()` in `check.ts`: only a
+   paid-key caller's `name` is used (Elliot's batch-submit script); anonymous
+   callers' names are ignored, so the tool shows its domain.
+   **Revisit when there's real traffic (not built):** anyone can submit a
+   domain they control and a clean-looking page can auto-publish a favourable
+   badge for it, so a scam site could show a green "Compliant" in the
+   extension. Fix would be to hold favourable verdicts for brand-new domains
+   for review; that reverses a deliberate choice in `autoPublish.ts` and puts
+   most new checks in Elliot's queue, so it waits for real usage.
+4. **Rate limits — ruled A (Cloudflare dashboard, no code).** To set up when at
+   the computer, generous on purpose (dashboard rules aren't in the repo, so
+   this is the record):
+   - `/v1/lookup`: 120 requests/minute per IP (the extension looks up on every
+     popup open, cached 5 min).
+   - `/v1/check` (POST): 5/minute per IP. Bounds the retry loop where failed
+     fetches release the daily slot, which the per-day cap doesn't.
+   - `/v1/admin/*`: 10/minute per IP.
+   The free plan allows very few rules, so prioritise admin, then `/v1/check`,
+   then lookup. Also confirm `ADMIN_TOKEN` is a long random value
+   (`openssl rand -hex 32`); if unsure, rotate with `wrangler secret put
+   ADMIN_TOKEN`.
+5. **Unverified:** whether `migrations/2026-09-18-add-not-ai-tool-status.sql`
+   has been run on production D1. Without it, approving hancocyber (pending id
+   10) fails on the CHECK constraint. Check with
+   `wrangler d1 execute policypeek-db --remote --command "SELECT sql FROM sqlite_master WHERE name='tools'"`
+   and look for `not_ai_tool` in the compliance_status CHECK list.
+6. **Stuck-pending alert — ruled A + B.** `wrangler.toml` now has
+   `[observability] enabled = true` (Workers Logs). `checkStuckPending`
+   (`cron.ts`) also sends a plain-text Telegram message via `alert.ts` when
+   rows cross the 30-minute mark, once per row: it only alerts on rows stuck
+   30-46 minutes (the cron runs every 15, the window is 16, so jitter can cause
+   an occasional duplicate but not a miss), which keeps it stateless (no table,
+   no migration). The message includes each row's `extraction_error`, so a
+   repeat of the API-key outage names its cause. Silent no-op until the two
+   secrets exist. **To switch on (Elliot):** create a *separate* alert bot in
+   BotFather (not the one Claude Code's Telegram plugin uses), press Start on
+   it once from his own account, then
+   `cd backend && npx wrangler secret put ALERT_BOT_TOKEN` and
+   `npx wrangler secret put ALERT_CHAT_ID` (his Telegram user id; for a private
+   chat with a bot the chat id is the user id). Not covered: the Worker or its
+   cron being completely dead (an alert sent by the cron can't report that);
+   an outside uptime monitor pinging a health URL would.
+
+**Not deployed:** everything above needs `wrangler deploy` (backend),
+`wrangler pages deploy` (frontend, after `npm run build`), and reloading the
+extension. Elliot's call per the charter.
+
+---
+
 ## Resolved (2026-09-18): `not_ai_tool` verdict category — signal 3 tightened, implemented, awaiting live deploy + hanco re-approve
 
 Elliot's sign-off (2026-09-18, Telegram) approved the design below with two
@@ -126,7 +202,9 @@ hit the live API in ~16 hours.
 
 ---
 
-## Open (2026-09-18): `checkStuckPending`'s warning has nowhere to go — this outage was undetectable by design, not by accident
+## Resolved (2026-09-19, built locally, needs secrets + deploy): `checkStuckPending`'s warning has nowhere to go — this outage was undetectable by design, not by accident
+
+**Ruled 2026-09-19: Workers Logs on, plus a push alert (see the entry at the top of this file, item 6).** Original analysis below.
 
 Elliot's question: why did a 3+ day outage go undetected when the cron
 already runs a stuck-check every 15 minutes? Checked rather than assumed:

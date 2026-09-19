@@ -14,13 +14,19 @@ export async function getStaticPaths() {
 }
 
 const { tool } = Astro.props as { tool: Tool };
-const reasonClass =
-  tool.compliance_status === "not_compliant" ? "reason prominent red" :
-  tool.compliance_status === "compliant_with_caveats" ? "reason prominent caveat" :
-  tool.compliance_status === "unrated" ? "reason prominent amber" :
-  tool.compliance_status === "shared_domain_unverified" ? "reason prominent amber-outline" :
-  tool.compliance_status === "not_ai_tool" ? "reason prominent gray" :
-  "reason";
+// Verdict block style hook. Each verdict has its own form as well as its own
+// colour (double rule for caveats, hatched sticker for unrated, dashed for
+// company-wide, plain for the rest) and always carries its text label, so
+// nothing depends on colour or pattern alone.
+const vclass: Record<Tool["compliance_status"], string> = {
+  compliant: "green",
+  compliant_with_caveats: "caveat",
+  not_compliant: "red",
+  unrated: "amber",
+  shared_domain_unverified: "shared",
+  not_ai_tool: "gray",
+};
+const v = vclass[tool.compliance_status];
 
 // One-line reason next to the verdict. Amber/red never render blank (see
 // reasonFor in verdicts.ts): before this, an unrated tool with an empty
@@ -30,7 +36,9 @@ const meaning = VERDICTS.find((v) => v.status === tool.compliance_status)?.meani
 const isNotAi = tool.compliance_status === "not_ai_tool";
 // The "what this means" line only adds something when the reason above it is
 // the tool's own policy wording; for fixed fallback reasons it would repeat them.
-const showMeaning = !isNotAi && Boolean(tool.summary && tool.summary.trim());
+// Unrated already says "We don't know." in its own block.
+const showMeaning = !isNotAi && tool.compliance_status !== "unrated" && Boolean(tool.summary && tool.summary.trim());
+const verdictLabel = VERDICTS.find((x) => x.status === tool.compliance_status)?.label ?? tool.compliance_status;
 
 // A non-AI site has nothing to say about "training on your data", so the
 // fact rows say "Not applicable" rather than "Unclear from policy" (which
@@ -49,25 +57,68 @@ const sources = tool.source_urls
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
   : `Does ${tool.name} Train on Your Data? GDPR Check`;
+// Meta description (SEO pass, 2026-09-18): a fixed template -- the question
+// people search, then the verdict in plain words -- rather than the raw
+// policy quote in tool.summary, which got cut off mid-sentence in results and
+// was sometimes unrelated to the question (hancocyber.com's was a cookie
+// line). The summary itself still shows on the page, next to the badge. The
+// sourcing tail is dropped when it would push the line past ~160 characters,
+// where search engines start truncating.
+const verdictInfo = VERDICTS.find((v) => v.status === tool.compliance_status);
+const templated = `Does ${tool.name} train on your data? ${verdictInfo ? `${verdictInfo.short}: ${verdictInfo.meaning}` : "See PolicyPeek's sourced rating."}`;
+const sourcingTail = " Sourced from its own privacy policy.";
 const pageDescription = isNotAi
   ? `PolicyPeek's data-training check doesn't apply to ${tool.name}: the policy we found shows no sign it's an AI product.`
-  : (tool.summary && tool.summary.trim()) || `Does ${tool.name} train on your data? See PolicyPeek's sourced rating.`;
+  : templated.length + sourcingTail.length <= 160 ? templated + sourcingTail : templated;
+
+const siteUrl = Astro.site!.href;
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "PolicyPeek", item: siteUrl },
+    { "@type": "ListItem", position: 2, name: "Tools", item: `${siteUrl}tools/` },
+    { "@type": "ListItem", position: 3, name: tool.name, item: `${siteUrl}tools/${tool.domain}/` },
+  ],
+};
 ---
-<Layout title={pageTitle} description={pageDescription}>
+<Layout title={pageTitle} description={pageDescription} noindex={isNotAi} jsonLd={breadcrumbs}>
   <a class="back" href="/tools">← All tools</a>
 
   <header class="detail-head">
     <h1>{tool.name}</h1>
-    <Badge status={tool.compliance_status} />
+    {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
   </header>
-  {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
 
-  {reason && <p class={reasonClass}>{reason}</p>}
-  {showMeaning && <p class="meaning">{meaning}</p>}
-  {!showMeaning && <div class="meaning-gap"></div>}
+  <section class="label" aria-labelledby="lp-h">
+    <div class="slab">
+      <h2 class="k" id="lp-h">Data Practices Disclosure</h2>
+      <span class="k">Read from its own policy</span>
+    </div>
 
-  <div class="label-panel">
-    <h2 class="lp-head">Data Practices Disclosure</h2>
+    {/* The verdict is the loudest thing on the label (as Calories are on a nutrition label). */}
+    <div class={`verdict v-${v}`}>
+      {tool.compliance_status === "unrated" ? (
+        <div class="plate">
+          <p class="v-word"><span class="sr-only">Verdict: </span>{verdictLabel}</p>
+          <p class="v-sub">We don't know.</p>
+        </div>
+      ) : (
+        <>
+          <p class="v-word"><span class="sr-only">Verdict: </span>{verdictLabel}</p>
+          <span class="rule" aria-hidden="true"></span>
+        </>
+      )}
+      {showMeaning && <p class="v-meaning">{meaning}</p>}
+    </div>
+
+    {reason && (
+      <div class="why">
+        <p class="why-k">Why</p>
+        <p class="why-t">{reason}</p>
+      </div>
+    )}
+
     <dl class="facts">
       <div>
         <dt>Trains on user data</dt>
@@ -86,7 +137,7 @@ const pageDescription = isNotAi
         <dd>{tool.auto_published ? "No — auto-published" : "Yes"}</dd>
       </div>
     </dl>
-  </div>
+  </section>
 
   {sources.length > 0 && (
     <>
@@ -106,55 +157,112 @@ const pageDescription = isNotAi
 
 <style>
   .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
-  .detail-head {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem 0.75rem;
-    flex-wrap: wrap;
-    margin-top: 0.75rem;
-  }
-  .detail-head h1 { margin: 0; overflow-wrap: anywhere; }
-  .domain { color: var(--muted); font-family: var(--font-mono); font-size: 0.9rem; margin: 0.25rem 0 0; overflow-wrap: anywhere; }
-  .reason {
-    font-size: 1.05rem;
-    margin: 1.25rem 0 0.5rem;
-    overflow-wrap: anywhere;
-    max-width: 65ch;
-  }
-  /* Keylines instead of the earlier 0.4rem-radius boxes: sharp corners are
-     the direction (Layout.astro); the rounded callout was the one soft
-     shape left on the site. */
-  .reason.prominent {
-    padding: 0.85rem 1rem;
-    max-width: none;
-  }
-  .reason.prominent.red { border-left: 6px solid var(--red-fg); background: var(--red-bg); }
-  .reason.prominent.caveat { border-left: 6px double var(--caveat-fg); background: var(--caveat-bg); }
-  .reason.prominent.amber { border-left: 6px solid var(--amber-fg); background: var(--amber-bg); }
-  .reason.prominent.amber-outline {
-    border: 1.5px dashed var(--amber-fg);
-    border-left: 6px solid var(--amber-fg);
-    background: transparent;
-    color: var(--amber-fg);
-  }
-  .reason.prominent.gray { border-left: 6px solid var(--gray-fg); background: var(--gray-bg); }
-  .meaning { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem; }
-  .meaning-gap { margin-bottom: 1.5rem; }
-  .label-panel {
-    margin: 1.5rem 0;
-    border: 3px solid var(--line);
-  }
-  .lp-head {
+  .detail-head { margin: 0.75rem 0 1.25rem; }
+  .detail-head h1 {
     margin: 0;
-    padding: 0.6rem 1rem;
-    border-bottom: 3px solid var(--line);
+    font-size: clamp(2.6rem, 8vw, 3.8rem);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+  .domain { color: var(--muted); font-family: var(--font-mono); font-size: 0.9rem; margin: 0.4rem 0 0; overflow-wrap: anywhere; }
+
+  /* ---- the label ---- */
+  .label { border: 3px solid var(--line); margin: 0 0 1.5rem; max-width: 46rem; }
+  .slab {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 6px solid var(--line);
+  }
+  .k {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+  h2.k { color: var(--fg); }
+  span.k { color: var(--muted); }
+
+  .verdict { padding: 1rem 1rem 1.1rem; border-bottom: 3px solid var(--line); }
+  .v-word {
+    margin: 0;
     font-family: var(--font-head);
     font-weight: 800;
-    font-size: 1rem;
-    line-height: 1.3;
+    font-size: clamp(2.2rem, 9vw, 3.4rem);
+    line-height: 0.95;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
   }
+  .rule { display: block; margin-top: 0.6rem; }
+  .v-meaning { margin: 0.7rem 0 0; font-size: 0.95rem; max-width: 60ch; text-wrap: pretty; }
+
+  .v-green { background: var(--green-bg); }
+  .v-green .v-word { color: var(--green-fg); }
+  .v-green .rule { border-top: 4px solid var(--green-fg); }
+
+  .v-red { background: var(--red-bg); }
+  .v-red .v-word { color: var(--red-fg); }
+  .v-red .rule { border-top: 4px solid var(--red-fg); }
+
+  /* Caveats keeps its own hue and its double rule ("qualified", like the
+     double rule above a subtotal on a nutrition label). */
+  .v-caveat { background: var(--caveat-bg); }
+  .v-caveat .v-word { color: var(--caveat-fg); }
+  .v-caveat .rule { height: 8px; border-top: 2px solid var(--caveat-fg); border-bottom: 2px solid var(--caveat-fg); }
+
+  /* Company-wide: outlined, dashed, like its badge. */
+  .v-shared { margin: 0.75rem; padding: 0.9rem 1rem 1rem; border: 2px dashed var(--amber-fg); border-bottom: 2px dashed var(--amber-fg); }
+  .v-shared .v-word { color: var(--amber-fg); }
+  .v-shared .rule { border-top: 3px dashed var(--amber-fg); }
+  .v-shared .v-meaning { color: var(--fg); }
+
+  .v-gray { background: var(--gray-bg); }
+  .v-gray .v-word { color: var(--gray-fg); }
+  .v-gray .rule { border-top: 2px solid var(--gray-fg); }
+
+  /* Unrated = "we don't know". Hatching is decoration only: the words
+     UNRATED and "We don't know." sit on a solid sticker (full AA contrast
+     against the page background) so the text never overlaps the pattern and
+     the meaning never depends on the pattern or the colour. */
+  .v-amber {
+    background: var(--amber-bg);
+    background-image: repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--amber-fg) 32%, transparent) 8px 10px);
+  }
+  .plate {
+    display: inline-block;
+    max-width: 100%;
+    padding: 0.6rem 0.9rem 0.7rem;
+    background: var(--bg);
+    border: 2px solid var(--amber-fg);
+  }
+  .v-amber .v-word { color: var(--amber-fg); }
+  .v-sub {
+    margin: 0.3rem 0 0;
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--fg);
+  }
+
+  .why { padding: 0.85rem 1rem 1rem; border-bottom: 3px solid var(--line); }
+  .why-k {
+    margin: 0 0 0.25rem;
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .why-t { margin: 0; font-size: 1.05rem; line-height: 1.5; overflow-wrap: anywhere; max-width: 62ch; }
+
   .facts { margin: 0; }
   .facts div {
     display: flex;
@@ -169,10 +277,10 @@ const pageDescription = isNotAi
     flex: 0 0 10.5rem;
     color: var(--muted);
     font-family: var(--font-head);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
   }
   .facts dd {
     margin: 0;
@@ -198,4 +306,14 @@ const pageDescription = isNotAi
   }
   .sources { padding-left: 1.25rem; font-family: var(--font-body); }
   .sources li { margin-bottom: 0.4rem; overflow-wrap: anywhere; }
+
+  /* Print: colour and pattern may not print, so the verdict gets a plain
+     boxed treatment; the words carry the meaning. */
+  @media print {
+    .verdict { background: none !important; border: 3px solid #000; }
+    .v-word, .v-sub { color: #000 !important; }
+    .plate { border-color: #000; }
+    .rule { border-color: #000 !important; }
+    .label { max-width: none; }
+  }
 </style>
