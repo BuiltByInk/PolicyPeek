@@ -64,15 +64,16 @@ with this list, `rules.ts` is the source of truth, fix the doc:
 
 | Agent | Owns | Can do without asking | Never do without asking |
 |---|---|---|---|
-| **Backend Agent** | D1 schema + migrations, Cloudflare Workers/Queues code, `/v1/lookup` and `/v1/check` endpoints, SSRF-safe fetch wrapper, admin auth path, `backend/src/rules.ts` | Read/write within `backend/`, run local D1 migrations, run backend test suite, run `wrangler dev` locally | Run `wrangler deploy` or otherwise touch live Cloudflare infra, change verdict boundary logic in `rules.ts` (flag in `DECISIONS_NEEDED.md` instead), set/rotate real `database_id` or secrets |
-| **Frontend Agent** | Astro static site, badge pages, methodology/about page, SEO (meta, sitemap, OpenGraph), reads from `data/tools.json` | Read/write within `frontend/` or `site/`, edit `data/tools.json`, run `astro build`/`astro dev` locally | Call live API endpoints instead of static data, touch backend code, publish/deploy the site |
-| **Security Agent** | SSRF hardening, timing-safe admin token comparison, XSS sanitization in Astro's `set:html`, the mandatory post-milestone security review pass | Read across the whole repo, run the security-checklist skill, write findings to `security/` or a review doc | Silently patch a vulnerability itself — file the fix as a proposed diff for Elliot or Backend Agent to apply, weaken any deny rule or hook |
+| **Backend Agent** | D1 schema + migrations, Cloudflare Workers/Queues code, `/v1/lookup` and `/v1/check` endpoints, SSRF-safe fetch wrapper, admin auth path, `backend/src/rules.ts` | Read/write within `backend/` and `scripts/` (including new files: tests, migrations), run local D1 migrations (`--local` only), run the backend test suite, run `wrangler dev` locally | Run `wrangler deploy` or otherwise touch live Cloudflare infra, change verdict boundary logic in `rules.ts` (flag in `DECISIONS_NEEDED.md` instead), set/rotate real `database_id` or secrets |
+| **Frontend Agent** | Astro static site, badge pages, methodology/about page, SEO (meta, sitemap, OpenGraph), reads from `data/tools.json` | Read/write within `frontend/` and `extension/` (owns the extension since 2026-09-19; can create files and saved local tests), edit `frontend/data/tools.json`, run `astro build`/`astro dev` and headless-browser checks locally | Call live API endpoints instead of static data, touch backend code, publish/deploy the site |
+| **Security Agent** | SSRF hardening, timing-safe admin token comparison, XSS sanitization in Astro's `set:html`, the mandatory post-milestone security review pass | Read across the whole repo, run `npm audit`/tests/`scripts/predeploy-check.mjs` and the local load-test harness, write findings to `security/` or a review doc, keep the pre-deploy gate current | Silently patch a vulnerability itself — file the fix as a proposed diff for Elliot or Backend Agent to apply, weaken any deny rule or hook |
 | **Research Agent** | Sourcing tool URLs + privacy policy/ToS/DPA links for the extraction pipeline, competitive landscape research, ICP question groundwork | Web research, draft new tool submissions into a review queue (not `data/tools.json` directly) | Publish a submitted tool as a live badge — every user/agent-submitted tool goes through the human review gate before it's a shared default |
 
-**Docs Agent (support role, not core four):** syncs `DECISIONS_NEEDED.md`,
-`changelog.md`, and any README/architecture docs after each of the above
-finishes a milestone. Read access everywhere, write access only to docs
-files.
+**Docs Agent (support role, not core four):** syncs `DECISIONS_NEEDED.md`
+(and its archive), `changelog.md`, `README.md`, `PROGRESS.md`,
+`ARCHITECTURE_NOTES.md`, the deploy runbook and the wording of published
+privacy text after each of the above finishes a milestone. Read access
+everywhere, write access only to those docs (scope widened 2026-09-19).
 
 **Marketing Agent (support role, added 2026-09-19 at Elliot's request):**
 research and drafting only — competitor and channel research, positioning,
@@ -87,6 +88,19 @@ third-party fact cited or marked unverified. Definition:
 `.claude/agents/marketing.md`. Added in response to a first draft strategy
 (`research/marketing_strategy_2026-09-19.md`) produced by a general-purpose
 agent, since no marketing role existed.
+
+**Manager sign-off rule (added 2026-09-19, Elliot's instruction):** any
+*impactful* change goes through the manager, and the manager escalates to Elliot
+when it falls outside its authority. Impactful means: runtime behaviour in a
+production code path; what data is collected, stored or sent; schema or
+migrations; adding or upgrading a dependency; any agent's tools or scope;
+public-facing text or claims; anything irreversible; anything that changes
+security posture. The agent files a note in `research/manager/inbox/` and stops
+until the manager approves or Elliot rules. Tests, behaviour-neutral refactors,
+doc fixes, local drafts and read-only research don't need it. Each agent's
+definition in `.claude/agents/` carries this rule; the manager's authority and
+escalation list are in `.claude/agents/manager.md`, and every manager decision is
+logged in `research/manager/decision_log.md`.
 
 **Manager Agent (added 2026-09-13, orchestration only):** queues and
 sequences work across the five agents above for a batch backlog run —

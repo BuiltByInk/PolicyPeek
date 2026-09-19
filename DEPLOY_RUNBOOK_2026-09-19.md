@@ -14,7 +14,7 @@ extension, a daily purge of stored client IPs, a whole-word fix to the
 ## 0. Before anything (local, safe)
 
 ```bash
-cd ~/policypeek/backend && npm test && npx tsc --noEmit    # expect 116 passing, no errors
+cd ~/policypeek/backend && npm test && npx tsc --noEmit    # expect all tests passing, no errors
 cd ../frontend && npm run build                            # expect "37 page(s) built"
 ```
 
@@ -106,6 +106,14 @@ curl -s -X POST -H "X-Admin-Token: $ADMIN_TOKEN" \
 curl -s "https://api.getpolicypeek.com/v1/lookup?domain=hancocyber.com"   # compliance_status: not_ai_tool
 ```
 If the approve fails with a CHECK constraint error, step 1 was not applied.
+
+## 4a. One read-only check from the independent security review **(prod)**
+
+Are any hosting or public-suffix domains already in the catalog? (Expect no rows.)
+```bash
+npx wrangler d1 execute policypeek-db --remote --command \
+  "SELECT id, domain, compliance_status FROM tools WHERE domain IN ('github.io','vercel.app','pages.dev','notion.site','netlify.app','herokuapp.com','co.uk','com.au','co.jp','com.br')"
+```
 
 ## 4b. Other rows waiting on a live-database write **(prod)**
 

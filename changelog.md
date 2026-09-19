@@ -103,7 +103,11 @@ Nothing was run against production and nothing was deployed.
   `CLAUDE.md`): research and drafting only, never posts or contacts anyone.
   First output: `research/marketing_strategy_2026-09-19.md` (draft; third-party
   claims cited or marked unverified).
-- Backend tests 73 -> 116, all passing; `tsc --noEmit` clean.
+- **Fixes from the independent security review** (Elliot: "fix security issues"; details and the two deliberate non-changes in `research/manager/decision_log.md` M11): the shared-domain override now matches subdomains (www.adobe.com, gemini.google.com); public suffixes and hosting apexes (co.uk, github.io, vercel.app ...) can't be registered and lookup no longer falls back to them (new dependency `tldts`); a resubmission from a different source host queues instead of overwriting a published entry; IPv4-mapped IPv6 and junk IPs handled, `X-Forwarded-For` only trusted on localhost; the daily slot is released against the right day and on unexpected errors; body limited by bytes; invisible/bidi characters stripped; alert noise reduced; explicit cron dispatch; stricter redirect rule (https downgrade counts as leaving the site); more SSRF ranges and hostname edge cases. Backend tests 152, all passing. An independent re-review of these fixes is running.
+- **Agents' permissions widened** at Elliot's request, with a manager sign-off rule for anything impactful (`CLAUDE.md`, `.claude/agents/*.md`, `research/manager/`). Manager report: `research/manager/next_steps_2026-09-19.md`.
+- **Client IPs in git**: two database dumps that contained client IPs are untracked and gitignored (commit `422aca7`). A history rewrite that removes them is prepared and verified in a scratch copy; the force-push needs Elliot's explicit go-ahead.
+- **`not_ai_tool` boilerplate rule** (`rules.ts`, Elliot: "go with recs"): common SaaS boilerplate can't suffice alone; at least one distinctive category (comments, embedded media, booking) is required. **Minimal CI** added (`.github/workflows/ci.yml`, runs `scripts/predeploy-check.mjs`, no secrets, no deploy).
+- Backend tests 73 -> 158, all passing; `tsc --noEmit` clean.
 - **Stale items noted**: the "/about claims 100% human review" entry is already
   fixed in `about.astro` (it now says clean results publish automatically); the
   "domain/policy-link validator too strict on subdomains" entry looks fixed

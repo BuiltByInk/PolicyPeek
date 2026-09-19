@@ -2,9 +2,11 @@
 
 Research and drafting only. Nothing here has been posted, published or sent to anyone. Claims about third parties carry a source URL; anything I could not confirm is marked **unverified**. Nothing here is legal advice.
 
+> **Update 2026-09-19:** superseded in part by `research/marketing/strategy_v2_2026-09-19.md` (one-page strategy, SEO review of the live site, Search Console checklist, 30-day plan, drafts). v2 also flags two live verdicts (Granola, GitHub Copilot) to re-check before any promotion.
+
 ## 0. Where you actually are
 
-- Zero users. The extension is not confirmed in any store. A search for getpolicypeek.com returned nothing from the site, so it looks unindexed (unverified: a search tool is not a real index check).
+- Zero users. The extension is not confirmed in any store. A search for getpolicypeek.com returned nothing from the site, so it looks unindexed (unverified: a search tool is not a real index check; re-tried 2026-09-19 with the same result). Live site checked 2026-09-19: the 2026-09-18 SEO work appears to be deployed (sitemap of 35 URLs without hancocyber, new og-image), but `/privacy/` is a 404 and `www` returns an error; details in v2 section 2b.
 - Name risk: search for "PolicyPeek" surfaces a GitHub project called PolicyPeak, a Chrome-extension policy analyser (https://github.com/ranjan2601/PolicyPeak), and PolicyPak, a Netwrix product (https://g2.com/products/policypak/reviews). Similar spelling, different products. Worth knowing before you spend on a brand.
 - Everything below assumes the decided ICP: the individual, casual checker.
 

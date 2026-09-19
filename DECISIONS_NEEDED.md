@@ -81,18 +81,7 @@ each over Telegram on 2026-09-19:
    appears there after the next site rebuild and deploy; the API and extension
    show it immediately.
 
-8. **`not_ai_tool` false positives — whole-word fix ruled and built** (see
-   `changelog.md`). **Still open, your call (`rules.ts` boundary logic):** ordinary
-   SaaS boilerplate — "payment"/"purchase" in the ecommerce category, plus a
-   cookie or login line — can still hit two categories on a thin AI-tool policy
-   whose extracted quotes happen to contain no AI words. Such a row never
-   auto-publishes (training stance is null, so it queues for you), but it would
-   show a computed "Not an AI tool" for you to approve. Options: require at least
-   one category that a real SaaS product wouldn't have (comments, booking,
-   embedded media, newsletter), stop counting cookie/login and payment terms
-   toward the two categories, or add the dedicated `ai_product_evidence`
-   extraction field you already flagged. Until ruled, look at the computed verdict
-   before approving any `not_ai_tool` row.
+8. **`not_ai_tool` false positives — whole-word fix and boilerplate rule both ruled and built** (see `changelog.md`; Elliot's "go with recs", 2026-09-19). Generic-site keywords match whole words, and everyday SaaS boilerplate (cookies/login, payments, marketing email) can never make a policy "not an AI tool" on its own: at least two categories must hit and at least one must be distinctive (comments, embedded media, booking). Reading used, to confirm: his recommendation also said to stop counting cookie words toward the two, but taken literally that breaks the hancocyber.com case, so cookie/login still counts as the second category next to a distinctive one. Until you confirm, look at the computed verdict before approving any `not_ai_tool` row.
 9. **Marketing (from `research/marketing_strategy_2026-09-19.md`):** a permanent
    marketing agent now exists (`.claude/agents/marketing.md`). Decisions it flags
    for you: the badge word "Compliant" can read as a legal verdict; the name is

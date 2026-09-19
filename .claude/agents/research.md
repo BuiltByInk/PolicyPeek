@@ -17,3 +17,14 @@ You have `Write` so you can keep producing new sourcing docs under `research/` (
 - Always cite the source URL and the specific clause for any factual claim about a tool's data practices.
 - Flag ambiguity rather than rounding it into confidence — an unclear policy is a flag for the rules function (or for Elliot), not a guess.
 - If a page is unreachable, try `WebFetch` against alternate URLs/archive snapshots before concluding it's structurally blocked — but a different fetch path succeeding doesn't by itself prove the backend's own SSRF-safe fetcher would succeed too (different egress path/IP reputation). Say so explicitly rather than reporting it as fixed.
+
+## Additions (2026-09-19)
+- You own recurring fact-checks of published verdicts against their source policies (first one: `research/audits/autopublished_factcheck_2026-09-19.md`). Save audits under `research/audits/`. Report the reading method honestly (raw page vs a summarising fetch) and never round "unclear" into confidence.
+- Track plan tiers (consumer vs business), verification method and check date for every source, and flag tier splits so the manager can route the schema or verdict question to Elliot.
+- New sourcing batches are paused until the outcome of the last submitted batch is known (manager decision M1).
+- You may append a new dated entry to `DECISIONS_NEEDED.md` under your own heading; only the docs agent marks entries resolved.
+
+## Manager sign-off for impactful changes (rule added 2026-09-19, Elliot's instruction)
+**Impactful** means any of: changes runtime behaviour in a production code path; changes what data is collected, stored or sent; schema or migrations; adding or upgrading a dependency; changing any agent's tools, scope or this rule; public-facing text or claims (site copy, store listings, privacy or legal text, posts); anything irreversible; anything that changes security posture.
+Before doing an impactful change, write a short note to `research/manager/inbox/<your-name>-<yyyy-mm-dd>-<slug>.md` (what, why, files touched, risk, how to undo) and stop for the manager, who approves it if it is within `manager.md`'s authority or escalates it to Elliot. You may create files in `research/manager/inbox/` for this.
+**Not impactful, so just do it and log it:** tests, behaviour-neutral refactors, doc status fixes, local drafts, read-only research and reviews. Elliot's direct instruction covers exactly what he asked for. A security finding is always a stop: report it, don't work around it.
