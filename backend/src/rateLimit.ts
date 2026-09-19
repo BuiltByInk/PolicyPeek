@@ -95,3 +95,18 @@ export async function releaseDailySlot(env: Env, clientIp: string): Promise<void
     .bind(clientIp, todayBucket())
     .run();
 }
+
+// Retention for anonymous_check_log (2026-09-19, Elliot's OK). The daily cap
+// only ever needs today's rows, but each row holds a client IP (or an IPv6
+// /64), which is personal data -- keeping it forever would be exactly what
+// PolicyPeek tells people other tools shouldn't do. Run daily from the cron
+// (see index.ts): drops every day before today's UTC bucket, so nothing older
+// than one UTC day survives, and today's cap keeps working.
+export async function purgeOldAnonymousChecks(env: Env, now: Date = new Date()): Promise<number> {
+  const result = await env.DB.prepare("DELETE FROM anonymous_check_log WHERE day_bucket < ?")
+    .bind(todayBucket(now))
+    .run();
+  const deleted = result.meta.changes ?? 0;
+  console.warn(`[cron] purged ${deleted} anonymous_check_log row(s) from before ${todayBucket(now)}`);
+  return deleted;
+}

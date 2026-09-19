@@ -3,6 +3,7 @@ import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
 import { handleListPending, handleApprove, handleReject } from "./admin";
 import { checkStuckPending, runMonthlyRecheck } from "./cron";
+import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
 
 export interface Env {
@@ -59,6 +60,9 @@ export default {
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === "0 3 1 * *") {
       ctx.waitUntil(runMonthlyRecheck(env));
+      return;
+    }    if (controller.cron === "30 3 * * *") {
+      ctx.waitUntil(purgeOldAnonymousChecks(env));
       return;
     }
     ctx.waitUntil(checkStuckPending(env));

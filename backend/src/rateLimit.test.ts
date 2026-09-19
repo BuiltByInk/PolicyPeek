@@ -37,3 +37,31 @@ describe("isOverGlobalCap", () => {
     expect(GLOBAL_DAILY_CHECK_CAP).toBe(200);
   });
 });
+
+describe("purgeOldAnonymousChecks", () => {
+  it("deletes every day before today's UTC bucket and keeps today's", async () => {
+    const calls: { sql: string; args: unknown[] }[] = [];
+    const env = {
+      DB: {
+        prepare(sql: string) {
+          const st = {
+            bind(...args: unknown[]) {
+              calls.push({ sql, args });
+              return st;
+            },
+            async run() {
+              return { success: true, meta: { changes: 7 } };
+            },
+          };
+          return st;
+        },
+      },
+    } as unknown as import("./index").Env;
+    const { purgeOldAnonymousChecks } = await import("./rateLimit");
+    const deleted = await purgeOldAnonymousChecks(env, new Date("2026-09-19T03:30:00.000Z"));
+    expect(deleted).toBe(7);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).toBe("DELETE FROM anonymous_check_log WHERE day_bucket < ?");
+    expect(calls[0].args).toEqual(["2026-09-19"]);
+  });
+});
