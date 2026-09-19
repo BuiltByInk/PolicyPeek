@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(wrangler deploy*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(wrangler publish*)",
+      "Bash(npx wrangler publish*)",
+      "Bash(wrangler pages deploy*)",
+      "Bash(npx wrangler pages deploy*)",
+      "Bash(wrangler secret*)",
+      "Bash(npx wrangler secret*)",
+      "Bash(wrangler d1 create*)",
+      "Bash(npx wrangler d1 create*)",
+      "Bash(wrangler d1 execute * --remote*)",
+      "Bash(npx wrangler d1 execute * --remote*)",
+      "Bash(wrangler d1 export * --remote*)",
+      "Bash(npx wrangler d1 export * --remote*)",
+      "Bash(wrangler dev * --remote*)",
+      "Bash(npx wrangler dev * --remote*)",
+      "Bash(node scripts/refresh-site.mjs * --deploy*)",
+      "Bash(gh secret*)",
+      "Bash(gh repo delete*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force*)",
+      "Bash(git push * +*)",
+      "Bash(rm -rf*)",
+      "Bash(rm -f*)",
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(sudo*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Write(.env)",
+      "Write(.env.*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Edit(**/.dev.vars)",
+      "Write(**/.dev.vars)",
+      "Read(**/.dev.vars)"
+    ]
+  }
+}

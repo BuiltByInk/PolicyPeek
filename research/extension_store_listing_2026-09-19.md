@@ -55,8 +55,8 @@ submitted. Everything in [square brackets] needs Elliot.
 > • **Not an AI tool**: nothing suggests this is an AI product
 >
 > Every badge links to the policy wording behind it. Facts are pulled from the
-> policy by software; a fixed rule turns them into the badge, and anything
-> uncertain is checked by a person before it's published. It is not legal advice
+> policy by software; a fixed rule turns them into the badge, and a good
+> verdict for a new tool, or anything uncertain, is checked by a person before it's published. It is not legal advice
 > and not a compliance certification.
 >
 > If a site isn't in the catalog yet, press "Check this site" (one free new check

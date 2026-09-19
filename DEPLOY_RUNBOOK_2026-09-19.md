@@ -140,6 +140,18 @@ curl -s -H "X-Admin-Token: $ADMIN_TOKEN" https://api.getpolicypeek.com/v1/admin/
 - **Held, need a decision, not submitted:** Adobe Firefly, Devin, Suno,
   Character.ai (reasons in `scripts/batch-submit.mjs`).
 
+## 4c. Demote badges that turned out to be unsupported **(prod)**
+
+After reading the flagged sources (see `research/audits/autopublished_factcheck_2026-09-19.md`), for each tool you decide to take back to Unrated (find its id in the queue listing or the tools table):
+```bash
+curl -s -X POST -H "X-Admin-Token: $ADMIN_TOKEN" -H "content-type: application/json" \
+  -d '{"reason":"Stored clause covers only Google Workspace API data, not customer content"}' \
+  https://api.getpolicypeek.com/v1/admin/tools/<TOOL_ID>/demote
+```
+It sets the tool to Unrated, clears its stored training facts, and logs your reason and the old values in the changelog table. A later monthly recheck can't re-promote it on its own. Run step 5 afterwards so the site shows it.
+
+Also new tonight: a favourable first result for a brand-new domain now waits in your queue instead of publishing itself, so expect to see those in `GET /v1/admin/pending` with the reason "brand-new domain with a favourable verdict".
+
 ## 5. Site **(prod)**
 
 ```bash
@@ -178,3 +190,7 @@ catalog.
 - If a tool's policy legitimately redirects to another domain, its monthly
   recheck will queue for review instead of auto-updating; add the domain to
   `crossDomainSources.ts` if it is the same company.
+
+## 9. Scrub client IPs from GitHub history (one time, your call)
+
+`bash scripts/scrub-history.sh` builds and verifies a cleaned copy of the history in a temp folder (it never pushes and never touches your working copy) and prints the three commands to finish, including the one force-push. Do it once, with a clean working tree and nothing committed in between, ideally after everything above is committed so it is only done once.
