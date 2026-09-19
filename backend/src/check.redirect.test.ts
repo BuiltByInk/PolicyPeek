@@ -17,7 +17,7 @@ vi.mock("./extraction", () => ({
 
 const { runExtraction } = await import("./check");
 
-function makeEnv() {
+function makeEnv(existingTool: { id: number; compliance_status: string; source_urls: string } | null = null) {
   const statements: { sql: string; args: unknown[] }[] = [];
   const env = {
     ANTHROPIC_API_KEY: "test-key",
@@ -31,6 +31,7 @@ function makeEnv() {
           },
           async first() {
             statements.push({ sql, args });
+            if (sql.startsWith("SELECT id, compliance_status")) return existingTool;
             return null;
           },
           async run() {
@@ -62,5 +63,25 @@ describe("runExtraction with an off-domain redirect", () => {
     await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", false, false, false, "policy text", null);
 
     expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(true);
+  });
+});
+
+describe("runExtraction when the source host differs from the published entry's", () => {
+  const existing = { id: 5, compliance_status: "compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) };
+
+  it("queues instead of overwriting the published summary and sources, even with an unchanged verdict", async () => {
+    const { env, statements } = makeEnv(existing);
+    await runExtraction(env, 50, "acme.com", null, "https://tenant.acme.com/privacy", true, false, false, "policy text", null);
+
+    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(false);
+    const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
+    expect(String(note!.args[0])).toContain("tenant.acme.com");
+  });
+
+  it("still auto-updates when the new source is on the same host", async () => {
+    const { env, statements } = makeEnv(existing);
+    await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy-2026", true, false, false, "policy text", null);
+
+    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(true);
   });
 });

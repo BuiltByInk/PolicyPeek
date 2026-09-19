@@ -1,5 +1,6 @@
 import type { Env } from "./index";
 import type { Tier } from "./auth";
+import { isPublicSuffix } from "./domainUtil";
 
 interface ToolRow {
   id: number;
@@ -29,7 +30,12 @@ export function suffixCandidates(host: string): string[] {
     .filter((l) => l.length > 0);
   const candidates: string[] = [];
   for (let i = 0; i < labels.length - 1; i++) {
-    candidates.push(labels.slice(i).join("."));
+    const candidate = labels.slice(i).join(".");
+    // Never fall back to a public suffix (co.uk, github.io, vercel.app ...):
+    // it isn't one party's domain, so its verdict would be inherited by every
+    // unrelated site under it.
+    if (isPublicSuffix(candidate)) continue;
+    candidates.push(candidate);
   }
   return candidates;
 }

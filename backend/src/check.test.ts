@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect } from "./check";
+import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect, sourceHostChanged, readBodyLimited } from "./check";
 
 // Regression coverage for a real bug: the original check used a bare
 // hostname.endsWith(domain), which let "evil-acme.com" pass for domain
@@ -102,5 +102,62 @@ describe("isSameSiteAfterRedirect", () => {
 
   it("still allows the curated cross-domain source (bolt.new -> stackblitz.com)", () => {
     expect(isSameSiteAfterRedirect("stackblitz.com", "bolt.new")).toBe(true);
+  });
+});
+
+describe("isSameSiteAfterRedirect -- www. widening is narrow", () => {
+  it("does not let a submitted www.acme.com accept every other host under acme.com", () => {
+    expect(isSameSiteAfterRedirect("docs.acme.com", "www.acme.com")).toBe(false);
+    expect(isSameSiteAfterRedirect("legal.acme.com", "www.acme.com")).toBe(false);
+  });
+
+  it("still treats www.acme.com and acme.com as the same site, either way round", () => {
+    expect(isSameSiteAfterRedirect("acme.com", "www.acme.com")).toBe(true);
+    expect(isSameSiteAfterRedirect("www.acme.com", "acme.com")).toBe(true);
+  });
+
+  it("does not collapse a degenerate www.com to a bare TLD", () => {
+    expect(isSameSiteAfterRedirect("com", "www.com")).toBe(false);
+  });
+});
+
+describe("sourceHostChanged", () => {
+  const stored = JSON.stringify(["https://acme.com/privacy"]);
+
+  it("is null when the new source is on the same host as the published one", () => {
+    expect(sourceHostChanged(stored, "https://acme.com/privacy-v2")).toBeNull();
+    expect(sourceHostChanged(stored, "https://ACME.com/other")).toBeNull();
+  });
+
+  it("returns the new host when it differs, including a tenant subdomain of the same domain", () => {
+    expect(sourceHostChanged(stored, "https://tenant.acme.com/privacy")).toBe("tenant.acme.com");
+    expect(sourceHostChanged(stored, "https://www.acme.com/privacy")).toBe("www.acme.com");
+  });
+
+  it("treats missing or unparseable stored data as no basis to compare", () => {
+    expect(sourceHostChanged(null, "https://acme.com/p")).toBeNull();
+    expect(sourceHostChanged("not json", "https://acme.com/p")).toBeNull();
+    expect(sourceHostChanged("[]", "https://acme.com/p")).toBeNull();
+  });
+});
+
+describe("readBodyLimited", () => {
+  const req = (body: string, headers: Record<string, string> = {}) =>
+    new Request("https://example.com", { method: "POST", body, headers });
+
+  it("returns the text of a small body", async () => {
+    expect(await readBodyLimited(req('{"a":1}'), 100)).toBe('{"a":1}');
+  });
+
+  it("returns null once the body exceeds the cap", async () => {
+    expect(await readBodyLimited(req("x".repeat(101)), 100)).toBeNull();
+  });
+
+  it("refuses a declared Content-Length over the cap without reading", async () => {
+    expect(await readBodyLimited(req("small", { "content-length": "999999" }), 100)).toBeNull();
+  });
+
+  it("counts bytes, not characters", async () => {
+    expect(await readBodyLimited(req("é".repeat(60)), 100)).toBeNull(); // 120 bytes
   });
 });

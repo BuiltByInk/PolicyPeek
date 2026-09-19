@@ -41,7 +41,11 @@ const DOH_RECORD_TYPES = ["A", "AAAA"] as const;
 
 export class SsrfBlockedError extends Error {}
 
-function isBlockedIpv4(a: number, b: number): boolean {
+function isBlockedIpv4(a: number, b: number, c: number = -1): boolean {
+  // Documentation ranges and the IETF protocol block are never real targets.
+  if (a === 192 && b === 0 && (c === 0 || c === 2)) return true; // 192.0.0.0/24, 192.0.2.0/24 (TEST-NET-1)
+  if (a === 198 && b === 51 && c === 100) return true; // TEST-NET-2
+  if (a === 203 && b === 0 && c === 113) return true; // TEST-NET-3
   if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64.0.0/10
   if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking 198.18.0.0/15
   if (a >= 224) return true; // multicast, reserved, broadcast
@@ -107,7 +111,7 @@ export function isBlockedIpLiteral(rawHostname: string): boolean {
 
   const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4) {
-    return isBlockedIpv4(Number(ipv4[1]), Number(ipv4[2]));
+    return isBlockedIpv4(Number(ipv4[1]), Number(ipv4[2]), Number(ipv4[3]));
   }
 
   const groups = expandIpv6(hostname);
@@ -117,13 +121,20 @@ export function isBlockedIpLiteral(rawHostname: string): boolean {
   if (groups.slice(0, 7).every(isZero) && groups[7] <= 1) return true; // :: and ::1
   if ((groups[0] & 0xffc0) === 0xfe80) return true; // link-local fe80::/10
   if ((groups[0] & 0xfe00) === 0xfc00) return true; // unique-local fc00::/7
-  if (groups[0] === 0x64 && groups[1] === 0xff9b) return true; // NAT64 well-known prefix (64:ff9b::/96)
+  if (groups[0] === 0x64 && groups[1] === 0xff9b) return true; // NAT64 (64:ff9b::/96 and 64:ff9b:1::/48)
+  if (groups[0] === 0x2002) return true; // 6to4: embeds an IPv4 address, never a legitimate policy host
+  if (groups[0] === 0x2001 && groups[1] === 0) return true; // Teredo tunnelling
+  // SIIT-translated IPv4: ::ffff:0:a.b.c.d
+  if (groups.slice(0, 4).every(isZero) && groups[4] === 0xffff && groups[5] === 0) {
+    return isBlockedIpv4((groups[6] >> 8) & 0xff, groups[6] & 0xff, (groups[7] >> 8) & 0xff);
+  }
 
   // IPv4-mapped / IPv4-compatible: ::ffff:a.b.c.d or ::a.b.c.d
   if (groups.slice(0, 5).every(isZero) && (groups[5] === 0xffff || groups[5] === 0)) {
     const a = (groups[6] >> 8) & 0xff;
     const b = groups[6] & 0xff;
-    return isBlockedIpv4(a, b);
+    const c = (groups[7] >> 8) & 0xff;
+    return isBlockedIpv4(a, b, c);
   }
 
   return false;
@@ -209,8 +220,16 @@ async function assertSafeUrl(rawUrl: string): Promise<URL> {
   if (url.username !== "" || url.password !== "") {
     throw new SsrfBlockedError("blocked_credentials_in_url");
   }
-  const hostname = url.hostname.replace(/^\[|\]$/g, "");
-  if (BLOCKED_HOSTNAMES.has(hostname.toLowerCase()) || isBlockedIpLiteral(hostname)) {
+  // Trailing dots are the same host ("localhost." is "localhost"); strip them
+  // so the name checks below can't be skipped by one.
+  const hostname = url.hostname.replace(/^\[|\]$/g, "").replace(/\.+$/, "");
+  const lowerHost = hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.has(lowerHost) || lowerHost.endsWith(".localhost") || isBlockedIpLiteral(hostname)) {
+    throw new SsrfBlockedError("blocked_target");
+  }
+  // An IPv6 literal we can't parse must not slip past both the literal check
+  // and DNS (isIpLiteralHostname skips DNS for anything with a colon): refuse it.
+  if (hostname.includes(":") && expandIpv6(convertTrailingIpv4(hostname)) === null) {
     throw new SsrfBlockedError("blocked_target");
   }
   // Literal-string checks above only catch a submitted hostname that IS

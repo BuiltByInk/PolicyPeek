@@ -227,3 +227,65 @@ describe("handleCheck global daily ceiling", () => {
     expect(anonymousCheckLog.size).toBe(GLOBAL_DAILY_CHECK_CAP); // unchanged
   });
 });
+
+describe("handleCheck security edges (2026-09-19 independent review)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("rejects a public suffix as the domain and does not burn the daily slot", async () => {
+    for (const domain of ["github.io", "co.uk", "vercel.app", "pages.dev"]) {
+      const { env, anonymousCheckLog } = makeFakeEnvWithLog();
+      const res = await handleCheck(makeRequest({ domain, source_url: `https://evil.${domain}/policy` }), env, makeCtx());
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ error: "invalid_domain" });
+      expect(anonymousCheckLog.size).toBe(0);
+    }
+  });
+
+  it("still accepts a tenant of a hosting platform as its own domain", async () => {
+    const { env } = makeFakeEnvWithLog();
+    const res = await handleCheck(
+      makeRequest({ domain: "someapp.vercel.app", source_url: "https://someapp.vercel.app/privacy" }),
+      env,
+      makeCtx()
+    );
+    expect(res.status).toBe(202);
+  });
+
+  it("refuses an oversized body with 413 and does not burn the daily slot", async () => {
+    const { env, anonymousCheckLog } = makeFakeEnvWithLog();
+    const res = await handleCheck(
+      makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy", name: "x".repeat(40_000) }),
+      env,
+      makeCtx()
+    );
+    expect(res.status).toBe(413);
+    expect(anonymousCheckLog.size).toBe(0);
+  });
+
+  it("gives the slot back if something unexpected throws after it was reserved", async () => {
+    const { env, anonymousCheckLog } = makeFakeEnvWithLog();
+    const realPrepare = env.DB.prepare.bind(env.DB);
+    (env.DB as unknown as { prepare: (sql: string) => unknown }).prepare = (sql: string) => {
+      if (sql.includes("INSERT INTO pending_checks")) throw new Error("D1 exploded");
+      return realPrepare(sql);
+    };
+    await expect(
+      handleCheck(makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy" }), env, makeCtx())
+    ).rejects.toThrow("D1 exploded");
+    expect(anonymousCheckLog.size).toBe(0);
+  });
+
+  it("a caller with a paid key can still set a name; an anonymous caller's name is ignored", async () => {
+    // Behaviour is covered by nameForTier's unit tests; this just confirms the
+    // request is accepted with a name field present.
+    const { env } = makeFakeEnvWithLog();
+    const res = await handleCheck(
+      makeRequest({ domain: "acme.com", source_url: "https://acme.com/policy", name: "Acme AI" }),
+      env,
+      makeCtx()
+    );
+    expect(res.status).toBe(202);
+  });
+});

@@ -12,15 +12,14 @@ export interface ExtractedFacts {
   relevant_clauses: string[];
 }
 
+import { cleanText } from "./textUtil";
+
 const MAX_DATA_RETENTION_CHARS = 300;
 const MAX_CLAUSE_CHARS = 500;
 const MAX_CLAUSES = 10;
 
 function boundedText(value: unknown, max: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
-  if (trimmed.length === 0) return null;
-  return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
+  return cleanText(value, max, { ellipsis: true });
 }
 
 // The model's output is derived from an attacker-influenceable page (anyone

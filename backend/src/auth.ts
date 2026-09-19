@@ -46,10 +46,23 @@ export function getClientIp(request: Request): string {
   const cfIp = request.headers.get("CF-Connecting-IP");
   if (cfIp) return normalizeIpForRateLimit(cfIp.trim());
 
+  // X-Forwarded-For is client-suppliable, so it's only believed when running
+  // locally (wrangler dev), where Cloudflare's own header doesn't exist. In
+  // production CF-Connecting-IP is always present; if it ever isn't, everyone
+  // shares the "unknown" bucket rather than letting a caller pick their own.
   const forwardedFor = request.headers.get("X-Forwarded-For");
-  if (forwardedFor) return normalizeIpForRateLimit(forwardedFor.split(",")[0].trim());
+  if (forwardedFor && isLocalRequest(request)) return normalizeIpForRateLimit(forwardedFor.split(",")[0].trim());
 
   return "unknown";
+}
+
+function isLocalRequest(request: Request): boolean {
+  try {
+    const host = new URL(request.url).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1";
+  } catch {
+    return false;
+  }
 }
 
 // One residential or hosting customer typically controls an entire IPv6 /64,
@@ -57,11 +70,26 @@ export function getClientIp(request: Request): string {
 // address would let a single machine mint a fresh "identity" per request and
 // bypass it (each one costing a real LLM call). Collapse IPv6 to its /64
 // prefix so the cap applies per network, the same way one IPv4 address does.
-// IPv4 and anything unparseable pass through unchanged.
+// IPv4-mapped IPv6 (::ffff:203.0.113.5, ::ffff:cb00:7105) is converted back to
+// its IPv4 form so one client can't hold two identities. Anything that isn't a
+// parseable IPv4 or IPv6 address (zone ids, brackets, junk) becomes "unknown"
+// instead of becoming its own key.
 export function normalizeIpForRateLimit(ip: string): string {
-  if (!ip.includes(":")) return ip;
-  const groups = expandIpv6(ip);
-  if (!groups) return ip;
+  const raw = ip.trim().replace(/^\[|\]$/g, "");
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(raw)) return raw;
+  if (!raw.includes(":") || raw.includes("%")) return "unknown";
+
+  // ::ffff:a.b.c.d -> a.b.c.d (dotted-quad tail)
+  const dotted = raw.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i);
+  if (dotted) return dotted[1];
+
+  const groups = expandIpv6(raw);
+  if (!groups) return "unknown";
+
+  // ::ffff:hhhh:hhhh (hex tail) -> IPv4
+  if (groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff) {
+    return `${groups[6] >> 8}.${groups[6] & 0xff}.${groups[7] >> 8}.${groups[7] & 0xff}`;
+  }
   return `${groups.slice(0, 4).map((g) => g.toString(16)).join(":")}::/64`;
 }
 

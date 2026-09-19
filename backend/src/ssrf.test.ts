@@ -202,3 +202,33 @@ describe("safeFetchText — URL shape restrictions", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("isBlockedIpLiteral -- documentation, tunnelling and translated ranges", () => {
+  it("blocks TEST-NET and IETF-protocol IPv4 blocks, including when IPv4-mapped", () => {
+    for (const ip of ["192.0.0.8", "192.0.2.5", "198.51.100.7", "203.0.113.9", "::ffff:192.0.2.5"]) {
+      expect(isBlockedIpLiteral(ip)).toBe(true);
+    }
+    expect(isBlockedIpLiteral("192.0.1.1")).toBe(false);
+  });
+
+  it("blocks 6to4, Teredo, NAT64 local-use and SIIT-translated addresses", () => {
+    for (const ip of ["2002:c000:0204::1", "2001:0:4136:e378:8000:63bf:3fff:fdd2", "64:ff9b:1::1", "::ffff:0:7f00:1"]) {
+      expect(isBlockedIpLiteral(ip)).toBe(true);
+    }
+  });
+});
+
+describe("safeFetchText -- hostname edge cases", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("blocks localhost and metadata hosts written with a trailing dot, and *.localhost", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    for (const url of ["http://localhost./x", "http://metadata.google.internal./x", "http://app.localhost/x", "http://a.b.localhost./x"]) {
+      await expect(safeFetchText(url)).rejects.toThrow(/blocked_target/);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

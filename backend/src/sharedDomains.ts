@@ -22,6 +22,15 @@ const KNOWN_SHARED_DOMAINS = new Set([
   "vercel.com",
 ]);
 
+// Matches the listed domain AND anything under it (www.adobe.com,
+// gemini.google.com). An exact-only match let the extension's ordinary path
+// (it submits the tab's hostname, usually with a www.) skip this override and
+// auto-publish a product-specific badge for a multi-product company. A trailing
+// dot is ignored. (2026-09-19, independent security review H1.)
 export function isKnownSharedDomain(domain: string): boolean {
-  return KNOWN_SHARED_DOMAINS.has(domain.toLowerCase());
+  const d = domain.toLowerCase().replace(/\.$/, "");
+  for (const shared of KNOWN_SHARED_DOMAINS) {
+    if (d === shared || d.endsWith(`.${shared}`)) return true;
+  }
+  return false;
 }

@@ -110,3 +110,43 @@ describe("formatStuckAlert", () => {
     expect(text.length).toBeLessThan(400);
   });
 });
+
+describe("checkStuckPending -- alert query and text", () => {
+  it("excludes pages that can never produce text (client-rendered sites) from alerts", async () => {
+    const queries: string[] = [];
+    const env = {
+      DB: {
+        prepare(sql: string) {
+          queries.push(sql);
+          const st = { bind() { return st; }, async all() { return { results: [] }; } };
+          return st;
+        },
+      },
+    } as unknown as Env;
+    await checkStuckPending(env);
+    // With nothing stuck only the first query runs; force the second by
+    // returning a stuck row from the first.
+    const env2 = {
+      DB: {
+        prepare(sql: string) {
+          queries.push(sql);
+          const st = {
+            bind() { return st; },
+            async all() { return { results: sql.includes("created_at >=") ? [] : [{ id: 1, domain: "a.com", created_at: "x", extraction_error: null }] }; },
+          };
+          return st;
+        },
+      },
+    } as unknown as Env;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await checkStuckPending(env2);
+    const alertQuery = queries.find((q) => q.includes("created_at >="))!;
+    expect(alertQuery).toContain("NOT LIKE 'empty_extracted_text%'");
+  });
+
+  it("cleans invisible characters out of the failure reason in an alert", () => {
+    const text = formatStuckAlert([row(1, "bad" + String.fromCodePoint(0x202e) + "reason" + String.fromCodePoint(0x200b) + "here")]);
+    expect(text).toContain("bad reason here");
+    expect(text).not.toMatch(/[\u202e\u200b]/);
+  });
+});

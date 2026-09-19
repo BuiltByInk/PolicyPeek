@@ -10,9 +10,12 @@
     "db:migrate:local": "wrangler d1 execute policypeek-db --local --file=./schema.sql"
   },
   "devDependencies": {
-    "wrangler": "^4.119.0",
     "@cloudflare/workers-types": "^5.20260801.1",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.119.0"
+  },
+  "dependencies": {
+    "tldts": "^7.4.13"
   }
 }

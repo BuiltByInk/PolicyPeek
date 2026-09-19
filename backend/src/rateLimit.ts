@@ -11,6 +11,9 @@ import type { Env } from "./index";
 
 interface ReserveResult {
   reserved: boolean;
+  // The UTC day the slot was reserved under, so a later release removes that
+  // row even if midnight passed in between.
+  bucket?: string;
   resetsAt?: string;
   // Why a reservation was refused: this caller already used today's slot, or
   // the whole service has hit its daily ceiling. The two need different
@@ -80,19 +83,19 @@ export async function tryReserveDailySlot(env: Env, clientIp: string): Promise<R
   if (isOverGlobalCap(row?.n ?? 0)) {
     // Give the slot back: the caller didn't do anything wrong, so being
     // turned away by the global ceiling must not burn their own daily check.
-    await releaseDailySlot(env, clientIp);
+    await releaseDailySlot(env, clientIp, bucket);
     return { reserved: false, resetsAt: nextDayResetAt(), reason: "global_cap" };
   }
-  return { reserved: true };
+  return { reserved: true, bucket };
 }
 
 // Compensating action for a reservation that turned out not to correspond
 // to a genuinely-queued check (the request failed validation or the fetch
 // afterward) -- preserves the original "a validation failure shouldn't burn
 // the caller's one daily slot" rule from before this was made atomic.
-export async function releaseDailySlot(env: Env, clientIp: string): Promise<void> {
+export async function releaseDailySlot(env: Env, clientIp: string, bucket: string = todayBucket()): Promise<void> {
   await env.DB.prepare("DELETE FROM anonymous_check_log WHERE client_ip = ? AND day_bucket = ?")
-    .bind(clientIp, todayBucket())
+    .bind(clientIp, bucket)
     .run();
 }
 

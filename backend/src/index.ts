@@ -6,6 +6,16 @@ import { checkStuckPending, runMonthlyRecheck } from "./cron";
 import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
 
+export type CronJob = "monthly-recheck" | "purge-ips" | "stuck-check";
+
+// Keep in step with `crons` in wrangler.toml.
+export function cronJobFor(cron: string): CronJob | null {
+  if (cron === "0 3 1 * *") return "monthly-recheck";
+  if (cron === "30 3 * * *") return "purge-ips";
+  if (cron === "*/15 * * * *") return "stuck-check";
+  return null;
+}
+
 export interface Env {
   DB: D1Database;
   ANTHROPIC_API_KEY?: string;
@@ -58,13 +68,20 @@ export default {
   },
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    if (controller.cron === "0 3 1 * *") {
-      ctx.waitUntil(runMonthlyRecheck(env));
-      return;
-    }    if (controller.cron === "30 3 * * *") {
-      ctx.waitUntil(purgeOldAnonymousChecks(env));
-      return;
+    switch (cronJobFor(controller.cron)) {
+      case "monthly-recheck":
+        ctx.waitUntil(runMonthlyRecheck(env));
+        return;
+      case "purge-ips":
+        ctx.waitUntil(purgeOldAnonymousChecks(env));
+        return;
+      case "stuck-check":
+        ctx.waitUntil(checkStuckPending(env));
+        return;
+      default:
+        // A cron string that matches nothing here (a typo in wrangler.toml)
+        // must be loud, not silently fall through to some other job.
+        console.warn(`[cron] unrecognised cron schedule "${controller.cron}" -- no job ran`);
     }
-    ctx.waitUntil(checkStuckPending(env));
   },
 } satisfies ExportedHandler<Env>;

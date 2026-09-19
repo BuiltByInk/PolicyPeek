@@ -1,5 +1,7 @@
 import type { Env } from "./index";
 import { isValidDomain } from "./lookup";
+import { isPublicSuffix } from "./domainUtil";
+import { cleanText } from "./textUtil";
 import { safeFetchTextWithFinalUrl, SsrfBlockedError } from "./ssrf";
 import { extractFacts, type ExtractedFacts } from "./extraction";
 import { getClientIp, resolveTier, type Tier } from "./auth";
@@ -11,7 +13,7 @@ import { evaluateAutoPublish } from "./autoPublish";
 import { tryAutoPublishAtomic } from "./admin";
 import { tryWaybackFallback } from "./waybackFallback";
 
-const MAX_BODY_CHARS = 10_000;
+const MAX_BODY_BYTES = 16_384;
 const MAX_SOURCE_URL_CHARS = 2_048;
 const MAX_NAME_CHARS = 100;
 
@@ -20,10 +22,37 @@ const MAX_NAME_CHARS = 100;
 // short plain string: no control characters, bounded length, and null (falls
 // back to the domain) if nothing usable is left.
 export function cleanSubmittedName(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const cleaned = raw.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
-  if (cleaned.length === 0) return null;
-  return cleaned.slice(0, MAX_NAME_CHARS);
+  return cleanText(raw, MAX_NAME_CHARS);
+}
+
+// Reads a request body but gives up (null) once it exceeds maxBytes, without
+// buffering the rest. A declared Content-Length over the cap is refused before
+// reading anything; a missing or lying length is caught by counting as we go.
+export async function readBodyLimited(request: Request, maxBytes: number): Promise<string | null> {
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) return null;
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    buf.set(c, offset);
+    offset += c.byteLength;
+  }
+  return new TextDecoder().decode(buf);
 }
 
 // Only a paid-key caller (in practice: Elliot's batch-submit script) may set
@@ -77,13 +106,17 @@ export interface FetchedPolicy {
 }
 
 // Decides whether the host a fetch ended up on is still "the same site" as
-// the submitted domain. A leading www. on either side is ignored, so
-// acme.com <-> www.acme.com never counts as leaving the domain. Otherwise
-// this is exactly the submit-time rule (exact, subdomain, or the curated
-// cross-domain source), applied to where the redirects landed.
+// the submitted domain: the submit-time rule (exact, subdomain, or the curated
+// cross-domain source) applied to where the redirects landed, plus one narrow
+// extra -- www.X and X count as the same site. Only that exact pair is
+// widened, and only when at least two labels remain after removing "www.", so
+// a submitted www.acme.com does NOT accept every other host under acme.com.
 export function isSameSiteAfterRedirect(finalHost: string, domain: string): boolean {
-  const strip = (h: string) => h.toLowerCase().replace(/^www\./, "");
-  return isSourceHostAllowedForDomain(strip(finalHost), strip(domain));
+  const f = finalHost.toLowerCase();
+  const d = domain.toLowerCase();
+  if (isSourceHostAllowedForDomain(f, d)) return true;
+  const bare = (h: string) => (h.startsWith("www.") && h.split(".").length > 2 ? h.slice(4) : h);
+  return bare(f) === bare(d);
 }
 
 // Shared by handleCheck and cron.ts's monthly recheck: try a live fetch
@@ -94,18 +127,41 @@ export function isSameSiteAfterRedirect(finalHost: string, domain: string): bool
 export async function fetchPolicyText(sourceUrl: string, domain: string): Promise<FetchedPolicy> {
   try {
     const { text: rawHtml, finalUrl } = await safeFetchTextWithFinalUrl(sourceUrl);
-    const finalHost = new URL(finalUrl).hostname;
+    const final = new URL(finalUrl);
+    // An https -> http downgrade is treated like leaving the site: the page
+    // that answered isn't the one that was asked for, and it can be tampered
+    // with in transit.
+    const downgraded = new URL(sourceUrl).protocol === "https:" && final.protocol === "http:";
     return {
       rawHtml,
       sourcedFromArchive: false,
       archivedUrl: null,
-      redirectedOffDomainTo: isSameSiteAfterRedirect(finalHost, domain) ? null : finalHost,
+      redirectedOffDomainTo: downgraded
+        ? `${final.hostname} (downgraded to http)`
+        : isSameSiteAfterRedirect(final.hostname, domain)
+          ? null
+          : final.hostname,
     };
   } catch (err) {
     if (err instanceof SsrfBlockedError) throw err;
     const fallback = await tryWaybackFallback(sourceUrl);
     if (!fallback) throw err;
     return { rawHtml: fallback.text, sourcedFromArchive: true, archivedUrl: fallback.archivedUrl, redirectedOffDomainTo: null };
+  }
+}
+
+// Returns the new source's host when it differs from the host of the first
+// stored source URL, else null. An unparseable or missing stored value counts
+// as "no basis to compare" (null), so it never blocks a legitimate update.
+export function sourceHostChanged(storedSourceUrlsJson: string | null, newSourceUrl: string): string | null {
+  try {
+    const stored = (JSON.parse(storedSourceUrlsJson || "[]") as unknown[])[0];
+    if (typeof stored !== "string") return null;
+    const oldHost = new URL(stored).hostname.toLowerCase();
+    const newHost = new URL(newSourceUrl).hostname.toLowerCase();
+    return oldHost === newHost ? null : newHost;
+  } catch {
+    return null;
   }
 }
 
@@ -188,9 +244,20 @@ export async function runExtraction(
   // (tryAutoPublishAtomic) -- see DECISIONS_NEEDED.md and admin.ts's
   // tryAutoPublishAtomic for the full mechanism.
   try {
-    const freshExisting = await env.DB.prepare("SELECT id, compliance_status FROM tools WHERE domain = ?")
+    const freshExisting = await env.DB.prepare("SELECT id, compliance_status, source_urls FROM tools WHERE domain = ?")
       .bind(domain)
-      .first<{ id: number; compliance_status: string }>();
+      .first<{ id: number; compliance_status: string; source_urls: string | null }>();
+
+    // A new page on a DIFFERENT host than the one the published entry was built
+    // from (for example a tenant subdomain of a real tool's domain) never
+    // silently replaces that entry's summary and sources, even when the verdict
+    // is unchanged. A verdict flip already queues; this closes the same-verdict
+    // overwrite. (2026-09-19, independent security review H2.)
+    const changedHost = freshExisting ? sourceHostChanged(freshExisting.source_urls, sourceUrl) : null;
+    if (changedHost) {
+      await recordExtractionError(env, pendingId, `queued_for_review: the source page host (${changedHost}) differs from the published entry's source -- never auto-published`);
+      return;
+    }
     const decision = evaluateAutoPublish(facts, {
       sharedDomain,
       isRecheck: freshExisting !== null,
@@ -246,6 +313,7 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   // pass the old check before any of them recorded (see DECISIONS_NEEDED.md,
   // 2026-09-06).
   let reservedSlot = false;
+  let reservedBucket: string | undefined;
   if (tier === "free") {
     const reservation = await tryReserveDailySlot(env, clientIp);
     if (!reservation.reserved) {
@@ -263,19 +331,38 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
       );
     }
     reservedSlot = true;
+    reservedBucket = reservation.bucket;
   }
 
   async function failed(response: Response): Promise<Response> {
-    if (reservedSlot) await releaseDailySlot(env, clientIp);
+    if (reservedSlot) await releaseDailySlot(env, clientIp, reservedBucket);
     return response;
   }
 
+  // Anything unexpected after the slot was reserved (a database error, a bug)
+  // must give the slot back before the Worker returns its 500, or a caller
+  // could lose their daily check to our failure.
+  try {
+    return await processCheck(request, env, ctx, tier, failed);
+  } catch (err) {
+    await failed(new Response(null, { status: 500 })).catch(() => {});
+    throw err;
+  }
+}
+
+async function processCheck(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  tier: Tier,
+  failed: (response: Response) => Promise<Response>
+): Promise<Response> {
   // A legitimate submission is three short strings. Read the body as text
   // first so an oversized payload is refused before it's parsed or stored.
   let body: CheckBody;
   try {
-    const rawBody = await request.text();
-    if (rawBody.length > MAX_BODY_CHARS) {
+    const rawBody = await readBodyLimited(request, MAX_BODY_BYTES);
+    if (rawBody === null) {
       return failed(Response.json({ error: "payload_too_large" }, { status: 413 }));
     }
     const parsedBody: unknown = JSON.parse(rawBody);
@@ -294,7 +381,10 @@ export async function handleCheck(request: Request, env: Env, ctx: ExecutionCont
   const rawSourceUrl = typeof body.source_url === "string" ? body.source_url.trim() : undefined;
   const name = nameForTier(tier, body.name);
 
-  if (!domain || !isValidDomain(domain)) {
+  // A public suffix (co.uk, github.io, vercel.app ...) isn't anyone's domain:
+  // anyone can register a name under it, so a verdict for it would be inherited
+  // by every unrelated site beneath. (2026-09-19, independent security review H2.)
+  if (!domain || !isValidDomain(domain) || isPublicSuffix(domain)) {
     return failed(Response.json({ error: "invalid_domain" }, { status: 400 }));
   }
   if (!rawSourceUrl) {

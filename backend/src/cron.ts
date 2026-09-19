@@ -4,11 +4,15 @@ import { cleanHtmlToText } from "./htmlClean";
 import { isKnownSharedDomain } from "./sharedDomains";
 import { runExtraction, fetchPolicyText } from "./check";
 import { sendAlert } from "./alert";
+import { cleanText } from "./textUtil";
 
 const STUCK_THRESHOLD_MINUTES = 30;
 // The cron fires every 15 minutes, so a row crosses the 30-minute mark in
 // exactly one run's window. The window is 16 minutes, not 15, so scheduler
 // jitter can only cause an occasional duplicate alert, never a missed one.
+// Pages that produce no text (client-rendered sites) fail the same way every
+// time and would page Elliot for something no one can fix; they stay in the
+// logged list above but don't alert.
 // This is what lets alerting be stateless (no table, no migration): each
 // stuck row alerts about once, instead of every 15 minutes until fixed.
 const ALERT_WINDOW_MINUTES = 16;
@@ -23,7 +27,10 @@ interface StuckRow {
 
 export function formatStuckAlert(rows: StuckRow[]): string {
   const shown = rows.slice(0, MAX_ROWS_IN_ALERT).map((r) => {
-    const why = r.extraction_error ? ` -- ${r.extraction_error.slice(0, 120)}` : "";
+    // The stored reason can carry text derived from a fetched page or an API
+    // error body, so clean it and keep it short. Telegram may auto-link it.
+    const reason = cleanText(r.extraction_error, 120);
+    const why = reason ? ` -- ${reason}` : "";
     return `#${r.id} ${r.domain} (since ${r.created_at})${why}`;
   });
   const more = rows.length > MAX_ROWS_IN_ALERT ? `\n...and ${rows.length - MAX_ROWS_IN_ALERT} more` : "";
@@ -55,7 +62,8 @@ export async function checkStuckPending(env: Env): Promise<void> {
     `SELECT id, domain, created_at, extraction_error FROM pending_checks
      WHERE status = 'pending'
        AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
-       AND created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)`
+       AND created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
+       AND (extraction_error IS NULL OR extraction_error NOT LIKE 'empty_extracted_text%')`
   )
     .bind(`-${STUCK_THRESHOLD_MINUTES} minutes`, `-${STUCK_THRESHOLD_MINUTES + ALERT_WINDOW_MINUTES} minutes`)
     .all<StuckRow>();

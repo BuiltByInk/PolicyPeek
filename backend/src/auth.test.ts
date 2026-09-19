@@ -9,11 +9,18 @@ describe("getClientIp", () => {
     expect(getClientIp(request)).toBe("203.0.113.5");
   });
 
-  it("falls back to the first hop of X-Forwarded-For when CF-Connecting-IP is absent", () => {
-    const request = new Request("https://example.com", {
+  it("only believes X-Forwarded-For when running locally (wrangler dev)", () => {
+    const local = new Request("http://localhost:8787/v1/check", {
       headers: { "X-Forwarded-For": "198.51.100.1, 10.0.0.1" },
     });
-    expect(getClientIp(request)).toBe("198.51.100.1");
+    expect(getClientIp(local)).toBe("198.51.100.1");
+  });
+
+  it("ignores a client-supplied X-Forwarded-For in production, so a caller can't pick their own identity", () => {
+    const prod = new Request("https://api.getpolicypeek.com/v1/check", {
+      headers: { "X-Forwarded-For": "198.51.100.1" },
+    });
+    expect(getClientIp(prod)).toBe("unknown");
   });
 
   it("falls back to 'unknown' when neither header is present", () => {
@@ -38,8 +45,16 @@ describe("normalizeIpForRateLimit", () => {
     expect(normalizeIpForRateLimit("2001:db8:abcd:12::1")).not.toBe(normalizeIpForRateLimit("2001:db8:abcd:13::1"));
   });
 
-  it("passes unparseable input through unchanged instead of throwing", () => {
-    expect(normalizeIpForRateLimit("not:an:ip:::::x")).toBe("not:an:ip:::::x");
+  it("maps unparseable input to 'unknown' instead of giving it its own key", () => {
+    expect(normalizeIpForRateLimit("not:an:ip:::::x")).toBe("unknown");
+    expect(normalizeIpForRateLimit("fe80::1%eth0")).toBe("unknown");
+    expect(normalizeIpForRateLimit("garbage")).toBe("unknown");
+  });
+
+  it("turns IPv4-mapped IPv6 back into the IPv4 address, so one client has one identity", () => {
+    expect(normalizeIpForRateLimit("::ffff:203.0.113.5")).toBe("203.0.113.5");
+    expect(normalizeIpForRateLimit("::ffff:cb00:7105")).toBe("203.0.113.5");
+    expect(normalizeIpForRateLimit("[2001:db8::1]")).toBe("2001:db8:0:0::/64");
   });
 
   it("applies to CF-Connecting-IP in getClientIp", () => {

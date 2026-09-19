@@ -46,7 +46,10 @@ export async function handleListPending(env: Env): Promise<Response> {
         existingStatus: existing?.compliance_status as ReturnType<typeof computeVerdict> | undefined,
         sourcedFromArchive: row.sourced_from_archive === 1,
       });
-      return { ...row, queue_reason: result.reason };
+      // A queued_for_review note (redirect left the domain, source host changed)
+      // is the real reason this row is waiting; evaluateAutoPublish can't see it.
+      const flagged = row.extraction_error?.startsWith("queued_for_review") ? row.extraction_error : null;
+      return { ...row, queue_reason: flagged ?? result.reason };
     })
   );
 
