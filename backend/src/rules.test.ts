@@ -147,11 +147,48 @@ describe("detectNotAiTool -- whole-word generic matching", () => {
     expect(detectNotAiTool(facts(["Visitors can leave comments on posts.", "We set cookies to remember your login."]))).toBe(true);
   });
 
-  it("still matches real ecommerce wording", () => {
-    expect(detectNotAiTool(facts(["When you place an order we keep your shipping address.", "We use cookies for your cart."]))).toBe(true);
+  it("still matches real ecommerce wording (paired with a distinctive category, per the later ruling)", () => {
+    expect(detectNotAiTool(facts(["When you place an order we keep your shipping address.", "Visitors can leave a comment on the blog."]))).toBe(true);
   });
 
   it("keeps the real hancocyber.com case as not_ai_tool", () => {
     expect(computeVerdict(hancoWordpressBoilerplate)).toBe("not_ai_tool");
+  });
+});
+
+// 2026-09-19 (Elliot: "go with recs"): everyday SaaS boilerplate can't make a
+// policy "not an AI tool" on its own. It needs at least one category a normal
+// software product wouldn't have (comments, embedded media, booking).
+describe("detectNotAiTool -- SaaS boilerplate is not enough", () => {
+  const facts = (relevant_clauses: string[]): ExtractedFacts => ({
+    trains_on_user_data: null,
+    data_retention: null,
+    gdpr_mentioned: null,
+    opt_out_available: null,
+    relevant_clauses,
+  });
+
+  it("stays false for cookies plus payments", () => {
+    expect(detectNotAiTool(facts(["We use cookies to keep you signed in.", "Payment details are handled by our processor."]))).toBe(false);
+  });
+
+  it("stays false for cookies plus a marketing email line", () => {
+    expect(detectNotAiTool(facts(["We use cookies to keep you signed in.", "You can unsubscribe from our newsletter at any time."]))).toBe(false);
+  });
+
+  it("stays false for payments plus marketing email", () => {
+    expect(detectNotAiTool(facts(["Payment is taken at checkout.", "Join our mailing list for updates."]))).toBe(false);
+  });
+
+  it("is true when a distinctive category joins a common one (the hancocyber.com shape)", () => {
+    expect(detectNotAiTool(facts(["Visitors can leave a comment on the blog.", "We use a cookie to remember your login session."]))).toBe(true);
+  });
+
+  it("is true for two distinctive categories on their own", () => {
+    expect(detectNotAiTool(facts(["Visitors can leave a comment on posts.", "Some pages show embedded content from other sites."]))).toBe(true);
+  });
+
+  it("stays false when only one distinctive category is present and nothing else", () => {
+    expect(detectNotAiTool(facts(["Visitors can leave a comment on posts.", "Thank you for reading."]))).toBe(false);
   });
 });

@@ -37,6 +37,11 @@ const GENERIC_CONTENT_CATEGORIES: Record<string, string[]> = {
   booking_appointment: ["booking", "appointment", "reservation", "schedule a call"],
 };
 
+// Categories a normal software product wouldn't have. The rest (cookie_session,
+// ecommerce, marketing_newsletter) are common SaaS boilerplate and never
+// suffice on their own; see detectNotAiTool.
+const DISTINCTIVE_GENERIC_CATEGORIES = new Set(["comments_social", "embedded_media", "booking_appointment"]);
+
 // Whole-word match with an optional plural/verb ending, for the GENERIC
 // categories only. Plain substring matching let short everyday words fire
 // inside unrelated text: "cart" inside "cartography", and a bare "order" inside
@@ -87,11 +92,18 @@ export function detectNotAiTool(facts: ExtractedFacts): boolean {
 
   if (facts.relevant_clauses.length < 2) return false;
 
-  const distinctCategoryHits = Object.values(GENERIC_CONTENT_CATEGORIES).filter((terms) =>
-    terms.some((term) => containsWord(text, term))
-  ).length;
+  const hit = (category: string) => GENERIC_CONTENT_CATEGORIES[category].some((term) => containsWord(text, term));
+  const hitCategories = Object.keys(GENERIC_CONTENT_CATEGORIES).filter(hit);
 
-  return distinctCategoryHits >= 2;
+  // Ordinary SaaS boilerplate (cookies/login, payments, marketing email) shows
+  // up in the thin policy of a real AI product just as often as in a blog's, so
+  // those categories alone can never make this call. At least one hit must come
+  // from a category a normal software product wouldn't have (comments, embedded
+  // media, appointment booking). (2026-09-19, Elliot: "go with recs" on the
+  // not_ai_tool boilerplate follow-up.)
+  const hasDistinctive = hitCategories.some((c) => DISTINCTIVE_GENERIC_CATEGORIES.has(c));
+
+  return hitCategories.length >= 2 && hasDistinctive;
 }
 
 // The one deterministic place a verdict gets assigned. The LLM extraction
