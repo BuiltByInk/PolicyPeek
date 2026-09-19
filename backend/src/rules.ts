@@ -32,10 +32,23 @@ const GENERIC_CONTENT_CATEGORIES: Record<string, string[]> = {
   comments_social: ["comment", "gravatar"],
   cookie_session: ["cookie", "login", "session", "remember me", "screen options"],
   embedded_media: ["embedded content", "embed"],
-  ecommerce: ["cart", "checkout", "order", "payment", "shipping", "purchase"],
+  ecommerce: ["cart", "checkout", "your order", "place an order", "order history", "order confirmation", "payment", "shipping", "purchase"],
   marketing_newsletter: ["newsletter", "subscribe", "mailing list", "marketing email"],
   booking_appointment: ["booking", "appointment", "reservation", "schedule a call"],
 };
+
+// Whole-word match with an optional plural/verb ending, for the GENERIC
+// categories only. Plain substring matching let short everyday words fire
+// inside unrelated text: "cart" inside "cartography", and a bare "order" inside
+// the near-universal legal phrase "in order to", which by itself was enough to
+// turn a thin AI-tool policy into `not_ai_tool` (2026-09-19, Elliot's OK).
+// AI_VOCAB deliberately stays substring-based: it matches stems ("train" ->
+// training, "generat" -> generative), and over-matching there is the safe
+// direction, since any hit blocks `not_ai_tool`.
+function containsWord(text: string, term: string): boolean {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}(?:s|es|ed|ing)?\\b`, "i").test(text);
+}
 
 // Detects "this policy shows no sign the site is actually an AI/ML product"
 // -- distinct from unrated's "we don't know," this is "there's nothing here
@@ -75,7 +88,7 @@ export function detectNotAiTool(facts: ExtractedFacts): boolean {
   if (facts.relevant_clauses.length < 2) return false;
 
   const distinctCategoryHits = Object.values(GENERIC_CONTENT_CATEGORIES).filter((terms) =>
-    terms.some((term) => text.includes(term))
+    terms.some((term) => containsWord(text, term))
   ).length;
 
   return distinctCategoryHits >= 2;

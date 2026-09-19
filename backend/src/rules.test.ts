@@ -118,3 +118,40 @@ describe("detectNotAiTool", () => {
     expect(detectNotAiTool(hancoWordpressBoilerplate)).toBe(true);
   });
 });
+
+// 2026-09-19: generic-category matching is whole-word. Before this, "cart" fired
+// inside "cartography" and a bare "order" fired inside "in order to", which
+// (with any cookie line) was enough to label a thin AI-tool policy not_ai_tool.
+describe("detectNotAiTool -- whole-word generic matching", () => {
+  const facts = (relevant_clauses: string[]): ExtractedFacts => ({
+    trains_on_user_data: null,
+    data_retention: null,
+    gdpr_mentioned: null,
+    opt_out_available: null,
+    relevant_clauses,
+  });
+
+  it("does not treat the legal phrase 'in order to' as an ecommerce signal", () => {
+    expect(
+      detectNotAiTool(
+        facts(["We use cookies to keep you signed in.", "We may share information in order to comply with legal obligations."])
+      )
+    ).toBe(false);
+  });
+
+  it("does not match a generic term inside a longer unrelated word", () => {
+    expect(detectNotAiTool(facts(["Our cartography team reviews maps.", "We use cookies for analytics."]))).toBe(false);
+  });
+
+  it("still matches plural and inflected forms of a generic term", () => {
+    expect(detectNotAiTool(facts(["Visitors can leave comments on posts.", "We set cookies to remember your login."]))).toBe(true);
+  });
+
+  it("still matches real ecommerce wording", () => {
+    expect(detectNotAiTool(facts(["When you place an order we keep your shipping address.", "We use cookies for your cart."]))).toBe(true);
+  });
+
+  it("keeps the real hancocyber.com case as not_ai_tool", () => {
+    expect(computeVerdict(hancoWordpressBoilerplate)).toBe("not_ai_tool");
+  });
+});
