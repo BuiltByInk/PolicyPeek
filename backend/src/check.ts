@@ -109,6 +109,16 @@ export async function fetchPolicyText(sourceUrl: string, domain: string): Promis
   }
 }
 
+// Records why a pending check didn't finish or didn't auto-publish. The row
+// stays visible in GET /v1/admin/pending with this text as its reason.
+async function recordExtractionError(env: Env, pendingId: number, message: string): Promise<void> {
+  await env.DB.prepare(
+    "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
+  )
+    .bind(message, pendingId)
+    .run();
+}
+
 export async function runExtraction(
   env: Env,
   pendingId: number,
@@ -122,11 +132,7 @@ export async function runExtraction(
   redirectedOffDomainTo: string | null = null
 ): Promise<void> {
   if (!env.ANTHROPIC_API_KEY) {
-    await env.DB.prepare(
-      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
-    )
-      .bind("ANTHROPIC_API_KEY not configured", pendingId)
-      .run();
+    await recordExtractionError(env, pendingId, "ANTHROPIC_API_KEY not configured");
     return;
   }
 
@@ -139,11 +145,7 @@ export async function runExtraction(
       .bind(JSON.stringify(facts), pendingId)
       .run();
   } catch (err) {
-    await env.DB.prepare(
-      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
-    )
-      .bind(String(err instanceof Error ? err.message : err), pendingId)
-      .run();
+    await recordExtractionError(env, pendingId, String(err instanceof Error ? err.message : err));
     return;
   }
 
@@ -153,14 +155,7 @@ export async function runExtraction(
   // the reason in extraction_error (the same channel auto_publish_raced
   // uses to surface a queued row in GET /v1/admin/pending).
   if (redirectedOffDomainTo) {
-    await env.DB.prepare(
-      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
-    )
-      .bind(
-        `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`,
-        pendingId
-      )
-      .run();
+    await recordExtractionError(env, pendingId, `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`);
     return;
   }
 
@@ -226,22 +221,11 @@ export async function runExtraction(
         // Don't retry and don't assume success: route to human review the
         // same way a genuine verdict-flip would, rather than risking an
         // unreviewed publish or silently dropping this submission.
-        await env.DB.prepare(
-          "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
-        )
-          .bind(
-            "auto_publish_raced: another concurrent submission changed this domain's row first; queued for manual review instead of risking an unreviewed verdict",
-            pendingId
-          )
-          .run();
+        await recordExtractionError(env, pendingId, "auto_publish_raced: another concurrent submission changed this domain's row first; queued for manual review instead of risking an unreviewed verdict");
       }
     }
   } catch (err) {
-    await env.DB.prepare(
-      "UPDATE pending_checks SET extraction_error = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?"
-    )
-      .bind(`auto_publish_failed: ${String(err instanceof Error ? err.message : err)}`, pendingId)
-      .run();
+    await recordExtractionError(env, pendingId, `auto_publish_failed: ${String(err instanceof Error ? err.message : err)}`);
   }
 }
 

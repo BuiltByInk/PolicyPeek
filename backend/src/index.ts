@@ -46,10 +46,10 @@ export default {
         return handleListPending(env);
       }
       if (idStr && action === "approve" && request.method === "POST") {
-        return handleApprove(request, env, Number(idStr));
+        return handleApprove(env, Number(idStr));
       }
       if (idStr && action === "reject" && request.method === "POST") {
-        return handleReject(request, env, Number(idStr));
+        return handleReject(env, Number(idStr));
       }
     }
 

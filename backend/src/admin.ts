@@ -53,15 +53,11 @@ export async function handleListPending(env: Env): Promise<Response> {
   return Response.json({ pending_checks: annotated });
 }
 
-// Shared by the human-driven /approve endpoint and the automatic tier-A
-// publish path in check.ts -- one place writes tools + changelog +
-// pending_checks status, so "approved" always means the same thing
-// regardless of who/what triggered it.
-export async function approvePendingCheck(
-  env: Env,
-  pending: PendingCheckRow,
-  opts: { autoPublished: boolean }
-): Promise<{ toolId: number; verdict: string }> {
+// Everything both publish paths (human approve and auto-publish) derive from
+// a pending check before writing to `tools`, in one place so the two can't
+// drift. `factColumns` is in the tools table's column order:
+// data_retention, trains_on_user_data, gdpr_mentioned, opt_out_available.
+function buildPublishFields(pending: PendingCheckRow) {
   const facts = JSON.parse(pending.extracted_facts as string) as ExtractedFacts;
   const sharedDomain = pending.shared_domain === 1;
   const sourcedFromArchive = pending.sourced_from_archive === 1;
@@ -75,6 +71,27 @@ export async function approvePendingCheck(
   const sourceUrls = JSON.stringify(
     [pending.source_url, sourcedFromArchive ? pending.archived_source_url : null].filter((u): u is string => Boolean(u))
   );
+  const nullableBool = (v: boolean | null) => (v === null ? null : Number(v));
+  const factColumns = [
+    facts.data_retention,
+    nullableBool(facts.trains_on_user_data),
+    nullableBool(facts.gdpr_mentioned),
+    nullableBool(facts.opt_out_available),
+  ] as const;
+
+  return { verdict, factColumns, summary, sourceUrls, sharedDomain, sourcedFromArchive };
+}
+
+// Shared by the human-driven /approve endpoint and the automatic tier-A
+// publish path in check.ts -- one place writes tools + changelog +
+// pending_checks status, so "approved" always means the same thing
+// regardless of who/what triggered it.
+export async function approvePendingCheck(
+  env: Env,
+  pending: PendingCheckRow,
+  opts: { autoPublished: boolean }
+): Promise<{ toolId: number; verdict: string }> {
+  const { verdict, factColumns, summary, sourceUrls, sharedDomain, sourcedFromArchive } = buildPublishFields(pending);
 
   const existing = await env.DB.prepare("SELECT id, compliance_status FROM tools WHERE domain = ?")
     .bind(pending.domain)
@@ -91,10 +108,7 @@ export async function approvePendingCheck(
     )
       .bind(
         verdict,
-        facts.data_retention,
-        facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
-        facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
-        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
+        ...factColumns,
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -113,10 +127,7 @@ export async function approvePendingCheck(
         pending.name || pending.domain,
         pending.domain,
         verdict,
-        facts.data_retention,
-        facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
-        facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
-        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
+        ...factColumns,
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -185,19 +196,7 @@ export async function tryAutoPublishAtomic(
   pending: PendingCheckRow,
   freshRead: ToolRow | null
 ): Promise<{ toolId: number; verdict: string; published: boolean }> {
-  const facts = JSON.parse(pending.extracted_facts as string) as ExtractedFacts;
-  const sharedDomain = pending.shared_domain === 1;
-  const sourcedFromArchive = pending.sourced_from_archive === 1;
-  const verdict = computeVerdict(facts, { sharedDomain });
-  const archiveNote = sourcedFromArchive
-    ? " (sourced from an archived snapshot, not the live page — the live page blocks automated checks)"
-    : "";
-  const summary = sharedDomain
-    ? "Policy text is shared across multiple company products — not verified as specific to this tool."
-    : (facts.relevant_clauses[0] ?? null) && `${facts.relevant_clauses[0]}${archiveNote}`;
-  const sourceUrls = JSON.stringify(
-    [pending.source_url, sourcedFromArchive ? pending.archived_source_url : null].filter((u): u is string => Boolean(u))
-  );
+  const { verdict, factColumns, summary, sourceUrls, sharedDomain, sourcedFromArchive } = buildPublishFields(pending);
 
   let toolId: number;
   let published: boolean;
@@ -217,10 +216,7 @@ export async function tryAutoPublishAtomic(
         pending.name || pending.domain,
         pending.domain,
         verdict,
-        facts.data_retention,
-        facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
-        facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
-        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
+        ...factColumns,
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -243,10 +239,7 @@ export async function tryAutoPublishAtomic(
     )
       .bind(
         verdict,
-        facts.data_retention,
-        facts.trains_on_user_data === null ? null : Number(facts.trains_on_user_data),
-        facts.gdpr_mentioned === null ? null : Number(facts.gdpr_mentioned),
-        facts.opt_out_available === null ? null : Number(facts.opt_out_available),
+        ...factColumns,
         sourceUrls,
         summary,
         Number(sharedDomain),
@@ -286,7 +279,7 @@ export async function tryAutoPublishAtomic(
   return { toolId, verdict, published: true };
 }
 
-export async function handleApprove(request: Request, env: Env, id: number): Promise<Response> {
+export async function handleApprove(env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
     `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url
      FROM pending_checks WHERE id = ?`
@@ -306,7 +299,7 @@ export async function handleApprove(request: Request, env: Env, id: number): Pro
   return Response.json({ tool_id: toolId, domain: pending.domain, compliance_status: verdict });
 }
 
-export async function handleReject(request: Request, env: Env, id: number): Promise<Response> {
+export async function handleReject(env: Env, id: number): Promise<Response> {
   const result = await env.DB.prepare(
     "UPDATE pending_checks SET status = 'rejected', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND status != 'approved'"
   )
