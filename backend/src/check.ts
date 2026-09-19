@@ -151,15 +151,36 @@ export async function fetchPolicyText(sourceUrl: string, domain: string): Promis
 }
 
 // Returns the new source's host when it differs from the host of the first
-// stored source URL, else null. An unparseable or missing stored value counts
-// as "no basis to compare" (null), so it never blocks a legitimate update.
+// stored source URL (ignoring a leading www.), else null. If the stored value is
+// missing or unparseable there is nothing to trust, so the new host counts as
+// changed and the update queues (fails closed).
 export function sourceHostChanged(storedSourceUrlsJson: string | null, newSourceUrl: string): string | null {
+  const bare = (h: string) => h.toLowerCase().replace(/^www\./, "");
+  let newHost: string;
+  try {
+    newHost = new URL(newSourceUrl).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
   try {
     const stored = (JSON.parse(storedSourceUrlsJson || "[]") as unknown[])[0];
-    if (typeof stored !== "string") return null;
-    const oldHost = new URL(stored).hostname.toLowerCase();
-    const newHost = new URL(newSourceUrl).hostname.toLowerCase();
-    return oldHost === newHost ? null : newHost;
+    if (typeof stored !== "string") return newHost;
+    return bare(new URL(stored).hostname) === bare(newHost) ? null : newHost;
+  } catch {
+    return newHost;
+  }
+}
+
+// For a brand-new domain: the policy should normally sit on the domain itself
+// (or its www.). A source on some other host, such as a tenant subdomain of a
+// multi-tenant site (yourname.substack.com submitted as domain substack.com),
+// isn't proven to be the domain owner's policy and must not auto-publish.
+// Returns that host, or null when it looks ordinary.
+export function unexpectedFirstSourceHost(domain: string, sourceUrl: string): string | null {
+  try {
+    const host = new URL(sourceUrl).hostname.toLowerCase();
+    const bare = (h: string) => h.replace(/^www\./, "");
+    return bare(host) === bare(domain.toLowerCase()) ? null : host;
   } catch {
     return null;
   }
@@ -256,6 +277,13 @@ export async function runExtraction(
     const changedHost = freshExisting ? sourceHostChanged(freshExisting.source_urls, sourceUrl) : null;
     if (changedHost) {
       await recordExtractionError(env, pendingId, `queued_for_review: the source page host (${changedHost}) differs from the published entry's source -- never auto-published`);
+      return;
+    }
+    // Same idea for a first publish: only a source on the domain itself
+    // auto-publishes. (2026-09-19 re-review, residual H2.)
+    const oddHost = freshExisting ? null : unexpectedFirstSourceHost(domain, sourceUrl);
+    if (oddHost) {
+      await recordExtractionError(env, pendingId, `queued_for_review: the source page is on ${oddHost}, not on the submitted domain itself -- never auto-published`);
       return;
     }
     const decision = evaluateAutoPublish(facts, {

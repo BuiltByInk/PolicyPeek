@@ -85,3 +85,14 @@ describe("runExtraction when the source host differs from the published entry's"
     expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(true);
   });
 });
+
+describe("runExtraction for a brand-new domain whose source is on a different host", () => {
+  it("queues instead of auto-publishing (a tenant page submitted under a multi-tenant apex)", async () => {
+    const { env, statements } = makeEnv(null);
+    await runExtraction(env, 60, "substack.com", null, "https://someone.substack.com/privacy", false, false, false, "policy text", null);
+
+    expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(false);
+    const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
+    expect(String(note!.args[0])).toContain("someone.substack.com");
+  });
+});

@@ -30,3 +30,11 @@ describe("suffixCandidates never falls back to a public suffix", () => {
     expect(suffixCandidates("checkout.shop.example.com")).toEqual(["checkout.shop.example.com", "shop.example.com", "example.com"]);
   });
 });
+
+describe("isValidDomain length cap", () => {
+  it("rejects a hostname longer than a DNS name can be", async () => {
+    const { isValidDomain } = await import("./lookup");
+    expect(isValidDomain("a".repeat(300) + ".com")).toBe(false);
+    expect(isValidDomain("example.com")).toBe(true);
+  });
+});

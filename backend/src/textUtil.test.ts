@@ -19,6 +19,10 @@ describe("cleanText", () => {
     expect(cleanText("a\u0000b" + NEL + "c" + ZERO_WIDTH + "d" + RLO + "e" + BOM + "f  \n g", 50)).toBe("a b c d e f g");
   });
 
+  it("also strips soft hyphens, variation selectors and tag characters", () => {
+    expect(cleanText("a" + c(0xad) + "b" + c(0xfe0f) + "c" + c(0xe0041) + "d", 50)).toBe("a b c d");
+  });
+
   it("truncates by code point so a surrogate pair is never split", () => {
     const out = cleanText("😀😀😀😀😀", 3)!;
     expect(out).toBe("😀😀😀");

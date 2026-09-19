@@ -107,7 +107,8 @@ Nothing was run against production and nothing was deployed.
 - **Agents' permissions widened** at Elliot's request, with a manager sign-off rule for anything impactful (`CLAUDE.md`, `.claude/agents/*.md`, `research/manager/`). Manager report: `research/manager/next_steps_2026-09-19.md`.
 - **Client IPs in git**: two database dumps that contained client IPs are untracked and gitignored (commit `422aca7`). A history rewrite that removes them is prepared and verified in a scratch copy; the force-push needs Elliot's explicit go-ahead.
 - **`not_ai_tool` boilerplate rule** (`rules.ts`, Elliot: "go with recs"): common SaaS boilerplate can't suffice alone; at least one distinctive category (comments, embedded media, booking) is required. **Minimal CI** added (`.github/workflows/ci.yml`, runs `scripts/predeploy-check.mjs`, no secrets, no deploy).
-- Backend tests 73 -> 158, all passing; `tsc --noEmit` clean.
+- **Re-review fixes**: a brand-new domain whose policy page is on a different host (for example a tenant subdomain of substack.com submitted as substack.com) now queues instead of auto-publishing; the same-source-host check fails closed and ignores `www.`; over-long hostnames rejected; more invisible characters stripped. Re-review report: `security/review-2026-09-19-rereview.md` (no HIGH findings).
+- Backend tests 73 -> 164, all passing; `tsc --noEmit` clean.
 - **Stale items noted**: the "/about claims 100% human review" entry is already
   fixed in `about.astro` (it now says clean results publish automatically); the
   "domain/policy-link validator too strict on subdomains" entry looks fixed

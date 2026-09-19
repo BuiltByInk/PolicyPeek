@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect, sourceHostChanged, readBodyLimited } from "./check";
+import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect, sourceHostChanged, unexpectedFirstSourceHost, readBodyLimited } from "./check";
 
 // Regression coverage for a real bug: the original check used a bare
 // hostname.endsWith(domain), which let "evil-acme.com" pass for domain
@@ -131,13 +131,31 @@ describe("sourceHostChanged", () => {
 
   it("returns the new host when it differs, including a tenant subdomain of the same domain", () => {
     expect(sourceHostChanged(stored, "https://tenant.acme.com/privacy")).toBe("tenant.acme.com");
-    expect(sourceHostChanged(stored, "https://www.acme.com/privacy")).toBe("www.acme.com");
+    expect(sourceHostChanged(stored, "https://evil.example/privacy")).toBe("evil.example");
   });
 
-  it("treats missing or unparseable stored data as no basis to compare", () => {
-    expect(sourceHostChanged(null, "https://acme.com/p")).toBeNull();
-    expect(sourceHostChanged("not json", "https://acme.com/p")).toBeNull();
-    expect(sourceHostChanged("[]", "https://acme.com/p")).toBeNull();
+  it("ignores a leading www. on either side", () => {
+    expect(sourceHostChanged(stored, "https://www.acme.com/privacy")).toBeNull();
+    expect(sourceHostChanged(JSON.stringify(["https://www.acme.com/p"]), "https://acme.com/p")).toBeNull();
+  });
+
+  it("fails closed: missing or unparseable stored data counts as changed", () => {
+    expect(sourceHostChanged(null, "https://acme.com/p")).toBe("acme.com");
+    expect(sourceHostChanged("not json", "https://acme.com/p")).toBe("acme.com");
+    expect(sourceHostChanged("[]", "https://acme.com/p")).toBe("acme.com");
+  });
+});
+
+describe("unexpectedFirstSourceHost", () => {
+  it("is null when the source is on the domain or its www. form", () => {
+    expect(unexpectedFirstSourceHost("acme.com", "https://acme.com/privacy")).toBeNull();
+    expect(unexpectedFirstSourceHost("acme.com", "https://www.acme.com/privacy")).toBeNull();
+    expect(unexpectedFirstSourceHost("www.acme.com", "https://acme.com/privacy")).toBeNull();
+  });
+
+  it("returns the host when a first publish rests on some other host, such as a tenant of a multi-tenant site", () => {
+    expect(unexpectedFirstSourceHost("substack.com", "https://someone.substack.com/privacy")).toBe("someone.substack.com");
+    expect(unexpectedFirstSourceHost("acme.com", "https://legal.acme.com/privacy")).toBe("legal.acme.com");
   });
 });
 

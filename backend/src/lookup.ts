@@ -20,6 +20,9 @@ interface ToolRow {
 // ["checkout.shop.example.com", "shop.example.com", "example.com"].
 // Drops the bare TLD (a single label has nothing to match against).
 export function isValidDomain(host: string): boolean {
+  // 253 is the longest a DNS name can be; anything longer is junk and would
+  // just cost CPU in the pattern match and the suffix walk.
+  if (host.length > 253) return false;
   return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(host.toLowerCase());
 }
 
