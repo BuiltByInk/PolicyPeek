@@ -14,7 +14,7 @@ export interface Tool {
   gdpr_mentioned: boolean | null;
   source_urls: string[];
   // Whether this row is a live, published tool (used e.g. by the backend's
-  // monthly recheck cron) -- NOT whether a human reviewed it. Do not use
+  // daily recheck cron) -- NOT whether a human reviewed it. Do not use
   // this for the "reviewed by a human" claim; see auto_published below.
   verified: boolean;
   // true when this tool was published by the automatic Tier-A pipeline

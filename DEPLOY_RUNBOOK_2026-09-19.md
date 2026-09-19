@@ -152,12 +152,11 @@ curl -s -H "X-Admin-Token: $ADMIN_TOKEN" https://api.getpolicypeek.com/v1/admin/
   reject the queued ones. 17 more eligible tools are still unsubmitted
   (`node scripts/batch-submit.mjs` is a dry run until you pass `--go`; default
   5 per run, and it uses your paid key, so the new 200/day ceiling doesn't apply).
-- **Ids 4, 5, 6** (Ideogram, JetBrains AI Assistant, Luma AI): your 2026-09-13
-  ruling was that `opt_out_available` should be false for all three, making them
-  `not_compliant`. The correction was never written. Exact commands are in
-  `DECISIONS_NEEDED.md` ("Blocked on you ... JetBrains / Ideogram / Luma AI"):
-  one `UPDATE pending_checks ... WHERE id IN (4, 5, 6)`, then a normal approve
-  for each. Only do this if that ruling still stands.
+- **Ids 4, 5, 6** (Ideogram, JetBrains AI Assistant, Luma AI): nothing to do. The changelog
+  records that all three were approved on 2026-09-17/18 and published as `not_compliant`
+  (tool ids 2, 1 and 4). The 2026-09-13 note about a pending database correction is
+  superseded. (Corrected 2026-09-19: an earlier version of this runbook listed them as
+  still waiting.)
 - **openai.com recheck** (previous id 7, rejected as a dead row from the API-key
   outage): never resubmitted. Submit it again once the backend is deployed.
 - **Held, need a decision, not submitted:** Adobe Firefly, Devin, Suno,

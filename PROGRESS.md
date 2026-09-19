@@ -1,3 +1,7 @@
+> **HISTORICAL. Superseded by `changelog.md`.** This is the overnight log from 2026-08-05/06, kept as it was written. It is not a current status page: the items listed under "In `DECISIONS_NEEDED.md` (needs you)" below have since been resolved (see `DECISIONS_ARCHIVE.md`), and the commit hashes and the "not pushed" note describe that night only. For what has shipped, read `changelog.md`; for what is open, `DECISIONS_NEEDED.md`; for how things work, `README.md` and `ARCHITECTURE_NOTES.md`.
+
+---
+
 # Overnight progress — 2026-08-05/06
 
 Worked the task list top to bottom while you were offline. Everything below is committed locally on `main` (5 commits, `4502505`..`5e5471c`) but **not pushed** — `git push` is hard-denied by the settings.json we set up together tonight, and there's no one to approve past a deny rule. Push it yourself, or loosen that rule, when you're back.

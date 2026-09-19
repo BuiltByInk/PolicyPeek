@@ -22,7 +22,7 @@ Nothing was run against production and nothing was deployed.
   must be real booleans else `null`; free text is control-char-stripped and
   length-capped. The model's JSON is untrusted, since the page it reads is
   attacker-influenceable.
-- **`POST /v1/check` input limits** (`check.ts`): 10 KB body cap (413), fields
+- **`POST /v1/check` input limits** (`check.ts`): 16 KB body cap counted in bytes (413), fields
   type-checked, `name` capped at 100 chars, `source_url` capped and its
   fragment dropped.
 - **IPv6 clients rate-limited by /64** (`auth.ts` `normalizeIpForRateLimit`),

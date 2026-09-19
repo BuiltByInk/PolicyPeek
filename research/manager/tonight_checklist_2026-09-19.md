@@ -9,7 +9,7 @@ Full commands, checks and rollbacks: `DEPLOY_RUNBOOK_2026-09-19.md` (step number
 - [ ] 4. Deploy backend and run the checks (step 3)
 - [ ] 5. Approve hancocyber, pending id 10 (step 4); run the read-only suffix check (4a)
 - [ ] 6. `ADMIN_TOKEN=... node scripts/batch-outcomes.mjs` to see what ids 11 to 15 became; approve or reject the queued ones (4b). A favourable first result for a new tool now waits in your queue.
-- [ ] 7. Read the flagged badge sources (cursor, perplexity, granola, notion, you.com first; then claude, sourcegraph, grammarly; openai and midjourney need a real browser). Demote what you can't stand behind with the new endpoint (4c). Also decide on GitHub Copilot (shows Unrated for the wrong reason) and the ids 4, 5, 6 correction from 2026-09-13 if that ruling still stands.
+- [ ] 7. Read the flagged badge sources (cursor, perplexity, granola, notion, you.com first; then claude, sourcegraph, grammarly; openai and midjourney need a real browser). Demote what you can't stand behind with the new endpoint (4c). Also decide on GitHub Copilot (shows Unrated for the wrong reason). (Ideogram, JetBrains and Luma AI, pending ids 4 to 6, were already published as not_compliant, so nothing to do there.)
 - [ ] 8. `node scripts/refresh-site.mjs --deploy` (step 5); check the hancocyber page, the demoted pages, the new "Last checked" row, and the submit form
 
 Minimum for tonight: steps 1 to 5. Steps 6 to 8 matter next because the live site still shows badges we can't fully support (`research/audits/autopublished_factcheck_2026-09-19.md`).

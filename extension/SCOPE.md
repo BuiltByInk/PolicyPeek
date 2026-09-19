@@ -1,7 +1,8 @@
 # Browser Extension MVP — Scope
 
-Status: **scope only, no code yet.** Per instructions, `manifest.json` and
-extension code are blocked until this doc is reviewed and approved.
+Status: **built (v0.1.0, not yet in any store).** This is the original scope document, kept
+for its reasoning; the code in this folder is the current source of truth. Original status
+line: "scope only, no code yet" (2026-08).
 
 ## Goal
 
