@@ -48,6 +48,10 @@ async function setCachedLookup(hostname, entry) {
   await chrome.storage.local.set({ [key]: { ...entry, ts: Date.now() } });
 }
 
+async function clearCachedLookup(hostname) {
+  await chrome.storage.local.remove(`lookup:${hostname}`);
+}
+
 async function getHostnameForActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.url) return null;
@@ -92,6 +96,29 @@ function renderCheckButton(tab, hostname) {
   actionsEl.appendChild(hint);
 }
 
+// After a new submission is accepted, ask the same public lookup the popup
+// already uses whether it has published yet. A clean result publishes within
+// seconds; anything else waits for a person, with no set time. matched_domain
+// must equal the submitted host: lookup also matches parent domains, and a
+// parent's verdict isn't this site's.
+const POLL_INTERVAL_MS = 3000;
+const POLL_TRIES = 10;
+
+async function pollForPublished(hostname) {
+  for (let i = 0; i < POLL_TRIES; i++) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    try {
+      const res = await fetch(`${API_BASE_URL}/v1/lookup?domain=${encodeURIComponent(hostname)}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.matched_domain === hostname && BADGE_COPY[data.compliance_status]) return data;
+    } catch {
+      // A failed poll is just tried again.
+    }
+  }
+  return null;
+}
+
 // Drops the query string and fragment before the URL leaves the browser.
 // Those parts routinely carry session tokens, share links or personal
 // identifiers, and this URL is stored and later shown as a public source link
@@ -134,11 +161,20 @@ async function submitCheck(tab, hostname, button) {
   const data = await res.json().catch(() => ({}));
   clearActions();
 
-  // 202: queued. No polling here on purpose -- v1 shows one static message
-  // and stops; the pending check goes through the existing human review
-  // gate before it ever becomes a real badge.
+  // 202: queued. A clean extraction publishes itself within seconds, so poll
+  // briefly for it; anything else waits for a person with no set time, and
+  // we say so rather than promising one. The earlier "not in catalog" answer
+  // is cached, so clear it or reopening the popup would show that stale state.
   if (res.status === 202) {
-    showMessage("Submitted! This goes to review — check back later for a verdict.");
+    await clearCachedLookup(hostname);
+    showMessage("Submitted. Checking now. Clear results are published within about a minute.");
+    const published = await pollForPublished(hostname);
+    if (published) {
+      await setCachedLookup(hostname, { state: published.compliance_status, name: published.name, summary: published.summary });
+      applyLookupResult(tab, hostname, published.compliance_status, published);
+      return;
+    }
+    showMessage("Submitted. No verdict yet. Clear results appear within a minute; anything else is checked by a person first, with no set time. Reopen this popup later to see it.");
     return;
   }
 

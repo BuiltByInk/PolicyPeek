@@ -131,6 +131,8 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
 </style>
 
 <script>
+  import { VERDICTS } from "../verdicts";
+
   const form = document.getElementById("submit-form") as HTMLFormElement | null;
   const status = document.getElementById("submit-status");
   if (form && status) {
@@ -183,6 +185,33 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
       return d.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
     }
 
+    // After a new submission is accepted, ask the public lookup (the same one
+    // the extension uses) whether it has published yet. A clean result
+    // publishes within seconds; anything else waits for a person and has no
+    // set time, so after about a minute we say that plainly instead of
+    // promising a time. matched_domain must equal what was submitted: lookup
+    // also matches parent domains, and a parent's verdict isn't this tool's.
+    async function waitForVerdict(domain: string) {
+      const POLL_MS = 3_000;
+      const POLL_TRIES = 20;
+      show("", `Got it. Checking ${domain} now. Clear results are published within about a minute.`);
+      for (let i = 0; i < POLL_TRIES; i++) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        try {
+          const res = await fetch(`${apiBase}/v1/lookup?domain=${encodeURIComponent(domain)}`);
+          if (res.ok) {
+            const data: any = await res.json().catch(() => null);
+            const verdict = VERDICTS.find((v) => v.status === data?.compliance_status);
+            if (verdict && data?.matched_domain === domain) {
+              show("ok", `${domain} is published: ${verdict.label}. ${verdict.meaning} The browser extension shows it now; the list on this site updates the next time the site is refreshed.`);
+              return;
+            }
+          }
+        } catch { /* a failed poll is just tried again */ }
+      }
+      show("ok", `We haven't published a verdict for ${domain} yet. Clear results appear within a minute; anything else is checked by a person first, and there's no set time for that. The browser extension shows the verdict as soon as it's published. The list on this site updates the next time the site is refreshed.`);
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const domain = cleanDomain(domainInput.value);
@@ -222,10 +251,12 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
         const err = typeof body?.error === "string" ? body.error : "";
 
         if (res.status === 202) {
-          show("ok", body.is_recheck
-            ? `${domain} is already in the catalog. We're re-checking it now.`
-            : `Got it. We're checking ${domain} now. If it passes the automatic checks it's published; otherwise a person reviews it first. New results can take a while to show up in the list on this site.`);
           form.reset();
+          if (body.is_recheck) {
+            show("ok", `${domain} is already in the catalog. We're re-checking it now. The list on this site updates the next time the site is refreshed.`);
+          } else {
+            await waitForVerdict(domain);
+          }
         } else if (err === "daily_capacity_reached") {
           // The service-wide daily ceiling, not this person's own limit.
           show("error", "We've reached the number of checks we can run today. Nothing you did wrong, and your own daily check is unused. Please try again tomorrow.");
