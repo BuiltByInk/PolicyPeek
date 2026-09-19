@@ -26,9 +26,14 @@ export interface AutoPublishResult {
 //     *change* the existing badge always queues for review, however clean
 //     the facts are -- a flip is exactly the event a human should see, per
 //     the "static source, but verify periodically" design.
-//   - Eligibility never branches on *which* verdict computeVerdict landed on
-//     (deliberately -- this function is about extraction confidence, not
-//     verdict favorability). 'compliant_with_caveats' (trains_on_user_data
+//   - Since 2026-09-19 there is ONE deliberate exception to "never branches on
+//     which verdict computeVerdict landed on": a brand-new domain whose verdict
+//     is favourable (compliant / compliant_with_caveats) always queues for a
+//     human. Everything else below is still about extraction confidence, not
+//     verdict favourability.
+//   - (Original wording:) Eligibility never branches on *which* verdict
+//     computeVerdict landed on (deliberately -- this function is about
+//     extraction confidence, not verdict favorability). 'compliant_with_caveats' (trains_on_user_data
 //     === true, opt_out_available === true) is therefore auto-publish
 //     eligible under exactly the same conditions as 'compliant' or
 //     'not_compliant': both facts are non-null, so it clears the two null
@@ -46,6 +51,20 @@ export function evaluateAutoPublish(
       eligible: false,
       verdict,
       reason: "sourced from a Wayback Machine snapshot, not the live page -- always gets a human look",
+    };
+  }
+  // A favourable badge (green or teal) for a domain that has never been
+  // published always gets a human look first (Elliot, 2026-09-19). Anyone can
+  // submit a domain they control, and a scam site with a clean-looking page
+  // must not be able to show a green badge in the extension without a person
+  // reading it. An unfavourable or unrated first result can still publish by
+  // itself, and a recheck of an existing entry is governed by the flip rule
+  // below.
+  if (!opts.isRecheck && (verdict === "compliant" || verdict === "compliant_with_caveats")) {
+    return {
+      eligible: false,
+      verdict,
+      reason: `brand-new domain with a favourable verdict (${verdict}) -- always gets a human look before a green or teal badge goes live`,
     };
   }
   if (facts.trains_on_user_data === null) {

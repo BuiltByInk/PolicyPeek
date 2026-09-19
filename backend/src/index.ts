@@ -1,7 +1,7 @@
 import { handleLookup } from "./lookup";
 import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
-import { handleListPending, handleApprove, handleReject } from "./admin";
+import { handleListPending, handleApprove, handleReject, handleDemote } from "./admin";
 import { checkStuckPending, runMonthlyRecheck } from "./cron";
 import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
@@ -44,6 +44,14 @@ export default {
 
     if (url.pathname === "/v1/check" && request.method === "POST") {
       return withCors(await handleCheck(request, env, ctx));
+    }
+
+    const demoteMatch = url.pathname.match(/^\/v1\/admin\/tools\/(\d+)\/demote$/);
+    if (demoteMatch && request.method === "POST") {
+      if (!(await requireAdminToken(request, env))) {
+        return Response.json({ error: "unauthorized" }, { status: 401 });
+      }
+      return handleDemote(request, env, Number(demoteMatch[1]));
     }
 
     const adminMatch = url.pathname.match(/^\/v1\/admin\/pending(?:\/(\d+)(?:\/(approve|reject))?)?$/);

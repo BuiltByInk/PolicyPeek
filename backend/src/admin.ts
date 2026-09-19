@@ -2,6 +2,7 @@ import type { Env } from "./index";
 import type { ExtractedFacts } from "./extraction";
 import { computeVerdict } from "./rules";
 import { evaluateAutoPublish } from "./autoPublish";
+import { cleanText } from "./textUtil";
 
 interface PendingCheckRow {
   id: number;
@@ -313,4 +314,63 @@ export async function handleReject(env: Env, id: number): Promise<Response> {
     return Response.json({ error: "pending_check_not_found_or_already_approved" }, { status: 404 });
   }
   return Response.json({ pending_check_id: id, status: "rejected" });
+}
+
+// Demotes a published tool to `unrated` with a written reason and an audit
+// trail (Elliot, 2026-09-19). Until this existed the only way to take back a
+// badge that turned out to be unsupported was a hand-written remote database
+// command. The stored training facts are cleared because "unrated" means we
+// don't know, and a leftover "trains: No" beside it is exactly the
+// contradiction a reader would notice; the old values go into the changelog
+// note so it can be undone. A later recheck that computes a different verdict
+// queues for review (the flip rule), so nothing re-promotes it automatically.
+export async function handleDemote(request: Request, env: Env, id: number): Promise<Response> {
+  let reason: string | null = null;
+  try {
+    const body = (await request.json()) as { reason?: unknown } | null;
+    reason = cleanText(body?.reason, 300);
+  } catch {
+    // fall through: a missing or malformed body is the same as no reason
+  }
+  if (!reason) {
+    return Response.json({ error: "reason_required" }, { status: 400 });
+  }
+
+  const tool = await env.DB.prepare(
+    "SELECT id, domain, compliance_status, trains_on_user_data, opt_out_available FROM tools WHERE id = ?"
+  )
+    .bind(id)
+    .first<{
+      id: number;
+      domain: string;
+      compliance_status: string;
+      trains_on_user_data: number | null;
+      opt_out_available: number | null;
+    }>();
+  if (!tool) {
+    return Response.json({ error: "tool_not_found" }, { status: 404 });
+  }
+  if (tool.compliance_status === "unrated") {
+    return Response.json({ error: "already_unrated" }, { status: 409 });
+  }
+
+  // Compare-and-swap on the status we just read, like the auto-publish path:
+  // if someone changed it in the meantime, don't overwrite blindly.
+  const result = await env.DB.prepare(
+    `UPDATE tools SET compliance_status = 'unrated', trains_on_user_data = NULL, opt_out_available = NULL, summary = NULL,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+     WHERE id = ? AND compliance_status = ?`
+  )
+    .bind(tool.id, tool.compliance_status)
+    .run();
+  if (result.meta.changes === 0) {
+    return Response.json({ error: "status_changed_meanwhile" }, { status: 409 });
+  }
+
+  const was = `was ${tool.compliance_status}, trains=${tool.trains_on_user_data ?? "null"}, opt_out=${tool.opt_out_available ?? "null"}`;
+  await env.DB.prepare("INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, 'unrated', ?)")
+    .bind(tool.id, tool.compliance_status, `demoted by admin: ${reason} (${was})`)
+    .run();
+
+  return Response.json({ tool_id: tool.id, domain: tool.domain, old_status: tool.compliance_status, new_status: "unrated" });
 }

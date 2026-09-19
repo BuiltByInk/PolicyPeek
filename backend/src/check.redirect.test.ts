@@ -58,11 +58,18 @@ describe("runExtraction with an off-domain redirect", () => {
     expect(note!.args[1]).toBe(42);
   });
 
-  it("still auto-publishes a clean extraction when no redirect left the domain", async () => {
-    const { env, statements } = makeEnv();
-    await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", false, false, false, "policy text", null);
+  it("still auto-publishes a recheck of a published tool when no redirect left the domain", async () => {
+    const { env, statements } = makeEnv({ id: 5, compliance_status: "compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) });
+    await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null);
 
-    expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(true);
+    expect(statements.some((s) => s.sql.includes("UPDATE tools"))).toBe(true);
+  });
+
+  it("queues a favourable first result for a brand-new domain instead of publishing it", async () => {
+    const { env, statements } = makeEnv();
+    await runExtraction(env, 44, "acme.com", null, "https://acme.com/privacy", false, false, false, "policy text", null);
+
+    expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(false);
   });
 });
 

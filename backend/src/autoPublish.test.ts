@@ -35,10 +35,18 @@ const trainsWithOptOut: ExtractedFacts = {
 };
 
 describe("evaluateAutoPublish", () => {
-  it("is eligible for a clean, non-training extraction on a fresh domain", () => {
+  it("is NOT eligible for a favourable verdict on a brand-new domain -- a person reads it first (Elliot, 2026-09-19)", () => {
     const result = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: false });
-    expect(result.eligible).toBe(true);
+    expect(result.eligible).toBe(false);
     expect(result.verdict).toBe("compliant");
+    expect(result.reason).toMatch(/brand-new domain with a favourable verdict/);
+  });
+
+  it("is still eligible for an unfavourable first result (not_compliant) on a fresh domain", () => {
+    const noOptOut: ExtractedFacts = { ...trainsWithOptOut, opt_out_available: false };
+    const result = evaluateAutoPublish(noOptOut, { sharedDomain: false, isRecheck: false });
+    expect(result.eligible).toBe(true);
+    expect(result.verdict).toBe("not_compliant");
   });
 
   it("rejects a null trains_on_user_data -- the source page didn't actually answer the question", () => {
@@ -75,10 +83,19 @@ describe("evaluateAutoPublish", () => {
     expect(result.reason).toMatch(/Wayback Machine/);
   });
 
-  it("is eligible for compliant_with_caveats on the same terms as compliant/not_compliant -- eligibility isn't verdict-favorability-gated", () => {
+  it("is NOT eligible for compliant_with_caveats on a brand-new domain either", () => {
     const result = evaluateAutoPublish(trainsWithOptOut, { sharedDomain: false, isRecheck: false });
-    expect(result.eligible).toBe(true);
+    expect(result.eligible).toBe(false);
     expect(result.verdict).toBe("compliant_with_caveats");
+  });
+
+  it("is eligible for compliant_with_caveats on a recheck that keeps the same verdict", () => {
+    const result = evaluateAutoPublish(trainsWithOptOut, {
+      sharedDomain: false,
+      isRecheck: true,
+      existingStatus: "compliant_with_caveats",
+    });
+    expect(result.eligible).toBe(true);
   });
 
   it("is NOT eligible on a recheck when the verdict would flip the existing published status", () => {
