@@ -5,7 +5,7 @@ Full commands, checks and rollbacks: `DEPLOY_RUNBOOK_2026-09-19.md` (step number
 ## Part 1: essentials (roughly 1.5 to 2 hours)
 - [ ] 1. `node scripts/predeploy-check.mjs` (green; a "working tree" warning is fine if you edited anything)
 - [ ] 2. Scrub IPs and back everything up: `bash scripts/scrub-history.sh`, then the 3 commands it prints (runbook step 9). One push containing all local commits. Do it first; keep the working tree clean and don't commit in between.
-- [ ] 3. Migrations (step 1): check whether `not_ai_tool` is in the CHECK list; back up; apply `2026-09-18-add-not-ai-tool-status.sql` (if not already) THEN `2026-09-19-add-last-checked.sql` (new: adds the last-checked columns; must come before the backend deploy); verify the row count
+- [x] 3. Migrations (step 1): done 2026-09-20. `2026-09-18-add-not-ai-tool-status.sql` was already applied (2026-09-18 evening); `2026-09-19-add-last-checked.sql` applied 2026-09-20 ~07:30 UTC after a fresh backup (`backups/policypeek-db-pre-last-checked-2026-09-20.sql`). Do not re-run either.
 - [ ] 4. Deploy backend and run the checks (step 3)
 - [ ] 5. Approve hancocyber, pending id 10 (step 4); run the read-only suffix check (4a)
 - [ ] 6. `ADMIN_TOKEN=... node scripts/batch-outcomes.mjs` to see what ids 11 to 15 became; approve or reject the queued ones (4b). A favourable first result for a new tool now waits in your queue.

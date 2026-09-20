@@ -24,21 +24,17 @@ Why first: the new backend can produce `not_ai_tool`, and the live table's
 CHECK constraint may not allow it yet. Old backend + new schema is harmless
 (the new CHECK is a superset), so the safe order is schema first.
 
-> **Progress, as of 2026-09-20 07:24 UTC (after a terminal crash mid-step).**
-> - **Done:** `2026-09-18-add-not-ai-tool-status.sql` is on the live database (the
->   `tools` schema read back from remote lists `'not_ai_tool'`). It was applied on the
->   evening of 2026-09-18, after an export saved as `backend/backup.sql` (gitignored,
->   32 tools, pre-migration). That is from the wrangler logs, not a note made at the
->   time. **Do NOT run this migration again:** it rebuilds the table with a fixed
->   column list and would drop the last-checked columns once they exist.
-> - **Not done:** `2026-09-19-add-last-checked.sql`. Remote returned `no such column:
->   last_checked_at`, and the schema shows none of the three new columns, so nothing
->   is half-applied. Live table had 33 tools.
-> - **Next:** run only 1b (with a fresh output name, e.g.
->   `../backups/policypeek-db-pre-last-checked-2026-09-20.sql`, since the last export
->   is a tool short), then the second `--file` line in 1c, then 1d. In 1d the
->   `COUNT(*)` should still be 33 and `COUNT(last_checked_at)` should equal it.
->   Then continue from step 2. Tick this off (or delete this note) once applied.
+> **Step 1 is DONE (2026-09-20).** Both migrations are on the live database.
+> - `2026-09-18-add-not-ai-tool-status.sql` was applied on the evening of 2026-09-18,
+>   after an export saved as `backend/backup.sql` (gitignored, 32 tools,
+>   pre-migration). That is from the wrangler logs, not a note made at the time.
+> - `2026-09-19-add-last-checked.sql` was applied on 2026-09-20 at about 07:30 UTC,
+>   after a fresh export, `backups/policypeek-db-pre-last-checked-2026-09-20.sql`
+>   (33 tools). The wrangler log shows it completed with no errors, followed by the
+>   row-count check.
+> - **Do NOT run either migration again.** The first rebuilds the table with a fixed
+>   column list and would drop the last-checked columns; the second would fail with
+>   `duplicate column name`. Continue from step 2 (optional secrets) or step 3 (backend deploy).
 
 ```bash
 cd ~/policypeek/backend
