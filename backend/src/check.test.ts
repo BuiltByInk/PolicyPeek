@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect, sourceHostChanged, unexpectedFirstSourceHost, readBodyLimited } from "./check";
+import { isSourceHostAllowedForDomain, cleanSubmittedName, nameForTier, isSameSiteAfterRedirect, sourceHostChanged, sourceUrlChanged, unexpectedFirstSourceHost, readBodyLimited } from "./check";
 
 // Regression coverage for a real bug: the original check used a bare
 // hostname.endsWith(domain), which let "evil-acme.com" pass for domain
@@ -177,5 +177,26 @@ describe("readBodyLimited", () => {
 
   it("counts bytes, not characters", async () => {
     expect(await readBodyLimited(req("é".repeat(60)), 100)).toBeNull(); // 120 bytes
+  });
+});
+
+describe("sourceUrlChanged", () => {
+  const stored = JSON.stringify(["https://acme.com/privacy"]);
+
+  it("is null for the same page, ignoring www., a trailing slash, host case and the fragment", () => {
+    expect(sourceUrlChanged(stored, "https://acme.com/privacy")).toBeNull();
+    expect(sourceUrlChanged(stored, "https://www.ACME.com/privacy/")).toBeNull();
+    expect(sourceUrlChanged(stored, "https://acme.com/privacy#top")).toBeNull();
+  });
+
+  it("returns the new URL for a different path or query on the same host", () => {
+    expect(sourceUrlChanged(stored, "https://acme.com/no-such-page")).toBe("https://acme.com/no-such-page");
+    expect(sourceUrlChanged(stored, "https://acme.com/privacy?x=1")).toBe("https://acme.com/privacy?x=1");
+  });
+
+  it("fails closed when the stored value is missing or malformed", () => {
+    expect(sourceUrlChanged(null, "https://acme.com/p")).toBe("https://acme.com/p");
+    expect(sourceUrlChanged("nope", "https://acme.com/p")).toBe("https://acme.com/p");
+    expect(sourceUrlChanged("[]", "https://acme.com/p")).toBe("https://acme.com/p");
   });
 });

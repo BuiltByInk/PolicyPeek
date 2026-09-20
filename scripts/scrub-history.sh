@@ -9,6 +9,7 @@
 #
 # Preconditions: working tree clean, nothing committed while it runs.
 set -euo pipefail
+umask 077   # the work folder holds the addresses being scrubbed; keep it private
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 FILES=("backend/backup.sql" "backups/policypeek-db-2026-09-06.sql")
@@ -81,6 +82,10 @@ NEXT (you run these; the push rewrites GitHub's history):
   cd "$REPO"
   git fetch origin && git reset --hard origin/main
   git reflog expire --expire=now --all && git gc --prune=now
+
+This only rewrites the branch it pushes (main). Check GitHub for any OTHER branches, tags
+or pull-request refs that still hold the old history (run: git ls-remote origin) and delete
+them, or the addresses stay reachable there. When finished, delete the work folder above.
 
 Afterwards: old commits can stay reachable on GitHub by their hash for a while.
 For full removal ask GitHub Support to purge cached views and dangling commits

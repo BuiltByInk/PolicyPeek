@@ -36,7 +36,13 @@
       "Read(.env.*)",
       "Edit(**/.dev.vars)",
       "Write(**/.dev.vars)",
-      "Read(**/.dev.vars)"
+      "Read(**/.dev.vars)",
+      "Bash(*wrangler*--remote*)",
+      "Bash(*refresh-site.mjs*--deploy*)",
+      "Bash(npm run deploy*)",
+      "Bash(npm run * deploy*)",
+      "Bash(*wrangler*pages*deploy*)",
+      "Bash(*wrangler*secret*)"
     ]
   }
 }

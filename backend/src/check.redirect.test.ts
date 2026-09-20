@@ -83,17 +83,38 @@ describe("runExtraction when the source host differs from the published entry's"
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
     expect(String(note!.args[0])).toContain("tenant.acme.com");
-    // the tool keeps its old "last checked" and records why, instead of claiming a fresh check
-    const toolNote = statements.find((s) => s.sql.includes("last_check_note = ?"));
-    expect(String(toolNote!.args[0])).toContain("awaiting review");
-    expect(toolNote!.args[1]).toBe("acme.com");
+    // a PUBLIC submission must not stamp attempt bookkeeping on the published tool
+    expect(statements.some((s) => s.sql.includes("last_check_note") || s.sql.includes("last_attempt_at"))).toBe(false);
   });
 
-  it("still auto-updates when the new source is on the same host", async () => {
+  it("still auto-updates when a submission uses exactly the published page", async () => {
     const { env, statements } = makeEnv(existing);
-    await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy-2026", true, false, false, "policy text", null);
+    await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
+  });
+
+  it("queues a public submission that uses a different page on the same host (M-2)", async () => {
+    const { env, statements } = makeEnv(existing);
+    await runExtraction(env, 52, "acme.com", null, "https://acme.com/no-such-page", true, false, false, "policy text", null);
+
+    expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
+    const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
+    expect(String(note!.args[0])).toContain("different page");
+  });
+
+  it("the daily job (scheduledRecheck) may record why it could not confirm an entry; a public submission may not (M-1)", async () => {
+    const flip = { id: 5, compliance_status: "not_compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) };
+
+    const job = makeEnv(flip);
+    await runExtraction(job.env, 53, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null, true);
+    const written = job.statements.find((s) => s.sql.includes("last_check_note = ?"));
+    expect(String(written!.args[0])).toContain("awaiting review");
+    expect(written!.args[1]).toBe("acme.com");
+
+    const pub = makeEnv(flip);
+    await runExtraction(pub.env, 54, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null, false);
+    expect(pub.statements.some((s) => s.sql.includes("last_check_note") || s.sql.includes("last_attempt_at"))).toBe(false);
   });
 });
 

@@ -42,6 +42,7 @@ describe("runDueRechecks selection", () => {
     const q = log.find((l) => l.sql.includes("FROM tools"))!;
     expect(q.sql).toContain("last_checked_at IS NULL OR last_checked_at <");
     expect(q.sql).toContain("last_attempt_at IS NULL OR last_attempt_at <");
+    expect(q.sql).toContain("source_urls IS NOT NULL AND source_urls != '[]'"); // tools with no source page never take a slot
     expect(q.sql).toContain("ORDER BY COALESCE(last_checked_at, '') ASC");
     expect(q.args).toEqual([`-${RECHECK_AFTER_DAYS} days`, `-${RETRY_AFTER_DAYS} days`, MAX_RECHECKS_PER_RUN]);
     expect(MAX_RECHECKS_PER_RUN).toBeLessThanOrEqual(10); // stays within a Worker's subrequest budget
@@ -105,5 +106,22 @@ describe("markToolAttempt", () => {
     const { env, log } = makeEnv();
     await markToolAttempt(env, "acme.com");
     expect(log[0].sql).not.toContain("last_check_note");
+  });
+});
+
+describe("runDueRechecks with bad stored data", () => {
+  it("notes and skips a tool whose source list is malformed, and still handles the next tool and the run", async () => {
+    const bad = { id: 1, domain: "bad.com", source_urls: "{not json", last_checked_at: null, last_check_note: null };
+    const good = { id: 2, domain: "good.com", source_urls: JSON.stringify(["https://good.com/p"]), last_checked_at: null, last_check_note: null };
+    const { env, log } = makeEnv([bad, good]);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
+    await expect(runDueRechecks(env)).resolves.toBeUndefined();
+    vi.unstubAllGlobals();
+
+    const skipped = log.find((l) => l.sql.includes("last_check_note = ?") && String(l.args[0]).includes("no usable source page"));
+    expect(skipped!.args[1]).toBe("bad.com");
+    const attempted = log.filter((l) => l.sql.startsWith("UPDATE tools SET last_attempt_at") && l.args[l.args.length - 1] === "good.com");
+    expect(attempted.length).toBeGreaterThan(0); // the next tool was still processed
   });
 });

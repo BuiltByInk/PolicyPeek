@@ -95,7 +95,7 @@ interface PublishedToolRow {
 // and does NOT advance it (see evaluateAutoPublish's isRecheck branch).
 export const RECHECK_AFTER_DAYS = 30;
 export const RETRY_AFTER_DAYS = 3;
-export const MAX_RECHECKS_PER_RUN = 5;
+export const MAX_RECHECKS_PER_RUN = 3;
 export const OVERDUE_ALERT_DAYS = 60;
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)";
@@ -104,6 +104,7 @@ export async function runDueRechecks(env: Env): Promise<void> {
   const { results } = await env.DB.prepare(
     `SELECT id, domain, source_urls, last_checked_at, last_check_note FROM tools
      WHERE verified = 1
+       AND source_urls IS NOT NULL AND source_urls != '[]'
        AND (last_checked_at IS NULL OR last_checked_at < ${NOW})
        AND (last_attempt_at IS NULL OR last_attempt_at < ${NOW})
      ORDER BY COALESCE(last_checked_at, '') ASC
@@ -116,8 +117,19 @@ export async function runDueRechecks(env: Env): Promise<void> {
   let failed = 0;
 
   for (const tool of results) {
-    const sourceUrl = (JSON.parse(tool.source_urls || "[]") as string[])[0];
-    if (!sourceUrl) continue;
+    // One tool with bad stored data must not abort the whole run (or the
+    // Monday alert below): note it and move on.
+    let sourceUrl: string | undefined;
+    try {
+      const first = (JSON.parse(tool.source_urls || "[]") as unknown[])[0];
+      sourceUrl = typeof first === "string" ? first : undefined;
+    } catch {
+      sourceUrl = undefined;
+    }
+    if (!sourceUrl) {
+      await markToolAttempt(env, tool.domain, "recheck skipped: no usable source page recorded").catch(() => {});
+      continue;
+    }
 
     // Mark the attempt BEFORE the slow work, so a crash or timeout mid-way
     // can't leave this tool at the front of the queue forever.
@@ -153,7 +165,8 @@ export async function runDueRechecks(env: Env): Promise<void> {
         sharedDomain,
         fetched.sourcedFromArchive,
         cleanedText,
-        fetched.redirectedOffDomainTo
+        fetched.redirectedOffDomainTo,
+        true // scheduled recheck: may write attempt bookkeeping on the tool
       );
       ok++;
     } catch (err) {

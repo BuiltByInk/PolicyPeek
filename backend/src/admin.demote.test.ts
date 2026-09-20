@@ -8,6 +8,7 @@ interface Tool {
   compliance_status: string;
   trains_on_user_data: number | null;
   opt_out_available: number | null;
+  summary?: string | null;
 }
 
 function makeEnv(tool: Tool | null, { changes = 1 }: { changes?: number } = {}) {
@@ -40,7 +41,7 @@ function makeEnv(tool: Tool | null, { changes = 1 }: { changes?: number } = {}) 
 const req = (body: unknown) =>
   new Request("https://x/v1/admin/tools/5/demote", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) });
 
-const compliant: Tool = { id: 5, domain: "notion.com", compliance_status: "compliant", trains_on_user_data: 0, opt_out_available: null };
+const compliant: Tool = { id: 5, domain: "notion.com", compliance_status: "compliant", trains_on_user_data: 0, opt_out_available: null, summary: "We do not process Workspace API user data to train models." };
 
 describe("handleDemote", () => {
   it("demotes to unrated, clears the training facts, and records the reason and old values", async () => {
@@ -60,6 +61,7 @@ describe("handleDemote", () => {
     expect(audit.args[1]).toBe("compliant");
     expect(String(audit.args[2])).toContain("demoted by admin: Stored clause covers only Google Workspace API data");
     expect(String(audit.args[2])).toContain("was compliant, trains=0, opt_out=null");
+    expect(String(audit.args[2])).toContain('summary="We do not process Workspace API user data'); // the removed summary is kept in the audit note
   });
 
   it("requires a reason (missing, blank, wrong type or malformed body)", async () => {

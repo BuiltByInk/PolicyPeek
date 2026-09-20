@@ -29,7 +29,10 @@ cd ~/policypeek/backend
 # 1a. Is it already applied? (read-only)
 npx wrangler d1 execute policypeek-db --remote \
   --command "SELECT sql FROM sqlite_master WHERE name='tools'"
-#     -> if the compliance_status CHECK list contains 'not_ai_tool', SKIP 1b-1c.
+#     -> if the CHECK list contains 'not_ai_tool', the FIRST migration in 1c is already applied,
+#        but the second (last-checked) may not be: check that separately with
+#        npx wrangler d1 execute policypeek-db --remote --command "SELECT last_checked_at FROM tools LIMIT 1"
+#        (an error 'no such column' means it still needs applying). Still do 1b (back up) first.
 
 # 1b. Back up first
 npx wrangler d1 export policypeek-db --remote --output ../backups/policypeek-db-pre-not-ai-tool-2026-09-19.sql

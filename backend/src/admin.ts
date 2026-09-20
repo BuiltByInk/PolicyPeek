@@ -339,7 +339,7 @@ export async function handleDemote(request: Request, env: Env, id: number): Prom
   }
 
   const tool = await env.DB.prepare(
-    "SELECT id, domain, compliance_status, trains_on_user_data, opt_out_available FROM tools WHERE id = ?"
+    "SELECT id, domain, compliance_status, trains_on_user_data, opt_out_available, summary FROM tools WHERE id = ?"
   )
     .bind(id)
     .first<{
@@ -348,6 +348,7 @@ export async function handleDemote(request: Request, env: Env, id: number): Prom
       compliance_status: string;
       trains_on_user_data: number | null;
       opt_out_available: number | null;
+      summary: string | null;
     }>();
   if (!tool) {
     return Response.json({ error: "tool_not_found" }, { status: 404 });
@@ -369,7 +370,8 @@ export async function handleDemote(request: Request, env: Env, id: number): Prom
     return Response.json({ error: "status_changed_meanwhile" }, { status: 409 });
   }
 
-  const was = `was ${tool.compliance_status}, trains=${tool.trains_on_user_data ?? "null"}, opt_out=${tool.opt_out_available ?? "null"}`;
+  const oldSummary = cleanText(tool.summary, 120);
+  const was = `was ${tool.compliance_status}, trains=${tool.trains_on_user_data ?? "null"}, opt_out=${tool.opt_out_available ?? "null"}${oldSummary ? `, summary="${oldSummary}"` : ""}`;
   await env.DB.prepare("INSERT INTO compliance_changelog (tool_id, old_status, new_status, note) VALUES (?, ?, 'unrated', ?)")
     .bind(tool.id, tool.compliance_status, `demoted by admin: ${reason} (${was})`)
     .run();

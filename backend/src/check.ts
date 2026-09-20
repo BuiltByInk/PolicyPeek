@@ -172,6 +172,32 @@ export function sourceHostChanged(storedSourceUrlsJson: string | null, newSource
   }
 }
 
+// Returns the new source URL (without its fragment) when it is not the same
+// page as the first stored source URL, else null. Ignores a leading www., a
+// trailing slash, letter case in the host and the fragment. A missing or
+// unparseable stored value fails closed (counts as changed).
+export function sourceUrlChanged(storedSourceUrlsJson: string | null, newSourceUrl: string): string | null {
+  const normalise = (u: string): string => {
+    const x = new URL(u);
+    return `${x.hostname.toLowerCase().replace(/^www\./, "")}${x.pathname.replace(/\/+$/, "")}${x.search}`;
+  };
+  let shown: string;
+  try {
+    const x = new URL(newSourceUrl);
+    x.hash = "";
+    shown = x.toString();
+  } catch {
+    return null;
+  }
+  try {
+    const stored = (JSON.parse(storedSourceUrlsJson || "[]") as unknown[])[0];
+    if (typeof stored !== "string") return shown;
+    return normalise(stored) === normalise(newSourceUrl) ? null : shown;
+  } catch {
+    return shown;
+  }
+}
+
 // For a brand-new domain: the policy should normally sit on the domain itself
 // (or its www.). A source on some other host, such as a tenant subdomain of a
 // multi-tenant site (yourname.substack.com submitted as domain substack.com),
@@ -207,11 +233,18 @@ export async function runExtraction(
   sharedDomain: boolean,
   sourcedFromArchive: boolean,
   rawText: string,
-  redirectedOffDomainTo: string | null = null
+  redirectedOffDomainTo: string | null = null,
+  // True only when the daily recheck job is the caller. Only the job may write
+  // attempt bookkeeping onto a published tool: a public submission for a
+  // published domain must not be able to stamp a note on it or push it into
+  // the recheck back-off. (2026-09-19 third review, M-1.)
+  scheduledRecheck: boolean = false
 ): Promise<void> {
+  const noteAttempt = (message: string): Promise<void> =>
+    scheduledRecheck ? markToolAttempt(env, domain, message) : Promise.resolve();
   if (!env.ANTHROPIC_API_KEY) {
     await recordExtractionError(env, pendingId, "ANTHROPIC_API_KEY not configured");
-    await markToolAttempt(env, domain, "recheck failed: extraction key not configured");
+    await noteAttempt("recheck failed: extraction key not configured");
     return;
   }
 
@@ -226,7 +259,7 @@ export async function runExtraction(
   } catch (err) {
     const message = String(err instanceof Error ? err.message : err);
     await recordExtractionError(env, pendingId, message);
-    await markToolAttempt(env, domain, `recheck failed: ${message}`);
+    await noteAttempt(`recheck failed: ${message}`);
     return;
   }
 
@@ -237,7 +270,7 @@ export async function runExtraction(
   // uses to surface a queued row in GET /v1/admin/pending).
   if (redirectedOffDomainTo) {
     await recordExtractionError(env, pendingId, `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`);
-    await markToolAttempt(env, domain, `awaiting review: the policy page redirected to ${redirectedOffDomainTo}`);
+    await noteAttempt(`awaiting review: the policy page redirected to ${redirectedOffDomainTo}`);
     return;
   }
 
@@ -282,8 +315,20 @@ export async function runExtraction(
     const changedHost = freshExisting ? sourceHostChanged(freshExisting.source_urls, sourceUrl) : null;
     if (changedHost) {
       await recordExtractionError(env, pendingId, `queued_for_review: the source page host (${changedHost}) differs from the published entry's source -- never auto-published`);
-      await markToolAttempt(env, domain, `awaiting review: the source page moved to ${changedHost}`);
+      await noteAttempt(`awaiting review: the source page moved to ${changedHost}`);
       return;
+    }
+    // A PUBLIC resubmission of a published tool may only refresh it from the
+    // exact page it was published from. A different page, even on the same
+    // host, could replace the stored summary and source link with whatever that
+    // page says, so it queues for review instead. (The daily job always uses
+    // the stored URL, so it is unaffected.) (2026-09-19 third review, M-2.)
+    if (freshExisting && !scheduledRecheck) {
+      const changedPage = sourceUrlChanged(freshExisting.source_urls, sourceUrl);
+      if (changedPage) {
+        await recordExtractionError(env, pendingId, `queued_for_review: a submission for an already-published tool used a different page (${changedPage}) than its published source -- never auto-published`);
+        return;
+      }
     }
     // Same idea for a first publish: only a source on the domain itself
     // auto-publishes. (2026-09-19 re-review, residual H2.)
@@ -303,7 +348,7 @@ export async function runExtraction(
       // A recheck that can't confirm the published entry by itself (for
       // example the verdict would change): keep the reason on the tool so
       // "last checked" isn't advanced and the review queue has context.
-      await markToolAttempt(env, domain, `awaiting review: ${decision.reason}`);
+      await noteAttempt(`awaiting review: ${decision.reason}`);
     }
 
     if (decision.eligible) {
@@ -330,13 +375,13 @@ export async function runExtraction(
         // same way a genuine verdict-flip would, rather than risking an
         // unreviewed publish or silently dropping this submission.
         await recordExtractionError(env, pendingId, "auto_publish_raced: another concurrent submission changed this domain's row first; queued for manual review instead of risking an unreviewed verdict");
-        await markToolAttempt(env, domain, "awaiting review: another update changed this entry at the same time");
+        await noteAttempt("awaiting review: another update changed this entry at the same time");
       }
     }
   } catch (err) {
     const reason = String(err instanceof Error ? err.message : err);
     await recordExtractionError(env, pendingId, `auto_publish_failed: ${reason}`);
-    await markToolAttempt(env, domain, `recheck failed: ${reason}`).catch(() => {});
+    await noteAttempt(`recheck failed: ${reason}`).catch(() => {});
   }
 }
 
