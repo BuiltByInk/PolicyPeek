@@ -221,11 +221,13 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
       if (!DOMAIN_RE.test(domain)) return show("error", "That doesn't look like a website name. Enter it like example.com.", domainInput);
       if (!sourceInput.value.trim()) return show("error", "Paste a link to the tool's privacy policy.", sourceInput);
       if (!sourceUrl) return show("error", "That doesn't look like a link. Paste the address of the privacy policy page.", sourceInput);
+      // Whether the policy link belongs to the website is left to the API
+      // (source_url_domain_mismatch below). A copy of that rule here didn't know
+      // the API's short list of approved policy sites on another domain (e.g.
+      // bolt.new -> stackblitz.com) and refused links the API accepts. A
+      // mismatch costs nothing: the API gives the daily check straight back.
       let sourceHost = "";
       try { sourceHost = new URL(sourceUrl).hostname.toLowerCase(); } catch { /* checked above */ }
-      if (sourceHost !== domain && !sourceHost.endsWith("." + domain)) {
-        return show("error", `The policy link has to be on ${domain} (or one of its subpages). This one is on ${sourceHost}.`, sourceInput);
-      }
       // Show the cleaned-up values so what we send is what they see.
       domainInput.value = domain;
       sourceInput.value = sourceUrl;
@@ -237,8 +239,10 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
       status.setAttribute("aria-busy", "true");
       show("", "Checking the policy page. This can take up to a minute.");
 
+      // The API's slowest legitimate path (page timeout, then the web-archive
+      // fallback) can take about a minute, so give it room before giving up.
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 60_000);
+      const timer = setTimeout(() => ctrl.abort(), 90_000);
       try {
         const res = await fetch(`${apiBase}/v1/check`, {
           method: "POST",
@@ -268,11 +272,16 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
         } else if (err === "invalid_domain") {
           show("error", "That doesn't look like a website name. Enter it like example.com.", domainInput);
         } else if (err === "source_url_domain_mismatch") {
-          show("error", `The policy link has to be on ${domain} (or one of its subpages).`, sourceInput);
+          show("error", `The policy link has to be on ${domain} (or one of its subpages). This one is on ${sourceHost}.`, sourceInput);
         } else if (err === "missing_source_url" || err === "invalid_source_url") {
           show("error", "That doesn't look like a link. Paste the address of the privacy policy page.", sourceInput);
+        } else if (err === "blocked_url" && body?.reason === "dns_resolution_failed") {
+          // Our own safety lookup of the address failed: a hiccup on our side, not a bad link.
+          show("error", "We couldn't look up that website just now. Nothing was used up. Try again in a moment.");
         } else if (err === "blocked_url") {
           show("error", "We can't open that link. Use the public address of the privacy policy page.", sourceInput);
+        } else if (err === "fetch_failed" && body?.reason === "no_readable_text") {
+          show("error", "That page opened but had no text we could read. It may only show its content with JavaScript. Try a different link to the same policy, for example a printable version.", sourceInput);
         } else if (res.status === 502 || err === "fetch_failed") {
           show("error", "We couldn't open that policy page. Check the link works in your browser. Some sites also block automated checks.", sourceInput);
         } else if (res.status === 400) {
@@ -283,7 +292,7 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
       } catch (e) {
         const timedOut = e instanceof DOMException && e.name === "AbortError";
         show("error", timedOut
-          ? "That's taking longer than expected. Wait a minute, then try again."
+          ? "That's taking longer than expected, but the check may still finish. Please don't submit it again yet. A second submission today may be refused."
           : "We couldn't reach the checking service. Check your connection and try again.");
       } finally {
         clearTimeout(timer);
