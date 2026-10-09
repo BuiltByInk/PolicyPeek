@@ -14,6 +14,13 @@ interface WaybackAvailableResponse {
   };
 }
 
+// The availability lookup had no timeout, so a slow archive.org could hold a
+// POST /v1/check open past the website form's own client timeout: the visitor
+// saw an error while their daily check was still in use. Same bound as the
+// DNS check in ssrf.ts plus margin; the snapshot fetch itself goes through
+// safeFetchText, which has its own per-hop timeout.
+const AVAILABILITY_TIMEOUT_MS = 10_000;
+
 export interface WaybackResult {
   text: string;
   archivedUrl: string;
@@ -26,7 +33,9 @@ export interface WaybackResult {
 export async function tryWaybackFallback(sourceUrl: string): Promise<WaybackResult | null> {
   let snapshotUrl: string;
   try {
-    const res = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(sourceUrl)}`);
+    const res = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(sourceUrl)}`, {
+      signal: AbortSignal.timeout(AVAILABILITY_TIMEOUT_MS),
+    });
     if (!res.ok) return null;
     const data = (await res.json()) as WaybackAvailableResponse;
     const closest = data.archived_snapshots?.closest;
