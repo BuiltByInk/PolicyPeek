@@ -79,8 +79,10 @@ let pages: Record<string, () => Response> = {};
 let factsByDomain: Record<string, ExtractedFacts> = {};
 let dohDown = false;
 
-const policyHtml = (words: string) =>
-  `<html><head><title>Privacy</title></head><body><main><h1>Privacy policy</h1><p>${words}</p></main></body></html>`;
+// Padded past THIN_CONTENT_CHARS so an ordinary fixture page isn't "thin".
+const FILLER = " We describe here how personal data is collected, used, stored and shared.".repeat(20);
+const policyHtml = (words: string, filler = FILLER) =>
+  `<html><head><title>Privacy</title></head><body><main><h1>Privacy policy</h1><p>${words}${filler}</p></main></body></html>`;
 
 function fakeFetch(input: RequestInfo | URL): Promise<Response> {
   const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
@@ -156,6 +158,7 @@ function makeWorld() {
 
   return {
     db,
+    env,
     submit: (body: unknown, ip?: string) =>
       call("/v1/check", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" }, ip }),
     lookup: (domain: string) => call(`/v1/lookup?domain=${encodeURIComponent(domain)}`),
@@ -248,7 +251,10 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
       [{ domain: "acme.com" }, "missing_source_url"],
       [{ domain: "acme.com", source_url: "not a url" }, "invalid_source_url"],
       [{ domain: "acme.com", source_url: "https://evil-acme.com/privacy" }, "source_url_domain_mismatch"],
-      [{ domain: "app.acme.com", source_url: "https://acme.com/privacy" }, "source_url_domain_mismatch"],
+      [{ domain: "app.acme.com", source_url: "https://other.com/privacy" }, "source_url_domain_mismatch"],
+      // A hosting tenant's "parent" is a public suffix, never accepted (Public Suffix List).
+      [{ domain: "someapp.vercel.app", source_url: "https://vercel.app/privacy" }, "source_url_domain_mismatch"],
+      [{ domain: "a.someapp.vercel.app", source_url: "https://other.vercel.app/privacy" }, "source_url_domain_mismatch"],
       [[], "invalid_json"],
     ];
     for (const [body, error] of cases) {
@@ -343,20 +349,124 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect((w.db.prepare("SELECT COUNT(*) AS n FROM compliance_changelog").get() as { n: number }).n).toBe(changelogBefore);
   });
 
-  it("duplicate submission while the first is still waiting for a person: both are queued (current behaviour, see DECISIONS_NEEDED.md)", async () => {
+  // Decision 1 (2026-10-09): a new tool already waiting in the queue reuses that row.
+  it("duplicate submission while the first is still waiting for a person: reuses the row, no LLM call, daily check not used", async () => {
+    const w = makeWorld();
+    sitePolicy("goodtool.io", "https://goodtool.io/privacy", COMPLIANT);
+    const first = await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.1");
+    const { extractFacts } = await import("./extraction");
+    const llmCalls = vi.mocked(extractFacts).mock.calls.length;
+    const fetches = vi.mocked(fetch).mock.calls.length;
+
+    const again = await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.2");
+    expect(again.status).toBe(202);
+    expect(again.body).toMatchObject({ pending_check_id: first.body.pending_check_id, status: "already_queued", already_queued: true, is_recheck: false });
+    expect(vi.mocked(extractFacts).mock.calls.length).toBe(llmCalls);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(fetches); // not even the page fetch
+    expect(w.pendingRows()).toHaveLength(1);
+    // Only the first visitor's check was used; the second can still check something else today.
+    expect(w.slotsUsed()).toBe(1);
+    sitePolicy("acme-ai.com", "https://acme-ai.com/privacy", NOT_COMPLIANT);
+    expect((await w.submit({ domain: "acme-ai.com", source_url: "https://acme-ai.com/privacy" }, "203.0.113.2")).status).toBe(202);
+  });
+
+  it("duplicate reuse also covers a row still being extracted, but not one whose extraction failed", async () => {
+    const w = makeWorld();
+    w.db.prepare("INSERT INTO pending_checks (domain, source_url, status) VALUES ('busy.ai', 'https://busy.ai/p', 'pending')").run();
+    const reused = await w.submit({ domain: "busy.ai", source_url: "https://busy.ai/p" });
+    expect(reused.body).toMatchObject({ already_queued: true, pending_check_id: 1 });
+
+    w.db.prepare("INSERT INTO pending_checks (domain, source_url, status, extraction_error) VALUES ('broken.ai', 'https://broken.ai/p', 'pending', 'model timeout')").run();
+    sitePolicy("broken.ai", "https://broken.ai/p", NOT_COMPLIANT);
+    const fresh = await w.submit({ domain: "broken.ai", source_url: "https://broken.ai/p" }, "203.0.113.9");
+    expect(fresh.status).toBe(202);
+    expect(fresh.body.already_queued).toBeUndefined();
+    expect((await w.lookup("broken.ai")).body.compliance_status).toBe("not_compliant");
+  });
+
+  it("duplicate reuse does not apply once the domain is published or its queued row was rejected", async () => {
     const w = makeWorld();
     sitePolicy("goodtool.io", "https://goodtool.io/privacy", COMPLIANT);
     await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.1");
-    const again = await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.2");
-    expect(again.status).toBe(202);
-    expect(again.body.is_recheck).toBe(false);
+    w.db.prepare("UPDATE pending_checks SET status = 'rejected'").run();
+    const afterReject = await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.2");
+    expect(afterReject.body.already_queued).toBeUndefined();
+    expect(w.pendingRows()).toHaveLength(2);
 
-    const queue = (await w.pending()).body.pending_checks;
-    expect(queue).toHaveLength(2);
-    // Approving either one publishes; approving the other afterwards is a same-verdict no-op update.
-    expect((await w.approve(queue[0].id)).status).toBe(200);
-    expect((await w.approve(queue[1].id)).status).toBe(200);
-    expect((w.db.prepare("SELECT COUNT(*) AS n FROM tools").get() as { n: number }).n).toBe(1);
+    await w.approve(2);
+    const afterPublish = await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" }, "203.0.113.3");
+    expect(afterPublish.body).toMatchObject({ is_recheck: true });
+    expect(afterPublish.body.already_queued).toBeUndefined();
+  });
+
+  // Decision 2 (2026-10-09): subdomain site, policy on the parent site.
+  it("subdomain site with its policy on the parent site: accepted, held for review even with an unfavourable verdict, approve publishes it", async () => {
+    const w = makeWorld();
+    sitePolicy("app.acme.com", "https://acme.com/privacy", NOT_COMPLIANT);
+
+    const res = await w.submit({ domain: "app.acme.com", source_url: "https://acme.com/privacy" });
+    expect(res.status).toBe(202);
+    expect((await w.lookup("app.acme.com")).status).toBe(404);
+
+    const row = (await w.pending()).body.pending_checks[0];
+    expect(row.status).toBe("extracted");
+    expect(row.queue_reason).toContain("parent site (acme.com)");
+    expect(row.queue_reason).toContain("never auto-published");
+    expect((await w.approve(row.id)).body).toMatchObject({ domain: "app.acme.com", compliance_status: "not_compliant" });
+  });
+
+  it("parent-site policy stays held on a later resubmission of the same page after it was published", async () => {
+    const w = makeWorld();
+    sitePolicy("app.acme.com", "https://www.acme.com/legal/privacy", NOT_COMPLIANT);
+    await w.submit({ domain: "app.acme.com", source_url: "https://www.acme.com/legal/privacy" }, "203.0.113.1");
+    await w.approve(1);
+    const updatedAt = (w.db.prepare("SELECT updated_at FROM tools").get() as { updated_at: string }).updated_at;
+
+    factsByDomain["app.acme.com"] = COMPLIANT; // the page now says something else
+    const again = await w.submit({ domain: "app.acme.com", source_url: "https://www.acme.com/legal/privacy" }, "203.0.113.2");
+    expect(again.body.is_recheck).toBe(true);
+    expect((await w.lookup("app.acme.com")).body.compliance_status).toBe("not_compliant");
+    expect((w.db.prepare("SELECT updated_at FROM tools").get() as { updated_at: string }).updated_at).toBe(updatedAt);
+    expect(w.pendingRows()[1].extraction_error).toContain("parent site");
+  });
+
+  it("parent-site policy is held by the daily recheck job too", async () => {
+    const { runDueRechecks } = await import("./cron");
+    const w = makeWorld();
+    sitePolicy("app.acme.com", "https://acme.com/privacy", NOT_COMPLIANT);
+    await w.submit({ domain: "app.acme.com", source_url: "https://acme.com/privacy" });
+    await w.approve(1);
+    w.db.prepare("UPDATE tools SET last_checked_at = '2020-01-01T00:00:00.000Z', last_attempt_at = NULL").run();
+
+    await runDueRechecks(w.env);
+    const rows = w.pendingRows();
+    expect(rows).toHaveLength(2);
+    expect(rows[1].extraction_error).toContain("parent site (acme.com)");
+    expect(rows[1].status).toBe("extracted");
+  });
+
+  // Decision 4 (2026-10-09): thin pages are accepted, flagged and held.
+  it("thin page (just a cookie banner): accepted, held for review even with a clear verdict, flagged thin_content in the queue", async () => {
+    const w = makeWorld();
+    dns["thin.ai"] = ["93.184.216.34"];
+    pages["https://thin.ai/privacy"] = () =>
+      new Response(policyHtml("[thin.ai] We use cookies to improve your experience. Accept all cookies?", ""), { status: 200 });
+    factsByDomain["thin.ai"] = NOT_COMPLIANT;
+
+    const res = await w.submit({ domain: "thin.ai", source_url: "https://thin.ai/privacy" });
+    expect(res.status).toBe(202);
+    expect((await w.lookup("thin.ai")).status).toBe(404);
+    const row = (await w.pending()).body.pending_checks[0];
+    expect(row.thin_content).toBe(true);
+    expect(row.queue_reason).toMatch(/^queued_for_review: thin content \(\d+ characters/);
+    expect(w.slotsUsed()).toBe(1); // accepted, so it counts as the day's check
+  });
+
+  it("an ordinary-length page is not flagged thin_content", async () => {
+    const w = makeWorld();
+    sitePolicy("goodtool.io", "https://goodtool.io/privacy", COMPLIANT);
+    await w.submit({ domain: "goodtool.io", source_url: "https://goodtool.io/privacy" });
+    expect((await w.pending()).body.pending_checks[0].thin_content).toBe(false);
   });
 
   it("rate limit: second check from the same client the same day is refused with 429, a reset time and Retry-After", async () => {

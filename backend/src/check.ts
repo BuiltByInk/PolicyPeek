@@ -1,11 +1,11 @@
 import type { Env } from "./index";
 import { isValidDomain } from "./lookup";
-import { isPublicSuffix } from "./domainUtil";
+import { isPublicSuffix, registrableDomain } from "./domainUtil";
 import { cleanText } from "./textUtil";
 import { safeFetchTextWithFinalUrl, SsrfBlockedError } from "./ssrf";
 import { extractFacts, type ExtractedFacts } from "./extraction";
 import { getClientIp, resolveTier, type Tier } from "./auth";
-import { cleanHtmlToText } from "./htmlClean";
+import { cleanHtmlToText, isThinContent } from "./htmlClean";
 import { tryReserveDailySlot, releaseDailySlot } from "./rateLimit";
 import { isKnownSharedDomain } from "./sharedDomains";
 import { allowedCrossDomainSource } from "./crossDomainSources";
@@ -94,6 +94,25 @@ export function isSourceHostAllowedForDomain(sourceHost: string, domain: string)
   }
 
   return false;
+}
+
+// A submitted subdomain whose policy lives on its parent site, e.g. website
+// app.acme.com with the policy at acme.com/privacy (or www./legal.acme.com).
+// Accepted at submit time, but the parent's policy isn't proven to cover this
+// particular product, so runExtraction always holds it for a person and it
+// never auto-publishes, on first submission or any later recheck. (2026-10-09,
+// Elliot's ruling, item 2 of the submit-flow questions in DECISIONS_NEEDED.md.)
+// Bounded by the registrable domain (Public Suffix List, private section
+// included), so a tenant like someapp.vercel.app can't reach vercel.app or
+// another tenant. Returns the source host, or null when the source isn't on
+// the parent (including when it is already on the domain itself).
+export function parentDomainSourceHost(sourceHost: string, domain: string): string | null {
+  const host = sourceHost.toLowerCase();
+  const d = domain.toLowerCase();
+  if (host === d || host.endsWith(`.${d}`)) return null;
+  const parent = registrableDomain(d);
+  if (!parent || parent === d) return null;
+  return host === parent || host.endsWith(`.${parent}`) ? host : null;
 }
 
 export interface FetchedPolicy {
@@ -263,6 +282,26 @@ export async function runExtraction(
     return;
   }
 
+  // Policy on the parent site of a submitted subdomain: always a person's call.
+  // Checked before the redirect rule because fetchPolicyText reports the
+  // parent host itself as "off the domain"; a redirect that went somewhere
+  // else again is added to the reason.
+  let parentHost: string | null = null;
+  try {
+    parentHost = parentDomainSourceHost(new URL(sourceUrl).hostname, domain);
+  } catch {
+    parentHost = null;
+  }
+  if (parentHost) {
+    const alsoRedirected =
+      redirectedOffDomainTo && redirectedOffDomainTo !== parentHost && !redirectedOffDomainTo.endsWith(`.${registrableDomain(domain)}`)
+        ? `; the fetch was also redirected to ${redirectedOffDomainTo}`
+        : "";
+    await recordExtractionError(env, pendingId, `queued_for_review: the policy is on the parent site (${parentHost}), not on ${domain} itself${alsoRedirected} -- held for manual review, never auto-published`);
+    await noteAttempt(`awaiting review: the policy is on the parent site ${parentHost}`);
+    return;
+  }
+
   // A redirect carried the fetch off the submitted domain (2026-09-19,
   // Elliot's ruling: option B in DECISIONS_NEEDED.md). The extracted facts
   // are kept, but this never auto-publishes -- a human sees it first, with
@@ -271,6 +310,14 @@ export async function runExtraction(
   if (redirectedOffDomainTo) {
     await recordExtractionError(env, pendingId, `queued_for_review: the policy text came from a different domain after a redirect (${redirectedOffDomainTo}) -- never auto-published`);
     await noteAttempt(`awaiting review: the policy page redirected to ${redirectedOffDomainTo}`);
+    return;
+  }
+
+  // Thin content (see THIN_CONTENT_CHARS): kept for a person, never published
+  // on its own. The queue listing also flags it from the stored text length.
+  if (isThinContent(rawText)) {
+    await recordExtractionError(env, pendingId, `queued_for_review: thin content (${rawText.length} characters of readable text) -- held for manual review, never auto-published`);
+    await noteAttempt(`awaiting review: thin content (${rawText.length} characters)`);
     return;
   }
 
@@ -493,9 +540,40 @@ async function processCheck(
   // fetched -- but it would still be stored and later shown as a source link.
   parsedSource.hash = "";
   const sourceUrl = parsedSource.toString();
-  // Belt-and-suspenders: see isSourceHostAllowedForDomain's comment.
-  if (!isSourceHostAllowedForDomain(parsedSource.hostname, domain)) {
+  // Belt-and-suspenders: see isSourceHostAllowedForDomain's comment. The one
+  // addition is a submitted subdomain's parent site, which is always held for
+  // review (parentDomainSourceHost).
+  if (
+    !isSourceHostAllowedForDomain(parsedSource.hostname, domain) &&
+    !parentDomainSourceHost(parsedSource.hostname, domain)
+  ) {
     return failed(Response.json({ error: "source_url_domain_mismatch" }, { status: 400 }));
+  }
+
+  // A new tool that is already in the queue (2026-10-09, Elliot's ruling, item
+  // 1 of the submit-flow questions in DECISIONS_NEEDED.md): reuse that row. No
+  // fetch, no LLM call, no second row, and the caller's daily check is given
+  // back (failed() releases the slot; the 202 itself is not an error). Only for
+  // a domain with no published entry (a published one is a recheck, unchanged),
+  // and only rows still waiting: a row whose extraction failed doesn't block a
+  // fresh submission. Two submissions racing past this read can still both be
+  // queued; the auto-publish path already handles that race.
+  const waiting = await env.DB.prepare(
+    `SELECT id FROM pending_checks
+     WHERE domain = ?
+       AND (status = 'extracted' OR (status = 'pending' AND extraction_error IS NULL))
+       AND NOT EXISTS (SELECT 1 FROM tools WHERE tools.domain = pending_checks.domain)
+     ORDER BY id LIMIT 1`
+  )
+    .bind(domain)
+    .first<{ id: number }>();
+  if (waiting) {
+    return failed(
+      Response.json(
+        { pending_check_id: waiting.id, domain, status: "already_queued", already_queued: true, is_recheck: false },
+        { status: 202 }
+      )
+    );
   }
 
   let fetched: FetchedPolicy;

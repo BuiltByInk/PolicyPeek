@@ -12,3 +12,10 @@ const OPTIONS = { allowPrivateDomains: true } as const;
 export function isPublicSuffix(host: string): boolean {
   return getDomain(host.toLowerCase(), OPTIONS) === null;
 }
+
+// The registrable domain ("eTLD+1") a host belongs to: app.acme.co.uk ->
+// acme.co.uk, someapp.vercel.app -> someapp.vercel.app. Null for a public
+// suffix itself or anything tldts can't place.
+export function registrableDomain(host: string): string | null {
+  return getDomain(host.toLowerCase(), OPTIONS);
+}
