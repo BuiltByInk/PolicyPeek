@@ -285,6 +285,11 @@ export async function tryAutoPublishAtomic(
   return { toolId, verdict, published: true };
 }
 
+// Deliberately no status check (2026-10-09, Elliot's ruling, item 3 of the
+// submit-flow questions in DECISIONS_NEEDED.md): approving an already-approved
+// row re-publishes it from that row's facts (the deploy runbook's hancocyber.com
+// re-approve relies on this to apply a rule change), and approving a rejected
+// row publishes it (a change of mind). Both are intentional; don't add a guard.
 export async function handleApprove(env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
     `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url
