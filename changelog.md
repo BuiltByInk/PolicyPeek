@@ -12,6 +12,33 @@ real record, not an empty log.
 
 ---
 
+## 2026-10-09, later (Elliot's rulings on the submit-flow questions, same branch, not deployed)
+
+Elliot answered the five questions from the pass below (`DECISIONS_NEEDED.md`,
+row 16, now resolved). Nothing deployed, nothing touched production.
+
+- **Duplicate submissions reuse the queued row** (`check.ts`). A new tool with a
+  row still waiting (extracted, or pending with no error) gets `202` with that
+  row's id and `status: "already_queued"`: no fetch, no LLM call, no second row,
+  and the visitor's daily check is given back. The site form and the extension
+  popup say it's already waiting for review.
+- **Subdomain site, policy on the parent site** (`app.acme.com` with
+  `acme.com/privacy`): accepted (`parentDomainSourceHost` in `check.ts`, bounded
+  by the registrable domain via `tldts`), and always held for review on first
+  submission, later resubmissions and the daily recheck. Never auto-published.
+- **Re-approving approved or rejected rows**: unchanged on purpose; comment
+  above `handleApprove` in `admin.ts` says why.
+- **Thin pages** (under 1,000 characters of readable text, `THIN_CONTENT_CHARS`
+  in `htmlClean.ts`): accepted, held for review with the reason, and every row in
+  `GET /v1/admin/pending` carries `thin_content`. Empty pages are still refused.
+  Test fixtures that used a few words of policy text were padded past the line.
+- **npm audit**: not touched here, now its own open row (17).
+- **Results:** backend 211/211 tests, `tsc` clean (also with the pre-deploy
+  gate's unused-code flags); frontend build 37 pages, browser form test 17/17.
+  The extension change is syntax-checked only (no test harness for the popup).
+
+---
+
 ## 2026-10-09 (submit-flow reliability pass, branch `claude/submit-flow`, not deployed)
 
 Elliot asked for the "submit a new site" flow to be made reliable: trace it,

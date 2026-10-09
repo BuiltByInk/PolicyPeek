@@ -4,7 +4,7 @@ This file holds decisions and questions that are still open or waiting on Elliot
 
 ## What is open right now
 
-Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 security-audit entry, some tracked elsewhere). Rows 8-16 are the entries kept in full below.
+Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 security-audit entry, some tracked elsewhere). Rows 8-17 are the entries kept in full below (row 17 lives inside row 16's entry).
 
 | # | Item | Date | Status | Needed from Elliot |
 |---|---|---|---|---|
@@ -18,18 +18,19 @@ Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 se
 | 8 | JetBrains / Ideogram / Luma AI opt-out correction (plus the two entries that carry its evidence) | 2026-09-13 | Possibly stale, verify. Changelog says approved as `not_compliant` on 2026-09-18; runbook 4b says the write never happened. | Run the read-only check in the status note; if all three are `not_compliant`, tell the docs agent to archive them. |
 | 9 | Adobe Firefly: new evidence | 2026-09-13 | Open. Not in the catalog; held in `scripts/batch-submit.mjs`. | Pick a strategy (see entry 10). |
 | 10 | Adobe Firefly: still unreachable, strategy pick | 2026-09-13 | Open. Three options listed, none chosen. | Choose: different URL, different archive, or accept the gap. |
-| 11 | Domain/policy-link validator too strict on subdomains | 2026-09-17 | [x] **Fixed in source, verified by tests 2026-10-09** (`backend/src/submitFlow.e2e.test.ts`, `frontend/tests/submit-form.test.mjs`): `midjourney.com` + a `docs.midjourney.com` link is accepted end to end. Such a first submission always waits for a person (security review H2), it never auto-publishes. Live site still unverified. The reverse case (website `app.acme.com`, policy on `acme.com`) is still refused: see row 16, item 2. | After the next deploy, submit a subdomain policy link once on the live site; then the docs agent can archive this. |
+| 11 | Domain/policy-link validator too strict on subdomains | 2026-09-17 | [x] **Fixed in source, verified by tests 2026-10-09** (`backend/src/submitFlow.e2e.test.ts`, `frontend/tests/submit-form.test.mjs`): `midjourney.com` + a `docs.midjourney.com` link is accepted end to end. Such a first submission always waits for a person (security review H2), it never auto-publishes. Live site still unverified. The reverse case (website `app.acme.com`, policy on `acme.com`) is now accepted and always held for review (row 16, item 2). | After the next deploy, submit a subdomain policy link once on the live site; then the docs agent can archive this. |
 | 12 | `/about` claim vs. practice; third batch paused | 2026-08-18 | Possibly stale, verify. Copy fixed in source, live site depends on deploy; batches paused by M1. | Say whether the review-integrity fix is enough to reconsider the pause. |
 | 13 | Third research batch, 17 tools, not piped | 2026-08-18 | Open, paused (M1). | Rulings on Devin/Cognition, Perplexity Comet, tier-scoped tools, Kling before anything is submitted. |
 | 14 | Second batch leftovers: Suno, Character.AI | 2026-08-17 | Partly open; both held in `scripts/batch-submit.mjs`. | Pick Suno's identity domain; decide whether Character.AI is worth pursuing. |
 | 15 | IP-based identity for the anonymous daily check cap | 2026-08-15 | Watch item, not blocking. Details partly out of date (see its note). | Revisit when real traffic exists. |
-| 16 | Submit-flow reliability pass: questions only you can answer | 2026-10-09 | Open. Five questions from tracing the submit flow; the clear bugs were fixed on branch `claude/submit-flow` (see `changelog.md`). | Answer items 1-5 in the entry below. |
+| 16 | Submit-flow reliability pass: questions only you can answer | 2026-10-09 | [x] **Resolved 2026-10-09.** Elliot ruled on all five; items 1, 2 and 4 built and tested, item 3 kept as is on purpose (documented in `admin.ts` `handleApprove`), item 5 moved to row 17. Branch `claude/submit-flow`, not deployed. | Nothing (deploy is row 1). |
+| 17 | Frontend `npm audit`: 4 advisories in indirect dependencies | 2026-10-09 | Open. Fails `scripts/predeploy-check.mjs`. Deliberately not touched on `claude/submit-flow` (Elliot, 2026-10-09). | Run `npm audit fix` in `frontend/` as its own change, or approve an agent doing it. |
 
 Pointer: the resolved 2026-09-19 entry "security audit decisions - 1-3 and 6 built locally, 4 is dashboard-only, 5 still unverified" is the top entry of `DECISIONS_ARCHIVE.md`; its items still awaiting Elliot are rows 1-6 above.
 
 ---
 
-## Open (2026-10-09): submit-flow reliability pass, questions for Elliot
+## Ruled (2026-10-09): submit-flow reliability pass, questions for Elliot
 
 Branch `claude/submit-flow`, not merged, not deployed. The submit flow
 (`SubmitTool.astro` -> `POST /v1/check` -> `pending_checks` -> auto-publish or
@@ -65,6 +66,13 @@ cost or dependencies, so they were left as they are:
    `scripts/predeploy-check.mjs` fails on this, so it blocks a deploy. Lockfile
    unchanged by this pass. The fix is `npm audit fix` in `frontend/`, which is
    a dependency upgrade and needs your OK.
+
+> **Elliot's rulings (2026-10-09), built the same day on `claude/submit-flow`, not deployed:**
+> 1. **Built.** A new tool with a row still waiting in the queue (extracted, or pending with no error) reuses that row: `202` with its `pending_check_id`, `status: "already_queued"`, `already_queued: true`; no fetch, no LLM call, no second row, and the visitor's daily check is given back. The site form and the extension say it's already waiting for review. A failed-extraction row, a rejected row or a published domain doesn't trigger it. Two submissions arriving at the same instant can still both be queued.
+> 2. **Built.** A subdomain site with its policy on its parent site (bounded by the registrable domain from the Public Suffix List, so `someapp.vercel.app` can't use `vercel.app`) is accepted and always held for review with the reason "the policy is on the parent site", on first submission, later resubmissions and the daily recheck. It never auto-publishes.
+> 3. **Kept as is, intentionally.** Re-approving an approved row and approving a rejected row both still publish; the runbook's hancocyber.com re-approve relies on the first. Comment added above `handleApprove` in `backend/src/admin.ts`.
+> 4. **Built.** Readable text under 1,000 characters (`THIN_CONTENT_CHARS`, `backend/src/htmlClean.ts`) is accepted but held for review with the reason "thin content (N characters ...)", and every row in `GET /v1/admin/pending` carries `thin_content: true|false`. A page with no text at all is still refused. The 1,000 figure was picked by the agent (a cookie banner is a few hundred characters, real policies are thousands); change the constant if you want another line.
+> 5. **Not touched here**, by instruction. Tracked as row 17.
 
 ---
 
