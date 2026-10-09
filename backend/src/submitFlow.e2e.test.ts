@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { readFileSync } from "node:fs";
 import type { Env } from "./index";
 import type { ExtractedFacts } from "./extraction";
 
@@ -18,9 +17,15 @@ import type { ExtractedFacts } from "./extraction";
 // the policy pages, archive.org) and the LLM call (extractFacts), since both
 // are external services.
 
+// The Node modules are imported through a plain string so the project's
+// tsc (Workers types only, no Node types) doesn't need to resolve them.
+const NODE_FS: string = "node:fs";
+const NODE_SQLITE: string = "node:sqlite";
+const { readFileSync } = (await import(NODE_FS)) as { readFileSync: (path: URL, enc: "utf8") => string };
+
 let DatabaseSync: (new (path: string) => SqliteDb) | null = null;
 try {
-  ({ DatabaseSync } = (await import("node:sqlite")) as unknown as { DatabaseSync: new (path: string) => SqliteDb });
+  ({ DatabaseSync } = (await import(NODE_SQLITE)) as { DatabaseSync: new (path: string) => SqliteDb });
 } catch {
   // Node older than 22.5 has no node:sqlite; the suite below is skipped.
 }
@@ -61,7 +66,7 @@ function d1Over(db: SqliteDb): D1Database {
   } as unknown as D1Database;
 }
 
-const SCHEMA = readFileSync(new URL("../schema.sql", import.meta.url), "utf8");
+const SCHEMA = readFileSync(new URL("../schema.sql", (import.meta as unknown as { url: string }).url), "utf8");
 const ADMIN_TOKEN = "test-admin-token-0123456789abcdef";
 
 // --- fake outside world ------------------------------------------------------
