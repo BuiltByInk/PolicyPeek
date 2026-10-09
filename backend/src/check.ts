@@ -515,6 +515,15 @@ async function processCheck(
   // JS-rendered sites before any real policy prose was reached.
   const cleanedText = cleanHtmlToText(fetched.rawHtml);
 
+  // A page that answered but has no readable text (typically one that builds
+  // itself with JavaScript, which this fetch doesn't run) has nothing to
+  // extract. Queuing it would spend an LLM call on an empty string, use up
+  // the caller's daily check, and leave a row a person can only reject, while
+  // the submitter is told it's being checked. Refuse it like a failed fetch.
+  if (cleanedText === "") {
+    return failed(Response.json({ error: "fetch_failed", reason: "no_readable_text" }, { status: 502 }));
+  }
+
   const isRecheck = await env.DB.prepare("SELECT 1 FROM tools WHERE domain = ?")
     .bind(domain)
     .first();

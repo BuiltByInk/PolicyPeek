@@ -317,6 +317,18 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(w.slotsUsed()).toBe(0);
   });
 
+  it("page that answers but has no readable text: 502 fetch_failed (no_readable_text), nothing queued, check given back", async () => {
+    const w = makeWorld();
+    dns["spa.example"] = ["93.184.216.34"];
+    pages["https://spa.example/privacy"] = () =>
+      new Response(`<html><head><script>window.app()</script></head><body><div id="root"></div></body></html>`, { status: 200 });
+    const res = await w.submit({ domain: "spa.example", source_url: "https://spa.example/privacy" });
+    expect(res.status).toBe(502);
+    expect(res.body).toMatchObject({ error: "fetch_failed", reason: "no_readable_text" });
+    expect(w.pendingRows()).toHaveLength(0);
+    expect(w.slotsUsed()).toBe(0);
+  });
+
   it("duplicate submission of an already-published domain: accepted as a recheck, verdict unchanged, no duplicate audit row", async () => {
     const w = makeWorld();
     sitePolicy("acme-ai.com", "https://acme-ai.com/privacy", NOT_COMPLIANT);
