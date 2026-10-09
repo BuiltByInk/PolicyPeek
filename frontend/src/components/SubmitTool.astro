@@ -256,7 +256,11 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL as string | undefined;
 
         if (res.status === 202) {
           form.reset();
-          if (body.is_recheck) {
+          if (body.already_queued) {
+            // Someone already submitted this tool and it is waiting for a person:
+            // the API reused that check and didn't count this one.
+            show("ok", `${domain} has already been submitted and is waiting for review. Your daily check wasn't used, so you can check another tool today. The browser extension shows the verdict once it's published.`);
+          } else if (body.is_recheck) {
             show("ok", `${domain} is already in the catalog. We're re-checking it now. The list on this site updates the next time the site is refreshed.`);
           } else {
             await waitForVerdict(domain);

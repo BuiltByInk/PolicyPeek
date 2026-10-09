@@ -191,6 +191,24 @@ test("duplicate of a tool already in the catalog is reported as a re-check", { s
   await page.close();
 });
 
+test("a new tool already waiting for review: says so, says the daily check wasn't used, no polling", { skip }, async () => {
+  const { page, calls } = await openForm(() => ({ status: 202, json: { pending_check_id: 7, domain: "goodtool.io", status: "already_queued", already_queued: true, is_recheck: false } }));
+  await submit(page, "goodtool.io", "goodtool.io/privacy");
+  const text = await statusText(page, "already been submitted and is waiting for review");
+  assert.match(text, /daily check wasn't used/);
+  await page.waitForTimeout(3_500); // past when the first poll would have gone out
+  assert.equal(calls.length, 1);
+  await page.close();
+});
+
+test("a subdomain site with its policy on the parent site is sent as typed (the API decides)", { skip }, async () => {
+  const { page, calls } = await openForm((call) => (call.method === "POST" ? accepted("app.acme.com") : { status: 404, json: { error: "not_found" } }));
+  await submit(page, "app.acme.com", "acme.com/privacy");
+  await statusText(page, "Checking app.acme.com now");
+  assert.deepEqual(calls[0].body, { domain: "app.acme.com", source_url: "https://acme.com/privacy" });
+  await page.close();
+});
+
 test("rate limit: own daily check used, with the reset time", { skip }, async () => {
   const { page } = await openForm(() => ({ status: 429, json: { error: "daily_check_limit_reached", resets_at: "2030-01-02T00:00:00.000Z" } }));
   await submit(page, "acme.com", "acme.com/privacy");
