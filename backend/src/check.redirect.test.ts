@@ -17,6 +17,9 @@ vi.mock("./extraction", () => ({
 
 const { runExtraction } = await import("./check");
 
+// Long enough not to count as thin content (THIN_CONTENT_CHARS in htmlClean.ts).
+const POLICY = "policy text ".repeat(100);
+
 function makeEnv(existingTool: { id: number; compliance_status: string; source_urls: string } | null = null) {
   const statements: { sql: string; args: unknown[] }[] = [];
   const env = {
@@ -49,7 +52,7 @@ function makeEnv(existingTool: { id: number; compliance_status: string; source_u
 describe("runExtraction with an off-domain redirect", () => {
   it("does not publish and records why it was queued", async () => {
     const { env, statements } = makeEnv();
-    await runExtraction(env, 42, "acme.com", null, "https://acme.com/redirect", false, false, false, "policy text", "evil.example");
+    await runExtraction(env, 42, "acme.com", null, "https://acme.com/redirect", false, false, false, POLICY, "evil.example");
 
     expect(statements.some((s) => s.sql.includes("INSERT INTO tools") || s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
@@ -60,14 +63,14 @@ describe("runExtraction with an off-domain redirect", () => {
 
   it("still auto-publishes a recheck of a published tool when no redirect left the domain", async () => {
     const { env, statements } = makeEnv({ id: 5, compliance_status: "compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) });
-    await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null);
+    await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
   });
 
   it("queues a favourable first result for a brand-new domain instead of publishing it", async () => {
     const { env, statements } = makeEnv();
-    await runExtraction(env, 44, "acme.com", null, "https://acme.com/privacy", false, false, false, "policy text", null);
+    await runExtraction(env, 44, "acme.com", null, "https://acme.com/privacy", false, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(false);
   });
@@ -78,7 +81,7 @@ describe("runExtraction when the source host differs from the published entry's"
 
   it("queues instead of overwriting the published summary and sources, even with an unchanged verdict", async () => {
     const { env, statements } = makeEnv(existing);
-    await runExtraction(env, 50, "acme.com", null, "https://tenant.acme.com/privacy", true, false, false, "policy text", null);
+    await runExtraction(env, 50, "acme.com", null, "https://tenant.acme.com/privacy", true, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
@@ -89,14 +92,14 @@ describe("runExtraction when the source host differs from the published entry's"
 
   it("still auto-updates when a submission uses exactly the published page", async () => {
     const { env, statements } = makeEnv(existing);
-    await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null);
+    await runExtraction(env, 51, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
   });
 
   it("queues a public submission that uses a different page on the same host (M-2)", async () => {
     const { env, statements } = makeEnv(existing);
-    await runExtraction(env, 52, "acme.com", null, "https://acme.com/no-such-page", true, false, false, "policy text", null);
+    await runExtraction(env, 52, "acme.com", null, "https://acme.com/no-such-page", true, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));
@@ -107,13 +110,13 @@ describe("runExtraction when the source host differs from the published entry's"
     const flip = { id: 5, compliance_status: "not_compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]) };
 
     const job = makeEnv(flip);
-    await runExtraction(job.env, 53, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null, true);
+    await runExtraction(job.env, 53, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null, true);
     const written = job.statements.find((s) => s.sql.includes("last_check_note = ?"));
     expect(String(written!.args[0])).toContain("awaiting review");
     expect(written!.args[1]).toBe("acme.com");
 
     const pub = makeEnv(flip);
-    await runExtraction(pub.env, 54, "acme.com", null, "https://acme.com/privacy", true, false, false, "policy text", null, false);
+    await runExtraction(pub.env, 54, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null, false);
     expect(pub.statements.some((s) => s.sql.includes("last_check_note") || s.sql.includes("last_attempt_at"))).toBe(false);
   });
 });
@@ -121,7 +124,7 @@ describe("runExtraction when the source host differs from the published entry's"
 describe("runExtraction for a brand-new domain whose source is on a different host", () => {
   it("queues instead of auto-publishing (a tenant page submitted under a multi-tenant apex)", async () => {
     const { env, statements } = makeEnv(null);
-    await runExtraction(env, 60, "substack.com", null, "https://someone.substack.com/privacy", false, false, false, "policy text", null);
+    await runExtraction(env, 60, "substack.com", null, "https://someone.substack.com/privacy", false, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.includes("INSERT INTO tools"))).toBe(false);
     const note = statements.find((s) => s.sql.includes("SET extraction_error = ?") && String(s.args[0]).startsWith("queued_for_review"));

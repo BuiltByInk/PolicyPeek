@@ -32,6 +32,22 @@ describe("tryWaybackFallback", () => {
     expect(result).toBeNull();
   });
 
+  it("gives up on an availability lookup that never answers (it is called with a timeout signal)", async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          if (init?.signal?.aborted) reject(init.signal.reason);
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => AbortSignal.abort(new Error("timed out")));
+
+    expect(await tryWaybackFallback("https://example.com/privacy")).toBeNull();
+    expect(timeoutSpy).toHaveBeenCalledWith(10_000);
+    expect(fetchMock.mock.calls[0][1]?.signal).toBeDefined();
+  });
+
   it("fetches the closest snapshot and returns its text + URL", async () => {
     vi.stubGlobal(
       "fetch",

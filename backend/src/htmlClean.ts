@@ -34,3 +34,15 @@ export function cleanHtmlToText(html: string): string {
 
   return text.replace(/\s+/g, " ").trim();
 }
+
+// Readable text below this many characters (after scripts, <head> and tags are
+// stripped) is "thin content": typically just a cookie banner or a "please
+// enable JavaScript" line rather than a policy. It is still checked, but never
+// auto-publishes, and the queue listing flags it. (2026-10-09, Elliot's ruling,
+// item 4 of the submit-flow questions in DECISIONS_NEEDED.md.) A page with no
+// text at all is refused outright in check.ts's processCheck.
+export const THIN_CONTENT_CHARS = 1_000;
+
+export function isThinContent(text: string): boolean {
+  return text.length < THIN_CONTENT_CHARS;
+}

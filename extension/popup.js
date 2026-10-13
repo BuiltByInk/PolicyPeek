@@ -165,6 +165,14 @@ async function submitCheck(tab, hostname, button) {
   // briefly for it; anything else waits for a person with no set time, and
   // we say so rather than promising one. The earlier "not in catalog" answer
   // is cached, so clear it or reopening the popup would show that stale state.
+  // 202 with already_queued: this site was already submitted and is waiting
+  // for a person. The API reused that check and didn't count this one.
+  if (res.status === 202 && data.already_queued) {
+    await clearCachedLookup(hostname);
+    showMessage("This site has already been submitted and is waiting for review. Your daily check wasn't used. Reopen this popup later to see the verdict.");
+    return;
+  }
+
   if (res.status === 202) {
     await clearCachedLookup(hostname);
     showMessage("Submitted. Checking now. Some results publish within about a minute; a good verdict for a new tool is always checked by a person first.");

@@ -3,6 +3,7 @@ import type { ExtractedFacts } from "./extraction";
 import { computeVerdict } from "./rules";
 import { evaluateAutoPublish } from "./autoPublish";
 import { cleanText } from "./textUtil";
+import { THIN_CONTENT_CHARS } from "./htmlClean";
 
 interface PendingCheckRow {
   id: number;
@@ -25,15 +26,20 @@ interface ToolRow {
 export async function handleListPending(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
     `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, extraction_error, shared_domain,
-       sourced_from_archive, archived_source_url, created_at, updated_at
+       sourced_from_archive, archived_source_url, created_at, updated_at, length(raw_fetch) AS raw_fetch_chars
      FROM pending_checks ORDER BY created_at DESC`
-  ).all<PendingCheckRow & { extraction_error: string | null }>();
+  ).all<PendingCheckRow & { extraction_error: string | null; raw_fetch_chars: number | null }>();
 
   // Annotate every still-queued, already-extracted row with *why* it wasn't
   // auto-published, so admin approval is confirming a specific flagged
   // reason instead of re-deriving it from raw facts each time.
+  // thin_content is derived from the stored page text, so it shows on every
+  // row (even one whose extraction failed or that is queued for another
+  // reason), not only when it is the reason for the hold. (2026-10-09.)
   const annotated = await Promise.all(
-    results.map(async (row) => {
+    results.map(async (rawRow) => {
+      const { raw_fetch_chars, ...rest } = rawRow;
+      const row = { ...rest, thin_content: raw_fetch_chars !== null && raw_fetch_chars < THIN_CONTENT_CHARS };
       if (row.status !== "extracted" || !row.extracted_facts) return row;
       const facts = JSON.parse(row.extracted_facts) as ExtractedFacts;
       const existing = row.is_recheck
@@ -285,6 +291,11 @@ export async function tryAutoPublishAtomic(
   return { toolId, verdict, published: true };
 }
 
+// Deliberately no status check (2026-10-09, Elliot's ruling, item 3 of the
+// submit-flow questions in DECISIONS_NEEDED.md): approving an already-approved
+// row re-publishes it from that row's facts (the deploy runbook's hancocyber.com
+// re-approve relies on this to apply a rule change), and approving a rejected
+// row publishes it (a change of mind). Both are intentional; don't add a guard.
 export async function handleApprove(env: Env, id: number): Promise<Response> {
   const pending = await env.DB.prepare(
     `SELECT id, domain, name, is_recheck, status, source_url, extracted_facts, shared_domain, sourced_from_archive, archived_source_url

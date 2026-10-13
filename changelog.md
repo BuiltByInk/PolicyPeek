@@ -12,6 +12,77 @@ real record, not an empty log.
 
 ---
 
+## 2026-10-09, later (Elliot's rulings on the submit-flow questions, same branch, not deployed)
+
+Elliot answered the five questions from the pass below (`DECISIONS_NEEDED.md`,
+row 16, now resolved). Nothing deployed, nothing touched production.
+
+- **Duplicate submissions reuse the queued row** (`check.ts`). A new tool with a
+  row still waiting (extracted, or pending with no error) gets `202` with that
+  row's id and `status: "already_queued"`: no fetch, no LLM call, no second row,
+  and the visitor's daily check is given back. The site form and the extension
+  popup say it's already waiting for review.
+- **Subdomain site, policy on the parent site** (`app.acme.com` with
+  `acme.com/privacy`): accepted (`parentDomainSourceHost` in `check.ts`, bounded
+  by the registrable domain via `tldts`), and always held for review on first
+  submission, later resubmissions and the daily recheck. Never auto-published.
+- **Re-approving approved or rejected rows**: unchanged on purpose; comment
+  above `handleApprove` in `admin.ts` says why.
+- **Thin pages** (under 1,000 characters of readable text, `THIN_CONTENT_CHARS`
+  in `htmlClean.ts`): accepted, held for review with the reason, and every row in
+  `GET /v1/admin/pending` carries `thin_content`. Empty pages are still refused.
+  Test fixtures that used a few words of policy text were padded past the line.
+- **npm audit**: not touched here, now its own open row (17).
+- **Results:** backend 211/211 tests, `tsc` clean (also with the pre-deploy
+  gate's unused-code flags); frontend build 37 pages, browser form test 17/17.
+  The extension change is syntax-checked only (no test harness for the popup).
+
+---
+
+## 2026-10-09 (submit-flow reliability pass, branch `claude/submit-flow`, not deployed)
+
+Elliot asked for the "submit a new site" flow to be made reliable: trace it,
+cover it with tests, fix bugs, no new features. Nothing was deployed and nothing
+touched production. Open questions are in `DECISIONS_NEEDED.md` (row 16).
+
+- **New end-to-end backend test** (`backend/src/submitFlow.e2e.test.ts`): the
+  real worker entry point, `handleCheck`, background extraction, admin
+  pending/approve and lookup, on the real `schema.sql` in an in-memory SQLite
+  (Node's built-in `node:sqlite`, skipped on Node < 22.5). Only outbound fetch
+  and the LLM call are faked; the real SSRF wrapper runs. Covers valid new
+  domains (auto-publish and queue-then-approve), subdomain and www. policy
+  links, invalid input, SSRF (private DNS answer, metadata redirect, odd port,
+  DNS service down), fetch failures, empty pages, duplicates, the daily limit,
+  and an extraction failure after the 202.
+- **Fix: a policy page with no readable text is refused** (`check.ts`). A
+  JavaScript-only page used to get a 202: the submitter was told it was being
+  checked, their daily check was used, an LLM call ran on an empty string and a
+  row sat in the queue that could only be rejected. Now 502 `fetch_failed`,
+  reason `no_readable_text`, and the daily check is given back.
+- **Fix: the Wayback availability lookup times out after 10s**
+  (`waybackFallback.ts`). It was the one outbound call in the submit path with
+  no timeout, so a slow archive.org could outlast the site form's own timeout.
+- **Fixes in the site form** (`SubmitTool.astro`): (1) the form no longer
+  refuses policy links itself; its copy of the rule didn't know the curated
+  cross-domain source (bolt.new -> stackblitz.com) and refused links the API
+  accepts. The API's mismatch answer now names both hosts. (2) A DNS safety-check
+  failure on our side now says "try again", not "we can't open that link".
+  (3) The empty-page refusal has its own message. (4) Client timeout 60s -> 90s,
+  and on timeout the visitor is told the check may still finish and not to
+  resubmit, instead of "try again" (which would hit the daily limit).
+- **New headless-browser test for the form** (`frontend/tests/submit-form.test.mjs`,
+  `npm test` in `frontend/`): builds the site against a fake API and checks the
+  message for every API answer above. It uses a global Playwright via
+  `NODE_PATH` and skips itself without one, so no dependency was added. Four of
+  its 15 cases fail on the old form and pass on the new one.
+- **Results:** backend 204/204 tests, `tsc` clean; frontend build 37 pages,
+  browser test 15/15. `scripts/predeploy-check.mjs` passes everything except
+  `npm audit (frontend)`: 4 advisories in indirect dependencies that are new
+  since 2026-09-19 (lockfile unchanged). Left for Elliot, since the fix is a
+  dependency upgrade (row 16, item 5).
+
+---
+
 ## 2026-09-19 (local security audit and hardening pass — not deployed)
 
 Elliot asked for a full review and security audit while away from his
