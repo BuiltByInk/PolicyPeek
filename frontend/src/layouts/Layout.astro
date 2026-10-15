@@ -14,6 +14,10 @@ const { title, description, noindex = false, ogImage = "/og-image.png", jsonLd }
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
 const path = Astro.url.pathname;
+// Cloudflare Web Analytics: cookieless, no personal data, and the token is a
+// public site tag (it ships in page HTML), not a secret. Set
+// PUBLIC_CF_BEACON_TOKEN at build time to turn it on; unset = no beacon.
+const cfBeaconToken = (import.meta.env.PUBLIC_CF_BEACON_TOKEN ?? "").trim();
 
 // Structured data is built from tools.json, which holds LLM-extracted text
 // (tool names etc.), so it is untrusted. JSON.stringify alone doesn't make it
@@ -258,8 +262,11 @@ const jsonLdString = jsonLd
       }
       footer.site .wrap { padding: 1.5rem 1.25rem; }
       @media (max-width: 480px) {
-        header.site .wrap { flex-direction: column; align-items: flex-start; }
-        nav.site a { margin-left: 0; margin-right: 1.25rem; }
+        /* Audit P4: keep logo + nav on one row on phones (wrapping pushed the hero down ~50px). */
+        header.site .wrap { flex-wrap: nowrap; gap: 0.5rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        header.site a.brand { font-size: 1.3rem; }
+        nav.site { white-space: nowrap; }
+        nav.site a { margin-left: 0.9rem; font-size: 0.74rem; letter-spacing: 0.04em; }
       }
       /* Print: a checked result is something people save or print for a
          colleague/relative. Drop chrome and forms, force black-on-white, and
@@ -281,6 +288,10 @@ const jsonLdString = jsonLd
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {jsonLdString && <script type="application/ld+json" set:html={jsonLdString} />}
+    {cfBeaconToken && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}></script>
+    )}
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

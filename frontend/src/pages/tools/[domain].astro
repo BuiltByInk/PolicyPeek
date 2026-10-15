@@ -57,6 +57,26 @@ const lastCheckedText = lastCheckedValid
   ? lastCheckedDate!.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
   : "Not recorded yet";
 
+// Audit P5: one plain human answer under the H1, built from the stored
+// "trains on user data" fact plus the verdict. Wording stays descriptive of
+// the published policy (see deliverables/badge-wording.md).
+const plainAnswer: string | null = (() => {
+  switch (tool.compliance_status) {
+    case "compliant":
+      return `No. ${tool.name}'s published policy says it doesn't train on your data by default.`;
+    case "compliant_with_caveats":
+      return `Yes, by default. ${tool.name}'s published policy says it may train on your data, but you can opt out.`;
+    case "not_compliant":
+      return `Yes. ${tool.name}'s published policy says it may train on your data, and we found no way to opt out.`;
+    case "unrated":
+      return `We can't tell. ${tool.name}'s published policy doesn't clearly say.`;
+    case "shared_domain_unverified":
+      return `We can't say yet. The only policy we found covers the whole company, not ${tool.name} itself.`;
+    default:
+      return null;
+  }
+})();
+
 const sources = tool.source_urls
   .map((raw) => ({ raw, href: safeHttpUrl(raw) }));
 
@@ -64,7 +84,7 @@ const sources = tool.source_urls
 // Train on Your Data?"), so it gets its own wording.
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
-  : `Does ${tool.name} Train on Your Data? GDPR Check`;
+  : `Does ${tool.name} Train on Your Data?`;
 // Meta description (SEO pass, 2026-09-18): a fixed template -- the question
 // people search, then the verdict in plain words -- rather than the raw
 // policy quote in tool.summary, which got cut off mid-sentence in results and
@@ -96,6 +116,7 @@ const breadcrumbs = {
   <header class="detail-head">
     <h1>{tool.name}</h1>
     {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
+    {plainAnswer && <p class="answer">{plainAnswer}</p>}
   </header>
 
   <section class="label" aria-labelledby="lp-h">
@@ -134,7 +155,16 @@ const breadcrumbs = {
       </div>
       <div>
         <dt>Data retention</dt>
-        <dd class={retentionIsLong ? "long" : undefined}>{retention}</dd>
+        {retentionIsLong ? (
+          <dd class="long">
+            <details class="more">
+              <summary>Show details</summary>
+              {retention}
+            </details>
+          </dd>
+        ) : (
+          <dd>{retention}</dd>
+        )}
       </div>
       <div>
         <dt>GDPR mentioned</dt>
@@ -165,6 +195,38 @@ const breadcrumbs = {
       </ul>
     </>
   )}
+
+  <section class="next no-print" aria-label="What next">
+    <form class="again" action="/tools/" method="get" role="search">
+      <label for="again-q">Check another tool</label>
+      <div class="again-row">
+        <input id="again-q" name="q" type="search" placeholder="e.g. chatgpt" autocomplete="off" spellcheck="false" />
+        <button type="submit">Look it up</button>
+      </div>
+    </form>
+    <button type="button" class="share" data-share-url={`${siteUrl}tools/${tool.domain}/`} data-share-title={pageTitle}>Copy link / share this verdict</button>
+    <p class="share-msg" role="status" aria-live="polite"></p>
+  </section>
+  <script>
+    for (const btn of document.querySelectorAll<HTMLButtonElement>("button.share")) {
+      const msg = btn.parentElement?.querySelector(".share-msg");
+      btn.addEventListener("click", async () => {
+        const url = btn.dataset.shareUrl || location.href;
+        const title = btn.dataset.shareTitle || document.title;
+        try {
+          if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+            await navigator.share({ title, url });
+            return;
+          }
+          await navigator.clipboard.writeText(url);
+          if (msg) msg.textContent = "Link copied.";
+        } catch (e) {
+          if ((e as Error)?.name === "AbortError") return;
+          if (msg) msg.textContent = `Copy this link: ${url}`;
+        }
+      });
+    }
+  </script>
 </Layout>
 
 <style>
@@ -176,6 +238,26 @@ const breadcrumbs = {
     line-height: 1;
     overflow-wrap: anywhere;
   }
+  .answer { margin: 0.8rem 0 0; font-size: 1.15rem; font-weight: 600; max-width: 40em; }
+  .more summary { cursor: pointer; color: var(--id); font-family: var(--font-body); }
+  .more[open] summary { margin-bottom: 0.4rem; }
+  .next { margin: 2rem 0 0; border-top: 3px solid var(--line); padding-top: 1.2rem; max-width: 46rem; }
+  .again label {
+    display: block; margin-bottom: 0.35rem; font-family: var(--font-head); font-size: 0.85rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+  }
+  .again-row { display: flex; max-width: 34rem; }
+  .again input {
+    flex: 1 1 auto; min-width: 0; font: inherit; font-family: var(--font-mono); padding: 0.6rem 0.7rem;
+    border: 3px solid var(--line); border-right: none; border-radius: 0; background: var(--bg); color: var(--fg);
+  }
+  .again button, .share {
+    font: inherit; font-family: var(--font-head); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.6rem 1rem; border: 3px solid var(--fg); border-radius: 0; cursor: pointer;
+  }
+  .again button { background: var(--fg); color: var(--bg); }
+  .share { margin-top: 1rem; background: var(--bg); color: var(--fg); border-color: var(--line); }
+  .share-msg { min-height: 1.2em; font-size: 0.9rem; color: var(--muted); }
   .domain { color: var(--muted); font-family: var(--font-mono); font-size: 0.9rem; margin: 0.4rem 0 0; overflow-wrap: anywhere; }
 
   /* ---- the label ---- */

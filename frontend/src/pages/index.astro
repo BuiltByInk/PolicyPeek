@@ -3,11 +3,22 @@ import Layout from "../layouts/Layout.astro";
 import SubmitTool from "../components/SubmitTool.astro";
 import Badge from "../components/Badge.astro";
 import type { Tool } from "../types";
-import { VERDICTS } from "../verdicts";
+import { VERDICTS, sentence } from "../verdicts";
 import toolsData from "../../data/tools.json";
 
 const tools = toolsData as Tool[];
 const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
+// Register order (design audit P3): the three real verdicts first, good to
+// bad, then the three "can't tell / doesn't apply" states.
+const REGISTER_ORDER = ["compliant", "compliant_with_caveats", "not_compliant", "unrated", "shared_domain_unverified", "not_ai_tool"];
+const registerRows = REGISTER_ORDER.map((s) => VERDICTS.find((v) => v.status === s)!).filter(Boolean);
+// Quick picks (audit P1): only tools that are actually in the register.
+const QUICK_PICKS = ["openai.com", "claude.com", "cursor.com", "otter.ai"];
+const picks = QUICK_PICKS.map((d) => tools.find((t) => t.domain === d)).filter((t): t is Tool => Boolean(t));
+// Sample verdict card: ChatGPT if listed, otherwise the first quick pick.
+const sample = tools.find((t) => t.domain === "openai.com") ?? picks[0] ?? null;
+const sampleVerdict = sample ? VERDICTS.find((v) => v.status === sample.compliance_status) : null;
+const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
 ---
 <Layout
   title="Does it train on your data?"
@@ -21,33 +32,62 @@ const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t
   }}
 >
   <section class="hero">
-    <p class="eyebrow">Data Practices Disclosure</p>
+    <div class="hero-main">
+    <p class="eyebrow">Free · AI tools · Sourced from the policy</p>
     <h1>Does it train on your data?</h1>
     <p class="lede">
-      PolicyPeek reads privacy policies so you don't have to, and turns them into a
-      one-line, sourced answer: does this tool train on what you give it, or not.
+      We read AI tools' privacy policies and give you a one-line answer, quoted from the policy itself.
     </p>
     <form class="find" action="/tools/" method="get" role="search">
-      <label for="home-q">Look up a tool</label>
+      <label for="home-q">Which AI tool do you use?</label>
       <div class="find-row">
         <input id="home-q" name="q" type="search" placeholder="e.g. chatgpt, cursor, otter.ai"
+          data-short-placeholder="e.g. chatgpt"
           autocomplete="off" spellcheck="false" />
         <button type="submit">Look it up</button>
       </div>
     </form>
-    <p class="alt"><a href="/tools/">Browse all {tools.length} tool{tools.length === 1 ? "" : "s"}</a></p>
+    {picks.length > 0 && (
+      <ul class="picks" aria-label="Popular tools">
+        {picks.map((t) => <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>)}
+      </ul>
+    )}
+    <p class="alt"><a href="/tools/">Browse all {tools.length} tool{tools.length === 1 ? "" : "s"}</a> · <a href="#submit">Don't see yours? Ask us to check it</a></p>
+    </div>
+    {sample && sampleVerdict && (
+      <aside class="sample" aria-label={`Example verdict: ${sample.name}`}>
+        <p class="s-k">Example: {sample.name}</p>
+        <Badge status={sample.compliance_status} />
+        <p class="s-m">{sampleVerdict.meaning}</p>
+        {sampleWhy && (<><p class="s-why-k">Why</p><p class="s-why">{sampleWhy}</p></>)}
+        <a href={`/tools/${sample.domain}/`}>See full verdict →</a>
+      </aside>
+    )}
   </section>
+  <script>
+    // Audit P4: the long placeholder is cut off on narrow phones.
+    const q = document.getElementById("home-q") as HTMLInputElement | null;
+    if (q && q.dataset.shortPlaceholder) {
+      const long = q.placeholder, short = q.dataset.shortPlaceholder;
+      const mq = window.matchMedia("(max-width: 480px)");
+      const apply = () => { q.placeholder = mq.matches ? short : long; };
+      apply();
+      mq.addEventListener("change", apply);
+    }
+  </script>
 
   <section class="register" aria-labelledby="reg-h">
-    <h2 id="reg-h">What we've found so far</h2>
-    <p class="reg-sub">{tools.length} tool{tools.length === 1 ? "" : "s"} checked. Each verdict, what it means, and how many tools have it.</p>
+    <h2 id="reg-h">{tools.length} AI tool{tools.length === 1 ? "" : "s"} checked. Here's how they score.</h2>
+    <p class="reg-def">Each badge says what the tool's own published policy says about training on your data. Green means it doesn't train on your data by default (or only if you opt in). It's not legal advice or a finding about any law.</p>
     <ul>
-      {VERDICTS.map((v) => (
-        <li class="reg-row">
-          <span class="n">{counts[v.status]}</span>
-          <span class="b"><Badge status={v.status} /></span>
-          <span class="m">{v.meaning}</span>
-          <a class="go" href={`/tools/?v=${v.status}`} aria-label={`See the ${counts[v.status]} tools rated ${v.short}`}>See them →</a>
+      {registerRows.map((v, i) => (
+        <li class={`reg-row${i === 3 ? " group-start" : ""}`}>
+          <a class="row-link" href={`/tools/?v=${v.status}`} aria-label={`See the ${counts[v.status]} tools with the badge ${v.label}`}>
+            <span class="n">{counts[v.status]}</span>
+            <span class="b"><Badge status={v.status} /></span>
+            <span class="m">{v.meaning}</span>
+            <span class="go" aria-hidden="true">See them →</span>
+          </a>
         </li>
       ))}
     </ul>
@@ -133,22 +173,47 @@ const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t
   }
   .find button:hover { background: var(--bg); color: var(--fg); border-color: var(--line); }
   .alt { margin: 0.8rem 0 0; font-size: 0.92rem; }
+  .picks { list-style: none; display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.8rem 0 0; padding: 0; }
+  .picks a {
+    display: inline-block; padding: 0.3rem 0.65rem; border: 2px solid var(--line);
+    font-family: var(--font-head); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.04em;
+    text-decoration: none; color: var(--fg);
+  }
+  .picks a:hover { background: var(--fg); color: var(--bg); }
+  .sample { border: 3px solid var(--line); padding: 0.9rem 1rem; margin-top: 1.4rem; max-width: 34rem; }
+  .s-k, .s-why-k {
+    margin: 0 0 0.5rem; font-family: var(--font-head); font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  }
+  .s-m { margin: 0.6rem 0; font-size: 0.95rem; }
+  .s-why-k { margin: 0.6rem 0 0.2rem; }
+  .s-why {
+    margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--muted);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  @media (min-width: 960px) {
+    .hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+    .sample { margin-top: 3.2rem; }
+  }
 
   /* ---- verdict register: doubles as the legend for the badge vocabulary ---- */
   .register { margin: 1.5rem 0 2rem; }
   .register h2 { margin: 0; font-size: 1.6rem; }
-  .reg-sub { margin: 0.3rem 0 0.9rem; color: var(--muted); font-size: 0.92rem; }
+  .reg-def { margin: 0.3rem 0 0.9rem; color: var(--muted); font-size: 0.92rem; max-width: 62ch; }
   .register ul { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--line); border-bottom: 3px solid var(--line); }
-  .reg-row {
+  .reg-row { border-bottom: 1px solid var(--line-soft); }
+  .reg-row.group-start { border-top: 2px solid var(--line); }
+  .row-link { color: inherit; text-decoration: none; }
+  .row-link:hover .go { text-decoration: underline; }
+  .row-link {
     display: grid;
     grid-template-columns: 2.6rem 1fr;
     gap: 0.2rem 0.9rem;
     align-items: start;
     padding: 0.75rem 0.25rem;
-    border-bottom: 1px solid var(--line-soft);
   }
   .reg-row:last-child { border-bottom: none; }
-  .reg-row .n {
+  .row-link .n {
     grid-row: 1 / span 3;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -157,11 +222,12 @@ const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t
     line-height: 1.1;
     text-align: right;
   }
-  .reg-row .m { color: var(--muted); font-size: 0.92rem; }
-  .reg-row .go { font-size: 0.88rem; }
+  .row-link .m { color: var(--muted); font-size: 0.92rem; }
+  .row-link .go { font-size: 0.88rem; color: var(--id); display: none; }
   @media (min-width: 760px) {
-    .reg-row { grid-template-columns: 2.6rem 12rem 1fr auto; align-items: center; }
-    .reg-row .n { grid-row: auto; }
+    .row-link { grid-template-columns: 2.6rem 15rem 1fr auto; align-items: center; }
+    .row-link .n { grid-row: auto; }
+    .row-link .go { display: inline; }
   }
 
   .how ol { padding-left: 1.25rem; font-family: var(--font-body); max-width: 62ch; }
