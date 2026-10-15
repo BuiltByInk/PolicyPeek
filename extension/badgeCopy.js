@@ -4,17 +4,17 @@
 // equivalent for "not in catalog" (it only lists catalogued tools) or a
 // transient "loading" state.
 export const BADGE_COPY = {
-  compliant: { label: "Compliant", shape: "solid", color: "green" },
-  not_compliant: { label: "Not compliant", shape: "solid", color: "red" },
+  compliant: { label: "Doesn't train on your data", shape: "solid", color: "green" },
+  not_compliant: { label: "Trains on your data, no opt-out", shape: "solid", color: "red" },
   compliant_with_caveats: {
-    label: "Compliant with caveats",
+    label: "Trains by default, you can opt out",
     // Own shape (double border), not reused from ring/solid -- same "shape
     // carries the distinction, not color alone" rule as shared_domain
     // below, ported from Badge.astro's solid-teal-double-border treatment.
     shape: "double",
     color: "caveat",
   },
-  unrated: { label: "Unrated", shape: "solid", color: "amber" },
+  unrated: { label: "Policy unclear", shape: "solid", color: "amber" },
   shared_domain_unverified: {
     label: "Company-wide policy",
     shape: "ring",

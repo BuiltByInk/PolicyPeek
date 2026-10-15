@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 ---
 <Layout
   title="Methodology"
-  description="How PolicyPeek turns a privacy policy into a compliant / compliant with caveats / not compliant / unrated badge — where the facts come from, and how the verdict is decided."
+  description="How PolicyPeek turns a privacy policy into a badge (doesn't train / opt-out available / no opt-out / policy unclear) — where the facts come from, and how the verdict is decided."
 >
   <h1>How a rating gets made</h1>
 
@@ -25,12 +25,12 @@ import Layout from "../layouts/Layout.astro";
       <strong>A fixed rule, not an opinion, decides the badge.</strong>
       The facts above run through one fixed rule, the same for every tool:
       <ul>
-        <li><strong>Compliant</strong> — doesn't train on your data by default, or only trains on it if you opt in.</li>
-        <li><strong>Compliant with caveats</strong> — trains on your data <em>by default</em>, but a real opt-out exists somewhere in the policy.</li>
-        <li><strong>Not compliant</strong> — trains on your data by default, with no opt-out.</li>
-        <li><strong>Unrated</strong> — the policy is genuinely unclear either way. This is not a middle grade — it means we don't know, not that the tool is "somewhat okay."</li>
+        <li><strong>Doesn't train on your data</strong> — doesn't train on your data by default, or only trains on it if you opt in.</li>
+        <li><strong>Trains by default, you can opt out</strong> — trains on your data <em>by default</em>, but a real opt-out exists somewhere in the policy.</li>
+        <li><strong>Trains on your data, no opt-out</strong> — trains on your data by default, and we found no way to opt out.</li>
+        <li><strong>Policy unclear</strong> — the policy is genuinely unclear either way. This is not a middle grade — it means we don't know, not that the tool is "somewhat okay."</li>
         <li><strong>Company-wide policy</strong> — the only policy we could find is published for a whole company (for example a Google or Microsoft policy), not for this one product. We don't rate the product from a policy that isn't about it.</li>
-        <li><strong>Not an AI tool</strong> — the site's policy shows no sign it's an AI product, so the question of training on your data doesn't apply. This isn't a compliance verdict at all.</li>
+        <li><strong>Not an AI tool</strong> — the site's policy shows no sign it's an AI product, so the question of training on your data doesn't apply. This isn't a training verdict at all.</li>
       </ul>
     </li>
     <li>
@@ -47,18 +47,18 @@ import Layout from "../layouts/Layout.astro";
     </li>
   </ol>
 
-  <h2>Why "compliant with caveats" isn't just a green pass</h2>
+  <h2>Why "you can opt out" isn't a green badge</h2>
   <p>
     An opt-out is a real, meaningful protection — but it's a weaker one than
     "doesn't train on your data by default." GDPR generally expects opt-in
     consent, not an opt-out you have to go find in a settings page or a
     support form. So when a tool trains on your data unless you take action,
-    PolicyPeek shows a distinct teal "Compliant with caveats" badge rather
-    than the plain green "Compliant" one — the same size and shape as every
+    PolicyPeek shows a distinct teal "Trains by default, you can opt out" badge rather
+    than the plain green "Doesn't train on your data" one — the same size and shape as every
     other badge, with a double border, deliberately not green, and paired with
     a one-line note on the tool's page explaining what the caveat actually is.
     It is also not a shade of amber: amber on this site always means "we
-    don't know." Compliant with caveats means the opposite — we know exactly
+    don't know." The opt-out badge means the opposite — we know exactly
     what the policy says, and it's a middle case, not an unknown one.
   </p>
 
@@ -67,9 +67,9 @@ import Layout from "../layouts/Layout.astro";
     If a policy doesn't clearly say one way or the other, PolicyPeek marks it
     unrated rather than rounding it up or down. An amber badge means "read the
     source yourself before you decide," not "probably fine" — and it is a
-    different kind of uncertainty than "compliant with caveats" above:
-    unrated means we couldn't tell from the policy, while compliant with
-    caveats means the policy told us exactly what happens and it's a
+    different kind of uncertainty than the opt-out badge above:
+    "policy unclear" means we couldn't tell from the policy, while the opt-out
+    badge means the policy told us exactly what happens and it's a
     conditional pass.
   </p>
 

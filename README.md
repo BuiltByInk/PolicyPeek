@@ -1,6 +1,6 @@
 # PolicyPeek
 
-PolicyPeek tells you whether an AI or SaaS tool trains on your data, using the tool's own published privacy policy. It shows one badge per tool: compliant, compliant with caveats, not compliant, unrated, company-wide policy (shared domain), or not an AI tool. It is a browser extension plus a website, backed by a small Cloudflare Workers API.
+PolicyPeek tells you whether an AI or SaaS tool trains on your data, using the tool's own published privacy policy. It shows one badge per tool: doesn't train on your data, trains by default (you can opt out), trains on your data with no opt-out, policy unclear, company-wide policy (shared domain), or not an AI tool. Badges describe what the published policy says; they are not legal advice or a finding about compliance with any law. It is a browser extension plus a website, backed by a small Cloudflare Workers API.
 
 How a badge is made: an LLM step (Claude Haiku) extracts facts from the policy text and nothing else; a separate deterministic function (`backend/src/rules.ts`) turns those facts into the verdict. The model never emits a verdict. The full rule set is in `CLAUDE.md` and on the site's `/about` page.
 

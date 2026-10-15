@@ -112,7 +112,7 @@ test("valid new domain with a subdomain policy link: sent cleaned, then shows th
   });
   await submit(page, "https://www.Midjourney.com/home?x=1", "docs.midjourney.com/hc/en-us/articles/privacy");
   const text = await statusText(page, "is published");
-  assert.match(text, /midjourney\.com is published: Not compliant/);
+  assert.match(text, /midjourney\.com is published: Trains on your data, no opt-out/);
   assert.deepEqual(calls[0].body, { domain: "midjourney.com", source_url: "https://docs.midjourney.com/hc/en-us/articles/privacy" });
   assert.match(calls[1].url, /\/v1\/lookup\?domain=midjourney\.com$/);
   await page.close();

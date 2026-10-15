@@ -3,7 +3,7 @@
   "name": "PolicyPeek",
   "short_name": "PolicyPeek",
   "version": "0.1.0",
-  "description": "Instant green/amber/red data-privacy badges for AI and SaaS tools.",
+  "description": "See whether an AI or SaaS tool's published policy says it trains on your data.",
 
   "permissions": ["activeTab", "storage"],
 
