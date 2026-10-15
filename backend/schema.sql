@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS tools (
   -- live table these were added by ALTER, so they sit last there too.
   last_checked_at TEXT, -- policy page last read and result confirmed/accepted
   last_attempt_at TEXT, -- last recheck attempt, successful or not
-  last_check_note TEXT  -- why the last attempt didn't confirm the entry, else NULL
+  last_check_note TEXT,  -- why the last attempt didn't confirm the entry, else NULL
+  manual_override INTEGER NOT NULL DEFAULT 0 CHECK (manual_override IN (0, 1))  -- 1 = hand-curated; rechecks never auto-publish over it
 );
 
 CREATE INDEX IF NOT EXISTS idx_tools_domain ON tools (domain);

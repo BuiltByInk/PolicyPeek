@@ -107,4 +107,14 @@ describe("evaluateAutoPublish", () => {
     expect(result.eligible).toBe(false);
     expect(result.reason).toMatch(/verdict changed/);
   });
+  it("never auto-publishes a recheck over a manually curated entry, even with an unchanged verdict", () => {
+    const r = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: true, existingStatus: "compliant", manualOverride: true });
+    expect(r.eligible).toBe(false);
+    expect(r.reason).toContain("manual_override");
+  });
+
+  it("manualOverride false leaves an unchanged recheck eligible", () => {
+    const r = evaluateAutoPublish(clean, { sharedDomain: false, isRecheck: true, existingStatus: "compliant", manualOverride: false });
+    expect(r.eligible).toBe(true);
+  });
 });

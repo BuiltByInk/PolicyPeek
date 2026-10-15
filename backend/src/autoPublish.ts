@@ -42,10 +42,22 @@ export interface AutoPublishResult {
 //     verdict-generosity judgment call for rules.ts, not this function.
 export function evaluateAutoPublish(
   facts: ExtractedFacts,
-  opts: { sharedDomain: boolean; isRecheck: boolean; existingStatus?: ComplianceStatus; sourcedFromArchive?: boolean }
+  opts: { sharedDomain: boolean; isRecheck: boolean; existingStatus?: ComplianceStatus; sourcedFromArchive?: boolean; manualOverride?: boolean }
 ): AutoPublishResult {
   const verdict = computeVerdict(facts, { sharedDomain: opts.sharedDomain });
 
+  // A published entry a person hand-corrected (tools.manual_override = 1,
+  // 2026-10 fact-check) is never rewritten by the automatic path, even when
+  // the recheck verdict matches: an auto-publish would replace the curated
+  // summary and source with the raw extracted quote. It queues instead, so a
+  // human sees any change via /v1/admin/pending.
+  if (opts.isRecheck && opts.manualOverride) {
+    return {
+      eligible: false,
+      verdict,
+      reason: "entry is manually curated (manual_override) -- rechecks never auto-publish over it",
+    };
+  }
   if (opts.sourcedFromArchive) {
     return {
       eligible: false,

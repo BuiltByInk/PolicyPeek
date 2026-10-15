@@ -350,9 +350,9 @@ export async function runExtraction(
   // (tryAutoPublishAtomic) -- see DECISIONS_NEEDED.md and admin.ts's
   // tryAutoPublishAtomic for the full mechanism.
   try {
-    const freshExisting = await env.DB.prepare("SELECT id, compliance_status, source_urls FROM tools WHERE domain = ?")
+    const freshExisting = await env.DB.prepare("SELECT id, compliance_status, source_urls, manual_override FROM tools WHERE domain = ?")
       .bind(domain)
-      .first<{ id: number; compliance_status: string; source_urls: string | null }>();
+      .first<{ id: number; compliance_status: string; source_urls: string | null; manual_override: number | null }>();
 
     // A new page on a DIFFERENT host than the one the published entry was built
     // from (for example a tenant subdomain of a real tool's domain) never
@@ -389,6 +389,7 @@ export async function runExtraction(
       isRecheck: freshExisting !== null,
       existingStatus: freshExisting?.compliance_status as Parameters<typeof evaluateAutoPublish>[1]["existingStatus"],
       sourcedFromArchive,
+      manualOverride: freshExisting?.manual_override === 1,
     });
 
     if (!decision.eligible && freshExisting) {

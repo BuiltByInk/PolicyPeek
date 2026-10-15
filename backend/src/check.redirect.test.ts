@@ -20,7 +20,7 @@ const { runExtraction } = await import("./check");
 // Long enough not to count as thin content (THIN_CONTENT_CHARS in htmlClean.ts).
 const POLICY = "policy text ".repeat(100);
 
-function makeEnv(existingTool: { id: number; compliance_status: string; source_urls: string } | null = null) {
+function makeEnv(existingTool: { id: number; compliance_status: string; source_urls: string; manual_override?: number } | null = null) {
   const statements: { sql: string; args: unknown[] }[] = [];
   const env = {
     ANTHROPIC_API_KEY: "test-key",
@@ -66,6 +66,13 @@ describe("runExtraction with an off-domain redirect", () => {
     await runExtraction(env, 43, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null);
 
     expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status"))).toBe(true);
+  });
+
+  it("never auto-publishes a scheduled recheck over a manually curated entry (manual_override), even with an unchanged verdict", async () => {
+    const { env, statements } = makeEnv({ id: 5, compliance_status: "compliant", source_urls: JSON.stringify(["https://acme.com/privacy"]), manual_override: 1 });
+    await runExtraction(env, 44, "acme.com", null, "https://acme.com/privacy", true, false, false, POLICY, null);
+
+    expect(statements.some((s) => s.sql.startsWith("UPDATE tools SET compliance_status") || s.sql.includes("INSERT INTO tools"))).toBe(false);
   });
 
   it("queues a favourable first result for a brand-new domain instead of publishing it", async () => {
