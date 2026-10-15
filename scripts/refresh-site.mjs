@@ -5,6 +5,7 @@
 //   node scripts/refresh-site.mjs            # pull from D1, show diff, confirm, build, verify. Does NOT deploy.
 //   node scripts/refresh-site.mjs --deploy   # same, then (after a second confirm) deploys to Pages
 //   node scripts/refresh-site.mjs --yes      # skip the "apply this diff?" prompt (never skips the deploy prompt)
+//   Piped/non-TTY stdin: answers are read line by line, EOF = "no", and the deploy prompt always answers "no" unless run in a terminal.
 //
 // What it does, in order:
 //   1. Runs generate-tools-json.mjs (a read-only SELECT against the live D1)
@@ -21,7 +22,7 @@
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { createInterface } from "node:readline/promises";
+import { createPrompter } from "./lib/confirm.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -34,11 +35,10 @@ const args = process.argv.slice(2);
 const DEPLOY = args.includes("--deploy");
 const YES = args.includes("--yes");
 
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-async function confirm(q) {
-  const a = (await rl.question(`${q} [y/N] `)).trim().toLowerCase();
-  return a === "y" || a === "yes";
-}
+// Prompts read piped stdin correctly; EOF answers "no". The deploy prompt
+// additionally requires a real terminal, so piped/CI input can never deploy.
+const rl = createPrompter();
+const confirm = rl.confirm;
 function run(cmd, cmdArgs, cwd) {
   return spawnSync(cmd, cmdArgs, { cwd, stdio: "inherit" }).status === 0;
 }
@@ -118,7 +118,7 @@ if (!DEPLOY) {
   console.log(`\nBuilt and verified, NOT deployed. To publish:\n  cd ${FRONTEND} && ${deployCmd}`);
   bail("", 0);
 }
-if (!(await confirm("\nDeploy to the live site now?"))) bail("Not deployed. The build in frontend/dist is ready when you are.", 0);
+if (!(await confirm("\nDeploy to the live site now?", { requireTTY: true }))) bail("Not deployed. The build in frontend/dist is ready when you are.", 0);
 if (!run("npx", ["wrangler", "pages", "deploy", "dist", "--project-name=policypeek-frontend"], FRONTEND)) bail("Deploy command failed.");
 console.log("\nDeployed. Load a changed page on the live site to confirm.");
 rl.close();
