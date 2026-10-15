@@ -1,0 +1,65 @@
+// Static checks on the built HTML for the homepage/tool-page audit changes,
+// the badge wording and the optional Cloudflare Web Analytics beacon.
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
+let plain, beacon;
+const build = (env) => {
+  const dir = mkdtempSync(join(tmpdir(), "pp-pages-test-"));
+  const e = { ...process.env, ...env };
+  if (!("PUBLIC_CF_BEACON_TOKEN" in env)) delete e.PUBLIC_CF_BEACON_TOKEN;
+  execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env: e, stdio: "pipe" });
+  return dir;
+};
+const read = (dir, p) => readFileSync(join(dir, p), "utf8");
+
+before(() => {
+  plain = build({});
+  beacon = build({ PUBLIC_CF_BEACON_TOKEN: "test-token-123" });
+});
+after(() => [plain, beacon].forEach((d) => d && rmSync(d, { recursive: true, force: true })));
+
+test("homepage: new eyebrow, label, quick picks, sample card, no jargon eyebrow", () => {
+  const h = read(plain, "index.html");
+  assert.match(h, /Free · AI tools · Sourced from the policy/);
+  assert.match(h, /Which AI tool do you use\?/);
+  assert.doesNotMatch(h, /Data Practices Disclosure/);
+  assert.match(h, /class="picks"/);
+  assert.match(h, /href="\/tools\/openai\.com\/"/);
+  assert.match(h, /Example: ChatGPT/);
+  assert.match(h, /AI tools? checked\. Here's how they score\./);
+});
+
+test("no page uses the word 'Compliant' or 'GDPR Check' in visible text or titles", () => {
+  const files = [];
+  const walk = (d) => readdirSync(d, { withFileTypes: true }).forEach((e) =>
+    e.isDirectory() ? walk(join(d, e.name)) : e.name.endsWith(".html") && files.push(join(d, e.name)));
+  walk(plain);
+  for (const f of files) {
+    const text = readFileSync(f, "utf8").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "")
+      .replace(/<[^>]+>/g, " ");
+    assert.doesNotMatch(text, /\bcompliant\b/i, f);
+    assert.doesNotMatch(readFileSync(f, "utf8"), /GDPR Check/, f);
+  }
+});
+
+test("tool page: plain answer, check another, share button", () => {
+  const h = read(plain, "tools/openai.com/index.html");
+  assert.match(h, /class="answer"[^>]*>Yes, by default\. ChatGPT(&#39;|')s published policy says it may train on your data, but you can opt out\./);
+  assert.match(h, /Check another tool/);
+  assert.match(h, /Copy link \/ share this verdict/);
+  assert.match(h, /data-share-url="https:\/\/[^"]+\/tools\/openai\.com\/"/);
+});
+
+test("Cloudflare beacon only renders when a token is configured", () => {
+  assert.doesNotMatch(read(plain, "index.html"), /cloudflareinsights/);
+  const h = read(beacon, "index.html");
+  assert.match(h, /static\.cloudflareinsights\.com\/beacon\.min\.js/);
+  assert.match(h, /test-token-123/);
+});
