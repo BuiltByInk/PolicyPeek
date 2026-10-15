@@ -12,6 +12,14 @@ real record, not an empty log.
 
 ---
 
+
+## 2026-10-15: production deploy (main @ a67e51b, PRs #1 submit flow and #2 frontend audit fix)
+
+- Predeploy check: all PASS. Step 1a read-only: `tools` CHECK includes `not_ai_tool`, `last_checked_at` exists, 33 tools. Migrations NOT re-run. Step 2 skipped.
+- Backend: `wrangler deploy` -> version `21237bba-281d-4805-bfde-3dce47920090` (previous `83dd0ed6-ee0a-49eb-ba6d-0f768636efef`). Crons */15, 0 4, 30 3. Checks: health ok, lookup ok, admin 401, check `[]` 400 invalid_json.
+- Site: `refresh-site.mjs` (diff = last_checked_at dates only, 33 tools), build verified, Pages deploy `050102b4` to policypeek-frontend (previous production `eda138ea`). Apex and www both 200.
+- Not done (Elliot): new badge wording (still a draft, not in `verdicts.ts`), step 4/4b/4c admin actions, extension, dashboard items in step 7, history scrub (step 9), 3b log/IP-purge follow-up checks.
+
 ## 2026-10-09, later (Elliot's rulings on the submit-flow questions, same branch, not deployed)
 
 Elliot answered the five questions from the pass below (`DECISIONS_NEEDED.md`,
