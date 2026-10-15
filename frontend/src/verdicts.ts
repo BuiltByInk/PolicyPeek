@@ -21,22 +21,22 @@ export interface VerdictInfo {
 
 // Order = how a visitor scanning for trouble wants to read them.
 export const VERDICTS: VerdictInfo[] = [
-  { status: "not_compliant", label: "Not compliant", short: "Not compliant", swatch: "red",
-    meaning: "Trains on your data by default, with no opt-out." },
-  { status: "compliant_with_caveats", label: "Compliant with caveats", short: "With caveats", swatch: "caveat",
-    meaning: "Trains on your data by default, but the policy gives you a real way to opt out." },
-  { status: "unrated", label: "Unrated", short: "Unrated", swatch: "amber",
-    meaning: "The policy doesn't say clearly either way. We don't know." },
+  { status: "not_compliant", label: "Trains on your data, no opt-out", short: "No opt-out", swatch: "red",
+    meaning: "Their published policy says your data may be used for training, and we found no way to opt out." },
+  { status: "compliant_with_caveats", label: "Trains by default, you can opt out", short: "Opt-out available", swatch: "caveat",
+    meaning: "Their published policy says your data may be used for training unless you switch it off." },
+  { status: "unrated", label: "Policy unclear", short: "Unclear", swatch: "amber",
+    meaning: "Their published policy doesn't clearly say whether your data is used for training." },
   { status: "shared_domain_unverified", label: "Company-wide policy", short: "Company-wide policy", swatch: "amber",
-    meaning: "The only policy we found covers a whole company, not this product." },
-  { status: "compliant", label: "Compliant", short: "Compliant", swatch: "green",
-    meaning: "Doesn't train on your data by default, or only if you opt in." },
+    meaning: "The only policy we found covers the whole company, not this product, so we can't give a product verdict yet." },
+  { status: "compliant", label: "Doesn't train on your data", short: "Doesn't train", swatch: "green",
+    meaning: "Their published policy says your data isn't used to train AI models, or only if you choose to opt in." },
   { status: "not_ai_tool", label: "Not an AI tool", short: "Not an AI tool", swatch: "gray",
-    meaning: "This doesn't look like an AI product, so the question doesn't apply." },
+    meaning: "Nothing in this site's policy suggests it's an AI product, so the training question doesn't apply." },
 ];
 
 export const NOT_AI_TOOL_REASON =
-  "PolicyPeek's compliance check doesn't apply here — the policy we found shows no sign this is an AI/ML product.";
+  "PolicyPeek's training check doesn't apply here: the policy we found shows no sign this is an AI product.";
 
 export const SHARED_DOMAIN_REASON = (name: string) =>
   `Policy text is shared across multiple company products, so this badge doesn't reflect ${name}-specific data handling.`;
@@ -69,7 +69,7 @@ export function reasonFor(tool: Tool): string | null {
     case "unrated":
       return summary ?? UNRATED_NO_SUMMARY_REASON;
     case "not_compliant":
-      return summary ?? "Trains on your data by default, with no opt-out.";
+      return summary ?? "Their published policy says your data may be used for training, and we found no way to opt out.";
     default:
       return summary;
   }
