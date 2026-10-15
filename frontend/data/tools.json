@@ -20,7 +20,7 @@
     "name": "Bolt.new",
     "domain": "bolt.new",
     "compliance_status": "compliant_with_caveats",
-    "summary": "We may use AI Inputs and AI Outputs to operate, maintain, and improve the Services, including improving AI performance, reliability, and safety. Such use shall be on aggregated, anonymized, or de-identified data.",
+    "summary": "Unless you opt out ... we may use Bolt Model Development Content ... to train, fine-tune, evaluate, benchmark, and improve artificial-intelligence models. Accounts in the EEA, UK and Switzerland don't need to opt out.",
     "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days (subject to backups, legal obligations, security requirements). Residual copies may persist in backups/logs for limited period.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -30,7 +30,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-07T08:57:15.963Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "ChatGPT",
@@ -51,18 +51,18 @@
   {
     "name": "Claude",
     "domain": "claude.com",
-    "compliance_status": "compliant",
-    "summary": "By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, Anthropic API, Claude Gov, etc.) to train our models.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. Commercial plans don't train by default.",
     "data_retention": "Feedback data stored for up to 5 years in secured back-end",
-    "trains_on_user_data": false,
+    "trains_on_user_data": true,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training"
+      "https://www.anthropic.com/legal/privacy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T20:00:29.003Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Copy.ai",
@@ -83,24 +83,25 @@
   {
     "name": "Cursor",
     "domain": "cursor.com",
-    "compliance_status": "compliant",
-    "summary": "We do not use Inputs or Suggestions to train our models, or permit third parties to use them for training, unless: (1) they are flagged for security review, (2) you explicitly report them to us, or (3) you've explicitly agreed to their use for such training purposes.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "If you choose to turn off \"Privacy Mode\": we may use and store codebase data, prompts, editor actions, code snippets ... to improve our AI features and train our models.",
     "data_retention": "Anysphere retains your personal data only for as long as necessary to operate the Service effectively and to support legitimate business needs such as legal compliance, safety, dispute resolution, and enforcement of our agreements. The appropriate retention period varies depending on the purpose for which the personal data was collected, its sensitivity, potential risks associated with its use or exposure, and any applicable legal requirements.",
-    "trains_on_user_data": false,
+    "trains_on_user_data": true,
     "gdpr_mentioned": null,
     "source_urls": [
+      "https://cursor.com/data-use",
       "https://cursor.com/privacy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T20:00:49.492Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "DeepL",
     "domain": "deepl.com",
     "compliance_status": "not_compliant",
-    "summary": "Rated on DeepL's free tier: free-tier submissions are used to train and improve DeepL's models with no opt-out available. DeepL Pro / API tier uses a different policy \u2014 Pro/API submissions are explicitly excluded from model training and improvement.",
+    "summary": "Rated on DeepL's free tier: free-tier submissions are used to train and improve DeepL's models, with no opt-out found. For DeepL Pro, API Pro and Write Pro, DeepL says \"your texts will not be used to improve the quality of our services.\"",
     "data_retention": "Free version: texts processed for limited period to train neural networks; Pro version: texts kept temporarily only as necessary for service delivery, then deleted after contractual performance; Voice: audio data deleted after service completion",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -111,13 +112,13 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-08-18T19:39:10.413Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "ElevenLabs",
     "domain": "elevenlabs.io",
     "compliance_status": "compliant_with_caveats",
-    "summary": "Where permitted by applicable laws, we collect publicly available information from third-party sites to enable the training of our models and systems. We may also work with third parties directly to collect information such as to enable the training of our models and systems.",
+    "summary": "\"We use your personal information to research, build, train and improve our AI models.\" \"You can opt out ... by navigating to the 'Data use' menu in the 'Terms and Privacy' section of your ElevenLabs account.\"",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -125,9 +126,9 @@
       "https://elevenlabs.io/privacy-policy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:26:45.683Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Fireflies.ai",
@@ -181,33 +182,34 @@
     "name": "Grammarly",
     "domain": "grammarly.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "You are in control of whether your user content is used for training and improvement of our models.",
+    "summary": "You can decide whether Superhuman can use your user content to train our AI models by adjusting the available training control(s) in your account settings.",
     "data_retention": "Personal data retained as long as necessary to provide products, complete transactions, comply with legal obligations, and resolve disputes. User content for troubleshooting and product improvement typically retained no longer than one year, then deleted or de-identified unless user retains it or legal obligations require longer retention.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.grammarly.com/privacy-policy-november-2024"
+      "https://www.grammarly.com/privacy-policy",
+      "https://support.grammarly.com/hc/en-us/articles/25555503115277"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:28:20.884Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Granola",
     "domain": "granola.ai",
-    "compliance_status": "compliant",
-    "summary": "We do not allow third parties such as OpenAI or Anthropic to use your Personal Data to train AI models. We only use de-identified data to train AI models, which you can opt-out of within your Granola account settings.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "We only use de-identified data to train AI models, which you can opt-out of within your Granola account settings.",
     "data_retention": null,
-    "trains_on_user_data": false,
+    "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://docs.granola.ai/help-center/policies/privacy-policy"
+      "https://www.granola.ai/privacy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-08-17T20:59:44.433Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "hancocyber.com",
@@ -229,23 +231,23 @@
     "name": "HeyGen",
     "domain": "heygen.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "To train and enhance the models that power our products and services, including to make our avatar creation models more accurate. It is necessary for our legitimate interest and subject to appropriate safeguards. You may request to opt-out of this training and enhancement by contacting us at [email protected]",
+    "summary": "HeyGen says it \"may use the input that you provide us to improve our services, for example, to train and enhance the models\". The opt-out is by emailing HeyGen's privacy team, not an account setting.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.heygen.com/privacy"
+      "https://www.heygen.com/policy"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-07T08:57:22.038Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Ideogram",
     "domain": "ideogram.ai",
     "compliance_status": "not_compliant",
-    "summary": "We use User Input and other information you submit to the Services because it is in our legitimate interest to administer and improve the Services and improve and develop our products and technology.",
+    "summary": "User information is used \"as a matter of our legitimate interests, including ... training the models that power our Services\"; the policy lists opt-outs only for marketing and analytics, not training.",
     "data_retention": "We retain your information for as long as is reasonably necessary for the purposes specified in this Privacy Policy. When determining the length of time to retain information, we consider various criteria, including whether we need the information to continue to administer your account, provide the Services, resolve a dispute, enforce our contractual agreements, prevent harm",
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -255,7 +257,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-18T09:18:23.655Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Jasper",
@@ -276,18 +278,19 @@
   {
     "name": "JetBrains AI Assistant",
     "domain": "jetbrains.com",
-    "compliance_status": "not_compliant",
-    "summary": "We may use collected data to develop and test products and services.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Paid and company plans: not used for training unless you agree. Free non-commercial licence: code-related data shared by default and may train JetBrains AI models; opt out in IDE settings.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.jetbrains.com/legal/docs/privacy/privacy/"
+      "https://www.jetbrains.com/legal/docs/terms/jetbrains-ai-service/",
+      "https://www.jetbrains.com/help/ai/data-collection-and-use-policy.html"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-18T09:18:23.891Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Kagi",
@@ -340,34 +343,34 @@
   {
     "name": "Midjourney",
     "domain": "midjourney.com",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "data collected through the process of training Midjourney machine learning algorithms",
+    "compliance_status": "unrated",
+    "summary": null,
     "data_retention": "Personal Data retained only as long as necessary for stated purposes; Usage Data generally retained for shorter period except when used for security or functionality improvements or legally required; data retained to comply with legal obligations, resolve disputes, and enforce agreements",
-    "trains_on_user_data": true,
+    "trains_on_user_data": null,
     "gdpr_mentioned": true,
     "source_urls": [
       "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:29:35.031Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Notion AI",
     "domain": "notion.com",
     "compliance_status": "compliant",
-    "summary": "We do not process Workspace API user data to develop, improve, or train generalized AI and/or ML models.",
+    "summary": "By default, Notion and its AI Subprocessors do not use Customer Data to train any models.",
     "data_retention": null,
     "trains_on_user_data": false,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://www.notion.com/trust/privacy-policy"
+      "https://www.notion.com/help/notion-ai-security-practices"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:29:43.395Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Otter.ai",
@@ -388,18 +391,18 @@
   {
     "name": "Perplexity AI",
     "domain": "perplexity.ai",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "Improve or create services and products, including our AI models.",
+    "compliance_status": "unrated",
+    "summary": null,
     "data_retention": null,
-    "trains_on_user_data": true,
+    "trains_on_user_data": null,
     "gdpr_mentioned": false,
     "source_urls": [
       "https://www.perplexity.ai/hub/legal/privacy-notice"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:30:05.527Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Replit AI",
@@ -484,19 +487,19 @@
   {
     "name": "Windsurf",
     "domain": "windsurf.com",
-    "compliance_status": "not_compliant",
-    "summary": "By Posting User Content to or via the Service, you authorize us to use it to provide the Service and Suggestions to you. (sourced from an archived snapshot, not the live page \u2014 the live page blocks automated checks)",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"By default, we may use your data for model training purposes to improve and enhance the Services.\" \u2026 \"After you opt out, your data will not be used for training\". Enterprise: never trained on without express prior written consent.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://windsurf.com/terms-of-service-individual",
-      "http://web.archive.org/web/20260511113517/https://windsurf.com/terms-of-service-individual"
+      "https://windsurf.com/security",
+      "https://windsurf.com/privacy-policy"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-08-18T20:15:17.567Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "You.com",
@@ -517,17 +520,18 @@
   {
     "name": "Zoom AI Companion",
     "domain": "zoom.com",
-    "compliance_status": "unrated",
-    "summary": null,
+    "compliance_status": "compliant",
+    "summary": "Zoom says it doesn't use your meeting audio, video, chat, transcripts or AI outputs to train its or third-party AI models. Usage data and de-identified aggregates are outside that promise.",
     "data_retention": null,
-    "trains_on_user_data": null,
+    "trains_on_user_data": false,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://www.zoom.com/en/products/ai-assistant/resources/privacy-security/"
+      "https://www.zoom.com/en/trust/terms/",
+      "https://www.zoom.com/en/trust/privacy/privacy-statement/"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.895Z"
+    "last_checked_at": "2026-10-15T16:02:55.792Z"
   }
 ]
