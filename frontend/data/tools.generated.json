@@ -13,7 +13,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": true
+    "shared_domain": true,
+    "last_checked_at": "2026-08-18T19:39:10.413Z"
   },
   {
     "name": "Bolt.new",
@@ -28,7 +29,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-07T08:57:15.963Z"
   },
   {
     "name": "ChatGPT",
@@ -43,7 +45,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:26:36.621Z"
   },
   {
     "name": "Claude",
@@ -58,7 +61,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T20:00:29.003Z"
   },
   {
     "name": "Copy.ai",
@@ -73,7 +77,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.255Z"
   },
   {
     "name": "Cursor",
@@ -88,7 +93,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T20:00:49.492Z"
   },
   {
     "name": "DeepL",
@@ -104,7 +110,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-18T19:39:10.413Z"
   },
   {
     "name": "ElevenLabs",
@@ -119,7 +126,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:26:45.683Z"
   },
   {
     "name": "Fireflies.ai",
@@ -134,7 +142,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-17T20:59:42.366Z"
   },
   {
     "name": "Gemini",
@@ -149,7 +158,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": true
+    "shared_domain": true,
+    "last_checked_at": "2026-09-01T21:28:01.884Z"
   },
   {
     "name": "GitHub Copilot",
@@ -164,7 +174,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.349Z"
   },
   {
     "name": "Grammarly",
@@ -179,7 +190,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:28:20.884Z"
   },
   {
     "name": "Granola",
@@ -194,7 +206,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-17T20:59:44.433Z"
   },
   {
     "name": "hancocyber.com",
@@ -209,7 +222,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-18T19:57:27.064Z"
   },
   {
     "name": "HeyGen",
@@ -224,7 +238,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-07T08:57:22.038Z"
   },
   {
     "name": "Ideogram",
@@ -239,7 +254,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-18T09:18:23.655Z"
   },
   {
     "name": "Jasper",
@@ -254,7 +270,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.448Z"
   },
   {
     "name": "JetBrains AI Assistant",
@@ -269,7 +286,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-18T09:18:23.891Z"
   },
   {
     "name": "Kagi",
@@ -284,7 +302,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-17T20:59:44.727Z"
   },
   {
     "name": "Luma AI (Dream Machine)",
@@ -299,7 +318,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-18T09:20:36.869Z"
   },
   {
     "name": "Microsoft Copilot",
@@ -314,7 +334,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": true
+    "shared_domain": true,
+    "last_checked_at": "2026-09-01T21:31:53.345Z"
   },
   {
     "name": "Midjourney",
@@ -329,7 +350,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:29:35.031Z"
   },
   {
     "name": "Notion AI",
@@ -344,7 +366,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:29:43.395Z"
   },
   {
     "name": "Otter.ai",
@@ -359,7 +382,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.535Z"
   },
   {
     "name": "Perplexity AI",
@@ -374,7 +398,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-01T21:30:05.527Z"
   },
   {
     "name": "Replit AI",
@@ -389,7 +414,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.622Z"
   },
   {
     "name": "Runway",
@@ -404,7 +430,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.706Z"
   },
   {
     "name": "Sourcegraph Cody",
@@ -419,7 +446,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-06T12:29:13.996Z"
   },
   {
     "name": "Stability AI (DreamStudio)",
@@ -434,7 +462,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.815Z"
   },
   {
     "name": "v0",
@@ -449,7 +478,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": true
+    "shared_domain": true,
+    "last_checked_at": "2026-09-01T19:41:05.556Z"
   },
   {
     "name": "Windsurf",
@@ -465,7 +495,8 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-18T20:15:17.567Z"
   },
   {
     "name": "You.com",
@@ -480,7 +511,8 @@
     ],
     "verified": true,
     "auto_published": true,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-08-17T20:59:43.393Z"
   },
   {
     "name": "Zoom AI Companion",
@@ -495,6 +527,7 @@
     ],
     "verified": true,
     "auto_published": false,
-    "shared_domain": false
+    "shared_domain": false,
+    "last_checked_at": "2026-09-03T10:43:26.895Z"
   }
 ]
