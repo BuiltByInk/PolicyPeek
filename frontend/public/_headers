@@ -2,3 +2,14 @@
 # same filename (a new version would get a new filename), so cache them for a year.
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Security headers for every page. Content-Security-Policy is generated at
+# build time by integrations/csp.mjs (hashes of Astro's inline scripts); the
+# placeholder below is replaced in dist/_headers and the build fails if it isn't.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: __CSP__
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()

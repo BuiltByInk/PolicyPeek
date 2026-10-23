@@ -5,6 +5,7 @@ import { handleListPending, handleApprove, handleReject, handleDemote } from "./
 import { checkStuckPending, runDueRechecks } from "./cron";
 import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
+import { withSecurityHeaders } from "./securityHeaders";
 
 export type CronJob = "due-rechecks" | "purge-ips" | "stuck-check";
 
@@ -25,10 +26,9 @@ export interface Env {
   ALERT_CHAT_ID?: string;
 }
 
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
 
+async function route(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({ ok: true, service: "policypeek-backend" });
     }
@@ -73,8 +73,12 @@ export default {
     }
 
     return Response.json({ error: "not_found" }, { status: 404 });
-  },
+  }
 
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return withSecurityHeaders(await route(request, env, ctx));
+  },
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     switch (cronJobFor(controller.cron)) {
       case "due-rechecks":
