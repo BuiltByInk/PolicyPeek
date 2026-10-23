@@ -1,0 +1,30 @@
+[
+ {
+  "domain": "deepseek.com",
+  "name": "DeepSeek",
+  "source_url": "https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html",
+  "badge": "compliant_with_caveats",
+  "summary": "Uses Inputs and Outputs to improve its services; \"you can opt out by turning off \"Improve the model for everyone\".\""
+ },
+ {
+  "domain": "lovable.dev",
+  "name": "Lovable",
+  "source_url": "https://lovable.dev/privacy",
+  "badge": "compliant_with_caveats",
+  "summary": "Trains on Customer Content; \"You can opt out of model training at any time in your account settings, on any plan, at no cost\". Business/Enterprise content is not trained on."
+ },
+ {
+  "domain": "suno.com",
+  "name": "Suno",
+  "source_url": "https://suno.com/privacy",
+  "badge": "not_compliant",
+  "summary": "Uses Submissions and other Content \"to train and enhance the models that power our Services\". No training opt-out is stated."
+ },
+ {
+  "domain": "tabnine.com",
+  "name": "Tabnine",
+  "source_url": "https://docs.tabnine.com/main/welcome/readme/privacy.md",
+  "badge": "compliant",
+  "summary": "\"Tabnine has a *no-train-no-retain* policy.\" and \"Tabnine does not train on your code.\""
+ }
+]
