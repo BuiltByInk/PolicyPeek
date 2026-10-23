@@ -1,0 +1,37 @@
+[
+ {
+  "domain": "photoroom.com",
+  "name": "Photoroom",
+  "source_url": "https://www.photoroom.com/legal/terms-and-conditions",
+  "badge": "compliant_with_caveats",
+  "summary": "\"By using the Services, you acknowledge and expressly authorize Photoroom to use User Content to improve, train and develop Photoroom's products and services.\" \"You can opt-out of this at any time by changing the settings on your account in the app under Data Control.\""
+ },
+ {
+  "domain": "kling.ai",
+  "name": "Kling AI",
+  "source_url": "https://kling.ai/docs/user-policy",
+  "badge": "not_compliant",
+  "summary": "\"Kling AI may process usage data, aggregated data, or Input for its lawful business purposes\" including to \"(f) create, test, improve, train, or otherwise develop the artificial intelligence or machine learning models ... used by Kling AI\"; no training opt-out in the terms or the privacy policy."
+ },
+ {
+  "domain": "remove.bg",
+  "name": "Remove.bg",
+  "source_url": "https://www.remove.bg/privacy",
+  "badge": "not_compliant",
+  "summary": "\"We may also analyze your activity, content, media uploads and related data in your account ... to train our algorithms, models and AI products and services using machine learning to develop, improve and provide our Service.\" The only opt-outs offered are analytics and marketing."
+ },
+ {
+  "domain": "invideo.io",
+  "name": "InVideo",
+  "source_url": "https://invideo.io/privacy-policy/",
+  "badge": "not_compliant",
+  "summary": "\"We may use your User Data to train, fine-tune or otherwise adjust the parameters of our artificial intelligence and machine-learning models. You can stop this use by deleting the relevant User Data or closing your account\". There's no setting to opt out."
+ },
+ {
+  "domain": "n8n.io",
+  "name": "n8n",
+  "source_url": "https://n8n.io/legal/privacy/",
+  "badge": "compliant",
+  "summary": "\"We do not use any personal data, including data received through any third-party services, for developing, improving, or training AI and/or ML models.\""
+ }
+]

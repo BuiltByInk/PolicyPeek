@@ -9,6 +9,7 @@ fact-check. Publishing needs Elliot's credentials and is run by Jump, never by a
 | 2026-10-launch | DeepSeek, Lovable, Suno, Tabnine | deliverables/research/factcheck-batch-2026-10.md |
 | 2026-10-23-A | Ahrefs, Mailchimp, Writesonic, Frase, Semrush, Pictory AI | deliverables/research/factcheck-batch-A-2026-10-23.md |
 | 2026-10-23-B | HubSpot, Zapier, Mistral Vibe (formerly Le Chat), Character.AI, Kimi, Pika, Buffer, Poe | deliverables/research/factcheck-batch-A-holds-B-2026-10-23.md |
+| 2026-10-23-C | Photoroom, Kling AI, Remove.bg, InVideo, n8n | deliverables/research/factcheck-batch-C-2026-10-23.md |
 
 Held (not in any batch): Pi and Leonardo.Ai (policy pages return 403 to the pipeline; no usable archive copy),
 NotebookLM (shared-domain rule: policy on support.google.com; no exception before launch), Canva, Descript, Grok,
