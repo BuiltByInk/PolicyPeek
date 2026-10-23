@@ -36,7 +36,18 @@ export function inlineScriptHashes(html) {
   return hashes;
 }
 
-export function buildCsp({ scriptHashes, apiBase }) {
+// Inline <style> blocks (Astro inlines small scoped stylesheets). The built
+// site has no style="" attributes (a test enforces that), so style-src needs
+// no 'unsafe-inline' or 'unsafe-hashes'.
+export function inlineStyleHashes(html) {
+  const hashes = new Set();
+  for (const m of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) {
+    hashes.add(`'sha256-${createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+  }
+  return hashes;
+}
+
+export function buildCsp({ scriptHashes, styleHashes = new Set(), apiBase }) {
   let apiOrigin = "";
   if (apiBase) {
     try { apiOrigin = new URL(apiBase).origin; } catch { apiOrigin = ""; }
@@ -44,7 +55,7 @@ export function buildCsp({ scriptHashes, apiBase }) {
   return [
     "default-src 'self'",
     `script-src 'self' ${[...scriptHashes].sort().join(" ")} https://static.cloudflareinsights.com`.replace(/\s+/g, " "),
-    "style-src 'self' 'unsafe-inline'",
+    `style-src 'self' ${[...styleHashes].sort().join(" ")}`.trim(),
     "img-src 'self' data:",
     "font-src 'self'",
     `connect-src 'self'${apiOrigin ? " " + apiOrigin : ""} https://cloudflareinsights.com`,
@@ -63,8 +74,14 @@ export default function csp() {
       "astro:build:done": ({ dir }) => {
         const dist = fileURLToPath(dir);
         const hashes = new Set();
-        for (const f of htmlFiles(dist)) for (const h of inlineScriptHashes(readFileSync(f, "utf8"))) hashes.add(h);
-        const policy = buildCsp({ scriptHashes: hashes, apiBase: process.env.PUBLIC_API_BASE_URL ?? loadEnv("production", process.cwd(), "PUBLIC_").PUBLIC_API_BASE_URL });
+        const styles = new Set();
+        for (const f of htmlFiles(dist)) {
+          const html = readFileSync(f, "utf8");
+          if (/<[^>]+\sstyle\s*=/i.test(html)) throw new Error(`policypeek-csp: style="" attribute in ${f} -- use a class (CSP has no 'unsafe-inline')`);
+          for (const h of inlineScriptHashes(html)) hashes.add(h);
+          for (const h of inlineStyleHashes(html)) styles.add(h);
+        }
+        const policy = buildCsp({ scriptHashes: hashes, styleHashes: styles, apiBase: process.env.PUBLIC_API_BASE_URL ?? loadEnv("production", process.cwd(), "PUBLIC_").PUBLIC_API_BASE_URL });
         const headersPath = join(dist, "_headers");
         const src = readFileSync(headersPath, "utf8");
         if (!src.includes(PLACEHOLDER)) throw new Error("policypeek-csp: __CSP__ placeholder missing from _headers");

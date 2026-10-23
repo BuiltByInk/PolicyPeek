@@ -8,7 +8,7 @@ import { mkdtempSync, readFileSync, readdirSync, statSync, rmSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { inlineScriptHashes, buildCsp } from "../integrations/csp.mjs";
+import { inlineScriptHashes, inlineStyleHashes, buildCsp } from "../integrations/csp.mjs";
 
 const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
 const htmlFiles = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? htmlFiles(p) : n.endsWith(".html") ? [p] : []; });
@@ -24,13 +24,14 @@ for (const beacon of [false, true]) {
       assert.ok(!h.includes("__CSP__"));
       for (const name of ["Strict-Transport-Security: max-age=31536000", "X-Frame-Options: DENY", "X-Content-Type-Options: nosniff", "Referrer-Policy:", "Permissions-Policy:"]) assert.ok(h.includes(name), name);
       const csp = h.match(/Content-Security-Policy: (.*)/)[1];
-      assert.ok(!/script-src[^;]*'unsafe-inline'/.test(csp));
+      assert.ok(!/'unsafe-(inline|eval|hashes)'/.test(csp), "no unsafe-* anywhere");
       assert.match(csp, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com/);
       assert.match(csp, /connect-src[^;]*https:\/\/api\.getpolicypeek\.com[^;]*https:\/\/cloudflareinsights\.com/);
       assert.match(csp, /frame-ancestors 'none'/);
       const files = htmlFiles(dir);
       assert.ok(files.length > 30);
       for (const f of files) for (const hash of inlineScriptHashes(readFileSync(f, "utf8"))) assert.ok(csp.includes(hash), `${f} inline script not in CSP`);
+      for (const f of files) for (const hash of inlineStyleHashes(readFileSync(f, "utf8"))) assert.ok(csp.includes(hash), `${f} inline style not in CSP`);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 }
