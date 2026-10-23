@@ -1,0 +1,44 @@
+[
+ {
+  "domain": "ahrefs.com",
+  "name": "Ahrefs",
+  "source_url": "https://ahrefs.com/legal/terms",
+  "badge": "not_compliant",
+  "summary": "Terms say \"we may use User Content, including any content you provide to us in connection with your use of AI Tools, to train our machine learning models\"; no opt-out found."
+ },
+ {
+  "domain": "mailchimp.com",
+  "name": "Mailchimp",
+  "source_url": "https://mailchimp.com/legal/terms/",
+  "badge": "not_compliant",
+  "summary": "Terms say \"We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model\"; no opt-out found."
+ },
+ {
+  "domain": "writesonic.com",
+  "name": "Writesonic",
+  "source_url": "https://writesonic.com/legal/terms",
+  "badge": "compliant",
+  "summary": "\"Writesonic does not use Customer Data to train or fine-tune any general-purpose, foundation, or large-language model\", which \"applies equally to… any Trial or free tier\"."
+ },
+ {
+  "domain": "frase.io",
+  "name": "Frase",
+  "source_url": "https://www.frase.io/company/terms",
+  "badge": "compliant",
+  "summary": "\"Frase does not use Customer Data to develop or train generalized artificial intelligence or machine learning models\"."
+ },
+ {
+  "domain": "semrush.com",
+  "name": "Semrush",
+  "source_url": "https://www.semrush.com/company/legal/semrush-artificial-intelligence-services-terms/",
+  "badge": "compliant",
+  "summary": "\"Semrush does not train or develop its models, and does not allow its third-party providers to train or develop its models on User Input.\""
+ },
+ {
+  "domain": "pictory.ai",
+  "name": "Pictory AI",
+  "source_url": "https://pictory.ai/terms-of-service",
+  "badge": "compliant",
+  "summary": "\"Pictory will not use your Customer Content or Pictoried Content to train or fine-tune its general artificial intelligence or machine learning models, except as expressly agreed by you in writing.\""
+ }
+]
