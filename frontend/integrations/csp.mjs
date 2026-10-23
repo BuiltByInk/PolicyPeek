@@ -48,17 +48,21 @@ export function inlineStyleHashes(html) {
 }
 
 export function buildCsp({ scriptHashes, styleHashes = new Set(), apiBase }) {
-  let apiOrigin = "";
-  if (apiBase) {
-    try { apiOrigin = new URL(apiBase).origin; } catch { apiOrigin = ""; }
+  // The submit form calls the API, so a missing/bad API base would ship a
+  // CSP that silently blocks it. Fail the build instead.
+  let u;
+  try { u = new URL(String(apiBase ?? "").trim()); } catch { u = null; }
+  if (!u || (u.protocol !== "https:" && u.protocol !== "http:")) {
+    throw new Error(`policypeek-csp: PUBLIC_API_BASE_URL must be an http(s) URL, got ${JSON.stringify(apiBase ?? "")}`);
   }
+  const apiOrigin = u.origin;
   return [
     "default-src 'self'",
     `script-src 'self' ${[...scriptHashes].sort().join(" ")} https://static.cloudflareinsights.com`.replace(/\s+/g, " "),
     `style-src 'self' ${[...styleHashes].sort().join(" ")}`.trim(),
     "img-src 'self' data:",
     "font-src 'self'",
-    `connect-src 'self'${apiOrigin ? " " + apiOrigin : ""} https://cloudflareinsights.com`,
+    `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -81,7 +85,7 @@ export default function csp() {
           for (const h of inlineScriptHashes(html)) hashes.add(h);
           for (const h of inlineStyleHashes(html)) styles.add(h);
         }
-        const policy = buildCsp({ scriptHashes: hashes, styleHashes: styles, apiBase: process.env.PUBLIC_API_BASE_URL ?? loadEnv("production", process.cwd(), "PUBLIC_").PUBLIC_API_BASE_URL });
+        const policy = buildCsp({ scriptHashes: hashes, styleHashes: styles, apiBase: process.env.PUBLIC_API_BASE_URL || loadEnv("production", process.cwd(), "PUBLIC_").PUBLIC_API_BASE_URL });
         const headersPath = join(dist, "_headers");
         const src = readFileSync(headersPath, "utf8");
         if (!src.includes(PLACEHOLDER)) throw new Error("policypeek-csp: __CSP__ placeholder missing from _headers");

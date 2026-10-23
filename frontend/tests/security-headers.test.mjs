@@ -41,6 +41,16 @@ test("inlineScriptHashes skips JSON-LD and external scripts", () => {
   assert.equal(inlineScriptHashes(html).size, 1);
 });
 
-test("buildCsp tolerates a missing/invalid API base", () => {
-  assert.match(buildCsp({ scriptHashes: new Set(), apiBase: "not a url" }), /connect-src 'self' https:\/\/cloudflareinsights\.com/);
+test("buildCsp throws on an empty or non-http(s) API base", () => {
+  for (const bad of [undefined, "", "   ", "not a url", "ftp://api.getpolicypeek.com", "javascript:alert(1)"]) {
+    assert.throws(() => buildCsp({ scriptHashes: new Set(), apiBase: bad }), /PUBLIC_API_BASE_URL/, String(bad));
+  }
+  assert.match(buildCsp({ scriptHashes: new Set(), apiBase: "https://api.getpolicypeek.com/x" }), /connect-src 'self' https:\/\/api\.getpolicypeek\.com https:\/\/cloudflareinsights\.com/);
+});
+
+test("the build fails when PUBLIC_API_BASE_URL is invalid", () => {
+  const dir = mkdtempSync(join(tmpdir(), "pp-hdr-bad-"));
+  try {
+    assert.throws(() => execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env: { ...process.env, PUBLIC_API_BASE_URL: "not a url" }, stdio: "pipe" }));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
