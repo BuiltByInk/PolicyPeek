@@ -69,3 +69,21 @@ test("tool page verdict card label reads 'What the policy says' (no 'Data Practi
   assert.match(h, /id="lp-h"[^>]*>What the policy says</);
   assert.doesNotMatch(h, /Data Practices Disclosure/i);
 });
+
+test("SEO: tool page title/description from the verdict, related links, every tool linked from / and /tools/", () => {
+  const tools = JSON.parse(readFileSync(join(FRONTEND, "data/tools.json"), "utf8"));
+  const home = read(plain, "index.html");
+  const list = read(plain, "tools/index.html");
+  for (const t of tools) {
+    assert.ok(home.includes(`href="/tools/${t.domain}/"`), `homepage links ${t.domain}`);
+    assert.ok(list.includes(`href="/tools/${t.domain}/"`), `/tools/ links ${t.domain}`);
+  }
+  const h = read(plain, "tools/claude.com/index.html");
+  assert.match(h, /<title>Does Claude train on my data\? AI training &amp; GDPR · PolicyPeek<\/title>/);
+  assert.match(h, /name="description" content="Does Claude train on my data\? Opt-out available: /);
+  assert.match(h, /id="rel-h"[^>]*>Related tools</);
+  assert.ok((h.match(/class="related"[\s\S]*?<\/section>/)[0].match(/href="\/tools\/[^"]+\/"/g) || []).length >= 3);
+  assert.doesNotMatch(h, /href="\/tools\/claude\.com\/"[^>]*>Does Claude/);
+  assert.match(h, /<link rel="canonical" href="https:\/\/getpolicypeek\.com\/tools\/claude\.com\/">/);
+  assert.match(h, /og:url" content="https:\/\/getpolicypeek\.com\/tools\/claude\.com\/"/);
+});

@@ -93,6 +93,16 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
     </ul>
   </section>
 
+  {/* Every tool as a plain crawlable link (SEO 2026-10-23). */}
+  <section class="all-tools" aria-labelledby="all-h">
+    <h2 id="all-h">Every tool we've checked</h2>
+    <ul>
+      {[...tools].sort((a, b) => a.name.localeCompare(b.name)).map((t) => (
+        <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>
+      ))}
+    </ul>
+  </section>
+
   <section class="how">
     <h2>How a rating gets made</h2>
     <ol>
@@ -107,6 +117,7 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
 </Layout>
 
 <style>
+  .all-tools ul { list-style: none; padding: 0; margin: 0.5rem 0 2rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
   .hero { padding: 0.5rem 0 1.5rem; }
   .eyebrow {
     font-family: var(--font-head);

@@ -82,9 +82,12 @@ const sources = tool.source_urls
 
 // Title/description: title is awkward for a non-AI site ("Does hancocyber.com
 // Train on Your Data?"), so it gets its own wording.
+// SEO (2026-10-23): the searched question ("Does X train on my data?") plus the
+// "AI training & GDPR" topic. The description states only what the verdict
+// says, in Design's badge wording (verdicts.ts), never "Compliant".
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
-  : `Does ${tool.name} Train on Your Data?`;
+  : `Does ${tool.name} train on my data? AI training & GDPR`;
 // Meta description (SEO pass, 2026-09-18): a fixed template -- the question
 // people search, then the verdict in plain words -- rather than the raw
 // policy quote in tool.summary, which got cut off mid-sentence in results and
@@ -93,13 +96,23 @@ const pageTitle = isNotAi
 // sourcing tail is dropped when it would push the line past ~160 characters,
 // where search engines start truncating.
 const verdictInfo = VERDICTS.find((v) => v.status === tool.compliance_status);
-const templated = `Does ${tool.name} train on your data? ${verdictInfo ? `${verdictInfo.short}: ${verdictInfo.meaning}` : "See PolicyPeek's sourced rating."}`;
+const templated = `Does ${tool.name} train on my data? ${verdictInfo ? `${verdictInfo.short}: ${verdictInfo.meaning}` : "See PolicyPeek's sourced rating."}`;
 const sourcingTail = " Sourced from its own privacy policy.";
 const pageDescription = isNotAi
   ? `PolicyPeek's data-training check doesn't apply to ${tool.name}: the policy we found shows no sign it's an AI product.`
   : templated.length + sourcingTail.length <= 160 ? templated + sourcingTail : templated;
 
 const siteUrl = Astro.site!.href;
+
+// Related tools (crawlable links): same verdict first, then others, never this
+// tool and never not-an-AI-tool pages (they're noindex).
+const allTools = toolsData as Tool[];
+const byName = (a: Tool, b: Tool) => a.name.localeCompare(b.name);
+const others = allTools.filter((t) => t.domain !== tool.domain && t.compliance_status !== "not_ai_tool");
+const related = [
+  ...others.filter((t) => t.compliance_status === tool.compliance_status).sort(byName),
+  ...others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName),
+].slice(0, 6);
 const breadcrumbs = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -196,6 +209,18 @@ const breadcrumbs = {
     </>
   )}
 
+  {related.length > 0 && (
+    <section class="related" aria-labelledby="rel-h">
+      <h2 id="rel-h">Related tools</h2>
+      <ul>
+        {related.map((t) => (
+          <li><a href={`/tools/${t.domain}/`}>Does {t.name} train on my data?</a></li>
+        ))}
+      </ul>
+      <p><a href="/tools/">Browse all tools</a></p>
+    </section>
+  )}
+
   <section class="next no-print" aria-label="What next">
     <form class="again" action="/tools/" method="get" role="search">
       <label for="again-q">Check another tool</label>
@@ -230,6 +255,8 @@ const breadcrumbs = {
 </Layout>
 
 <style>
+  .related ul { list-style: none; padding: 0; margin: 0.5rem 0; }
+  .related li { margin: 0.35rem 0; }
   .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
   .detail-head { margin: 0.75rem 0 1.25rem; }
   .detail-head h1 {
