@@ -1,0 +1,58 @@
+[
+ {
+  "domain": "hubspot.com",
+  "name": "HubSpot",
+  "source_url": "https://knowledge.hubspot.com/account-management/hubspot-ai-mode-training",
+  "badge": "compliant_with_caveats",
+  "summary": "HubSpot \"may use customer data ... to train and improve HubSpot's own AI models.\" \"By default, the setting will be turned on.\" \"Super Admins can opt out of AI model training at any time\". Same terms on the free CRM."
+ },
+ {
+  "domain": "zapier.com",
+  "name": "Zapier",
+  "source_url": "https://zapier.com/legal/terms-of-service",
+  "badge": "compliant_with_caveats",
+  "summary": "Terms: Zapier \"may derive de-identified data sets from your Customer Content ... including through model training.\" \"You may opt out of providing Zapier with such permission for Derived Data by submitting this opt-out form\"."
+ },
+ {
+  "domain": "mistral.ai",
+  "name": "Mistral Vibe (formerly Le Chat)",
+  "source_url": "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training",
+  "badge": "compliant_with_caveats",
+  "summary": "\"Input and output data are used by default to train our artificial intelligence models, unless you opt out of training at any time.\" \"Vibe: users are not opted out by default and can opt out at any time in their settings.\""
+ },
+ {
+  "domain": "character.ai",
+  "name": "Character.AI",
+  "source_url": "https://character.ai/regional",
+  "badge": "compliant_with_caveats",
+  "summary": "\"we train the AI systems and improve AI models that support our Services.\" \"With specific regard to the processing of your personal data for the purpose of training and improving our AI models, you have the right to opt out at any time.\""
+ },
+ {
+  "domain": "kimi.com",
+  "name": "Kimi",
+  "source_url": "https://www.kimi.com/en/help/others/data-usage",
+  "badge": "compliant_with_caveats",
+  "summary": "\"the platform may use users' input data, instructions, and generated responses for model training\". Opt-out by request: \"If you do not want your content to be used for model training, you may contact our customer service\"."
+ },
+ {
+  "domain": "pika.art",
+  "name": "Pika",
+  "source_url": "https://pika.art/terms-of-service",
+  "badge": "not_compliant",
+  "summary": "\"Pika may use anonymized or aggregated Content, including Inputs, Outputs, and your interactions with the Service, and Usage Data to train, improve, and develop its machine learning models\"; no training opt-out found."
+ },
+ {
+  "domain": "buffer.com",
+  "name": "Buffer",
+  "source_url": "https://buffer.com/ai-assistant",
+  "badge": "unrated",
+  "summary": "Asked \"Does Buffer scrape my content to train the AI?\", Buffer says text entered in AI Assistant \"will be shared with OpenAI\" but never states whether training happens; legal pages are silent."
+ },
+ {
+  "domain": "poe.com",
+  "name": "Poe",
+  "source_url": "https://poe.com/privacy",
+  "badge": "unrated",
+  "summary": "Model providers may use chats \"to provide and generally improve their services ... or based on the settings in your Poe account\", and \"Developers that create bots and apps on Poe using APIs may view and store your chats on their servers to train their models.\" Depends on bot."
+ }
+]
