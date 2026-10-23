@@ -63,3 +63,9 @@ test("Cloudflare beacon only renders when a token is configured", () => {
   assert.match(h, /static\.cloudflareinsights\.com\/beacon\.min\.js/);
   assert.match(h, /test-token-123/);
 });
+
+test("tool page verdict card label reads 'What the policy says' (no 'Data Practices Disclosure')", () => {
+  const h = read(plain, "tools/claude.com/index.html");
+  assert.match(h, /id="lp-h"[^>]*>What the policy says</);
+  assert.doesNotMatch(h, /Data Practices Disclosure/i);
+});
