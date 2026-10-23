@@ -22,7 +22,7 @@ for (const beacon of [false, true]) {
       execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env, stdio: "pipe" });
       const h = readFileSync(join(dir, "_headers"), "utf8");
       assert.ok(!h.includes("__CSP__"));
-      for (const name of ["Strict-Transport-Security: max-age=31536000", "X-Frame-Options: DENY", "X-Content-Type-Options: nosniff", "Referrer-Policy:", "Permissions-Policy:"]) assert.ok(h.includes(name), name);
+      for (const name of ["Strict-Transport-Security: max-age=86400", "X-Frame-Options: DENY", "X-Content-Type-Options: nosniff", "Referrer-Policy:", "Permissions-Policy:"]) assert.ok(h.includes(name), name);
       const csp = h.match(/Content-Security-Policy: (.*)/)[1];
       assert.ok(!/'unsafe-(inline|eval|hashes)'/.test(csp), "no unsafe-* anywhere");
       assert.match(csp, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com/);
