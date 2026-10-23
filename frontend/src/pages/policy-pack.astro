@@ -1,0 +1,98 @@
+---
+// Product page for the separate paid template pack. Copy is taken from
+// /workspace/deliverables/ink-products/listing-copy.md (the Lemon Squeezy
+// listing draft); the independence statement is required by the brief.
+// The buy buttons are disabled placeholders until the checkout URL exists.
+import Layout from "../layouts/Layout.astro";
+---
+<Layout
+  title="AI Policy Starter Pack by InkLLM"
+  description="An editable AI acceptable-use policy, staff guide and vendor checklist for UK & EU small businesses, written with UK GDPR, EU GDPR and the EU AI Act in mind."
+>
+  <p class="kicker">From the PolicyPeek team</p>
+  <h1>AI Policy Starter Pack by InkLLM</h1>
+  <p class="lede">An editable AI acceptable-use policy, staff guide and vendor checklist for UK &amp; EU small businesses, written with UK GDPR, EU GDPR and the EU AI Act in mind.</p>
+
+  <aside class="independence" aria-label="About this product and PolicyPeek">
+    <p><strong>PolicyPeek stays free and independent.</strong> The AI Policy Starter Pack is a separate paid product from the same team. It has no influence on any PolicyPeek rating.</p>
+  </aside>
+
+  <p>Your team is already using AI. The question is whether customer data is ending up in tools that train on it.</p>
+  <p>The AI Policy Starter Pack by InkLLM gives small businesses the documents they need to use AI with confidence: a policy that sets the rules, a guide staff will actually read, and a checklist for vetting any AI tool before you trust it with your data.</p>
+  <p>Written in plain English for UK and EU businesses, and updated for the EU AI Act timeline as amended in 2026. Fill in the [brackets], add your approved tools, and you're ready to go.</p>
+
+  <h2>Choose your option</h2>
+  <p class="note">Prices in GBP, VAT included. One-off digital download via Lemon Squeezy.</p>
+  <div class="options">
+    <section class="option">
+      <h3>Essentials <span class="price">£19</span></h3>
+      <ul>
+        <li>AI Acceptable-Use Policy template (Word + Markdown), including AI Tool Register and EU AI Act key-dates sheet</li>
+        <li>Staff Guide to Using AI Tools Safely (Word + Markdown)</li>
+      </ul>
+      <button type="button" class="buy" disabled aria-disabled="true">Checkout coming soon</button>
+    </section>
+    <section class="option featured">
+      <h3>Starter Pack <span class="price">£39</span></h3>
+      <p class="tag">Most popular</p>
+      <ul>
+        <li>Everything in Essentials</li>
+        <li>AI Vendor Checklist (Word + Markdown): 30+ questions on training on your data, retention, opt-outs, sub-processors, GDPR DPAs and lawful basis, international transfers and EU AI Act risk tiers, with real example findings from PolicyPeek</li>
+        <li>12 months of updates: when laws or key dates change, updated files are added to your download</li>
+      </ul>
+      <button type="button" class="buy" disabled aria-disabled="true">Checkout coming soon</button>
+    </section>
+  </div>
+
+  <h2>Who it's for</h2>
+  <ul>
+    <li>Owners and managers of businesses with 1–50 staff in the UK or EU</li>
+    <li>Teams without in-house legal or compliance</li>
+    <li>Agencies and freelancers whose clients ask for their AI policy</li>
+    <li>Anyone who wants staff to use AI <em>and</em> keep customer data safe</li>
+  </ul>
+
+  <h2>Built with PolicyPeek</h2>
+  <p>The vendor checklist uses PolicyPeek, which reads AI tools' own privacy policies and gives a sourced verdict on whether each tool trains on your data, as a quick first check before you dig into a vendor's terms.</p>
+
+  <h2>FAQ</h2>
+  <dl class="faq">
+    <dt>Is this legal advice?</dt>
+    <dd>No. It's a researched template and general information. Adapt it to your business and take professional advice if you're unsure.</dd>
+    <dt>Does it cover the EU AI Act?</dt>
+    <dd>Yes: AI literacy, prohibited practices, transparency duties and high-risk categories, with dates as amended by Regulation (EU) 2026/1744.</dd>
+    <dt>I'm UK-only. Is it relevant?</dt>
+    <dd>Yes. It's built around UK GDPR and ICO expectations, and explains when the EU AI Act can reach UK businesses.</dd>
+    <dt>What format are the files?</dt>
+    <dd>Word (.docx) and Markdown, so you can edit them in Word, Google Docs or Notion.</dd>
+    <dt>Can I use it across my company?</dt>
+    <dd>Yes, for one business (your organisation and its staff). Not for resale or redistribution.</dd>
+    <dt>How do updates work?</dt>
+    <dd>Starter Pack buyers can re-download from their purchase email or the Lemon Squeezy order page for 12 months; we replace the files when we update them.</dd>
+    <dt>Can I get a refund?</dt>
+    <dd>Because this is digital content delivered instantly, you'll be asked at checkout to agree to immediate access and acknowledge that you lose your 14-day right to cancel once the download starts. So we don't offer refunds after download. If a file is faulty or won't open, email <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a> and we'll fix or replace it. This doesn't affect your statutory rights.</dd>
+  </dl>
+
+  <h2>Important note</h2>
+  <p class="small">The AI Policy Starter Pack by InkLLM provides general information and editable templates only. It is not legal advice, does not create a solicitor–client relationship, and does not guarantee compliance. Laws and vendor terms change; check current sources before relying on it. Example vendor findings reflect published sources on the date checked (23 October 2026).</p>
+  <p class="small">Questions or a faulty file: <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>.</p>
+</Layout>
+
+<style>
+  .kicker { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+  .lede { font-size: 1.1rem; }
+  .independence { border: 3px solid var(--line); padding: 0.75rem 1rem; margin: 1.5rem 0; }
+  .independence p { margin: 0; }
+  .note, .small { color: var(--muted); font-size: 0.9rem; }
+  .options { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0 2rem; }
+  @media (min-width: 720px) { .options { grid-template-columns: 1fr 1fr; } }
+  .option { border: 3px solid var(--line); padding: 1rem 1.25rem; display: flex; flex-direction: column; }
+  .option.featured { border-width: 4px; }
+  .option h3 { margin-top: 0; display: flex; justify-content: space-between; align-items: baseline; }
+  .option ul { flex: 1; }
+  .price { font-size: 1.5rem; }
+  .tag { margin: -0.5rem 0 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .buy { font: inherit; font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.75rem 1rem; border: 3px solid var(--line); background: var(--bg); color: var(--muted); cursor: not-allowed; }
+  .faq dt { font-weight: 700; margin-top: 1rem; }
+  .faq dd { margin: 0.25rem 0 0; }
+</style>
