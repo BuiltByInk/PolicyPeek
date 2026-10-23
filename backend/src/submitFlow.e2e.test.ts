@@ -200,6 +200,17 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(w.slotsUsed()).toBe(1);
   });
 
+  it("batch submission (hold_for_review: true): an unfavourable first result is queued, not published", async () => {
+    const w = makeWorld();
+    sitePolicy("batch-ai.com", "https://batch-ai.com/privacy", NOT_COMPLIANT);
+
+    const res = await w.submit({ domain: "batch-ai.com", source_url: "https://batch-ai.com/privacy", hold_for_review: true });
+    expect(res.status).toBe(202);
+    expect((await w.lookup("batch-ai.com")).status).toBe(404);
+    expect(w.pendingRows()[0].status).toBe("extracted");
+    expect(String(w.pendingRows()[0].extraction_error)).toContain("batch submission");
+  });
+
   it("valid new domain, favourable result: queued with a reason, published only after admin approve", async () => {
     const w = makeWorld();
     sitePolicy("goodtool.io", "https://goodtool.io/legal/privacy", COMPLIANT);

@@ -69,6 +69,10 @@ interface CheckBody {
   domain?: string;
   source_url?: string;
   name?: string;
+  // Batch runs (scripts/batch-submit.mjs, new-tools runner) send true: a first-time
+  // domain then always waits in the review queue, never auto-publishes. Opt-in,
+  // so it can only make a submission MORE conservative. (2026-10-15)
+  hold_for_review?: unknown;
 }
 
 // The policy URL has to actually belong to the domain being submitted, not
@@ -257,7 +261,9 @@ export async function runExtraction(
   // attempt bookkeeping onto a published tool: a public submission for a
   // published domain must not be able to stamp a note on it or push it into
   // the recheck back-off. (2026-09-19 third review, M-1.)
-  scheduledRecheck: boolean = false
+  scheduledRecheck: boolean = false,
+  // A batch submission: a first-time domain always queues (see CheckBody.hold_for_review).
+  holdForReview: boolean = false
 ): Promise<void> {
   const noteAttempt = (message: string): Promise<void> =>
     scheduledRecheck ? markToolAttempt(env, domain, message) : Promise.resolve();
@@ -382,6 +388,10 @@ export async function runExtraction(
     const oddHost = freshExisting ? null : unexpectedFirstSourceHost(domain, sourceUrl);
     if (oddHost) {
       await recordExtractionError(env, pendingId, `queued_for_review: the source page is on ${oddHost}, not on the submitted domain itself -- never auto-published`);
+      return;
+    }
+    if (holdForReview && !freshExisting) {
+      await recordExtractionError(env, pendingId, "queued_for_review: first-time domain from a batch submission -- held for manual review, never auto-published");
       return;
     }
     const decision = evaluateAutoPublish(facts, {
@@ -517,6 +527,7 @@ async function processCheck(
   const domain = typeof body.domain === "string" ? body.domain.trim().toLowerCase() : undefined;
   const rawSourceUrl = typeof body.source_url === "string" ? body.source_url.trim() : undefined;
   const name = nameForTier(tier, body.name);
+  const holdForReview = body.hold_for_review === true;
 
   // A public suffix (co.uk, github.io, vercel.app ...) isn't anyone's domain:
   // anyone can register a name under it, so a verdict for it would be inherited
@@ -642,7 +653,9 @@ async function processCheck(
       sharedDomain,
       fetched.sourcedFromArchive,
       cleanedText,
-      fetched.redirectedOffDomainTo
+      fetched.redirectedOffDomainTo,
+      false,
+      holdForReview
     )
   );
 
