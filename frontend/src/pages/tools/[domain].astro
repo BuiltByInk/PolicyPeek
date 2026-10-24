@@ -5,6 +5,7 @@ import type { Tool } from "../../types";
 import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
+import { gumroadLink } from "../../gumroad";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -253,6 +254,10 @@ const jsonLd = [
       <p><a href="/tools/">Browse all tools</a></p>
     </section>
   )}
+
+  <aside class="pack-box compact" aria-labelledby="pack-h">
+    <p><strong id="pack-h">Does your team use {tool.name} for work?</strong> The AI Policy Starter Pack gives you an editable UK AI policy, staff rules and an Article 4 checklist. £19. <a href={gumroadLink("starter", `tool-${tool.domain}`)}>Get the Starter Pack</a> · <a href={gumroadLink("checklist", `tool-${tool.domain}`)}>or the free checklist</a></p>
+  </aside>
 
   <section class="next no-print" aria-label="What next">
     <form class="again" action="/tools/" method="get" role="search">

@@ -60,11 +60,22 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
     <Content />
     <p class="updated">Last updated <time datetime={guide.modified}>{fmt(guide.modified)}</time>. Plain-text version for AI tools: <a href={`/guides/${guide.slug}.md`} type="text/markdown">{guide.slug}.md</a>.</p>
   </article>
-  <aside class="checklist-cta" aria-label="Free AI checklist">
-    <p>Want a simple checklist to work through with your team? <a href={gumroadLink("checklist", `guide-${guide.slug}`)}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
-    {POLICY_GUIDES.includes(guide.slug)
-      ? <p class="pack-cta">Need this done this week? The AI Policy Starter Pack (from £19) gives you a ready-to-edit UK AI policy, and the Training Kit (£29) covers the staff session and training record. <a href={gumroadLink("starter", `guide-${guide.slug}`)}>Get the Starter Pack</a> or <a href={gumroadLink("training", `guide-${guide.slug}`)}>the Training Kit</a>.</p>
-      : <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>}
+  {POLICY_GUIDES.includes(guide.slug) ? (
+    <aside class="pack-box" aria-labelledby="pack-end-h">
+      <p class="pack-box-title" id="pack-end-h">Need an AI policy for your team?</p>
+      <p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist, ready to adapt in Word or Google Docs. £19, or £39 for the Complete version.</p>
+      <p class="pack-box-go"><a class="btn" href={gumroadLink("starter", `guide-end-${guide.slug}`)}>Get the Starter Pack, £19</a> <span>or <a href={gumroadLink("training", `guide-end-${guide.slug}`)}>the Staff AI Training Kit (£29)</a></span></p>
+      <p class="pack-box-small">From InkLLM, the team behind PolicyPeek. Templates, not legal advice. Prices include VAT for UK buyers.</p>
+    </aside>
+  ) : (
+    <aside class="checklist-cta" aria-label="Business resources">
+      <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>
+    </aside>
+  )}
+  <aside class="pack-box free" aria-labelledby="free-h">
+    <p class="pack-box-title" id="free-h">Free: the AI-at-work checklist</p>
+    <p>A one-page checklist to work through with your team: which tools are approved, what never goes in, and who checks the output. Free on Gumroad. Enter your email and it's sent straight to you.</p>
+    <p class="pack-box-go"><a class="btn" href={gumroadLink("checklist", `guide-free-${guide.slug}`)}>Get the free checklist</a></p>
   </aside>
   <section class="more-guides" aria-labelledby="more-h">
     <h2 id="more-h">More guides</h2>
@@ -86,7 +97,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   .updated { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line-soft); padding-top: 0.75rem; margin-top: 2rem; }
   .checklist-cta { border: 2px solid var(--line-soft); padding: 0.75rem 1rem; margin: 1.5rem 0; }
   .checklist-cta p { margin: 0; }
-  .checklist-cta p.pack-cta { margin-top: 0.5rem; color: var(--muted); font-size: 0.92rem; }
+  .checklist-cta p.pack-cta { margin-top: 0; color: var(--muted); font-size: 0.92rem; }
   .more-guides ul { list-style: none; padding: 0; margin: 0.5rem 0; }
   .more-guides li { margin: 0.35rem 0; }
 </style>
