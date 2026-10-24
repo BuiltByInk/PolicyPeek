@@ -9,6 +9,8 @@ export const SITE = "https://getpolicypeek.com";
 interface Meta { slug: string; description: string; published: string; modified: string }
 // Order = priority on the /guides/ index and in llms.txt.
 const META: Meta[] = [
+  { slug: "do-uk-small-businesses-need-an-ai-policy", description: "No UK law requires a standalone AI policy, but UK GDPR and the EU AI Act's AI literacy duty can still apply. What a small-business AI policy should cover, checked Oct 2026." },
+  { slug: "eu-ai-act-article-4-ai-literacy-small-uk-business", description: "What EU AI Act Article 4 (AI literacy) means for a 10-person UK business using ChatGPT: who it applies to, enforcement from 2 Aug 2026, and six practical steps." },
   { slug: "free-ai-privacy-policy-checker", description: "PolicyPeek is a free checker that reads AI tools' own privacy policies and terms and tells you, in one badge, whether they train on your data. 59 tools checked." },
   { slug: "how-to-check-if-an-app-trains-ai-on-your-data", description: "Find out in two minutes whether an app uses your data to train AI: where to look in its policy, the exact phrases that matter, and a free checker." },
   { slug: "does-chatgpt-train-on-your-data", description: "Does ChatGPT train on your data? Yes, by default, but OpenAI's own policy says you can opt out. Here's the exact wording, plus how other AI tools compare." },
