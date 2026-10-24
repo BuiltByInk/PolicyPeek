@@ -24,13 +24,19 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
 <Layout
   title="Does it train on your data?"
   description="PolicyPeek checks AI tools' own privacy policies and tells you, in one line, whether they train on your data — sourced from the policy itself, not a guess."
-  jsonLd={{
+  jsonLd={[{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "PolicyPeek",
+    url: Astro.site!.href,
+    logo: new URL("/apple-touch-icon.png", Astro.site!).href,
+  }, {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "PolicyPeek",
     url: Astro.site!.href,
     description: "Plain-English verdicts on whether AI tools train on your data, sourced from each tool's own privacy policy.",
-  }}
+  }]}
 >
   <section class="hero">
     <div class="hero-main">

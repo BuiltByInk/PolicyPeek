@@ -124,8 +124,30 @@ const breadcrumbs = {
     { "@type": "ListItem", position: 3, name: tool.name, item: `${siteUrl}tools/${tool.domain}/` },
   ],
 };
+const toolUrl = `${siteUrl}tools/${tool.domain}/`;
+const jsonLd = [
+  breadcrumbs,
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: pageTitle,
+    description: pageDescription,
+    url: toolUrl,
+    inLanguage: "en-GB",
+    ...(lastCheckedValid ? { dateModified: lastCheckedDate!.toISOString() } : {}),
+    publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
+    about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
+  },
+  ...(!isNotAi && plainAnswer
+    ? [{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [{ "@type": "Question", name: `Does ${tool.name} train on my data?`, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }],
+      }]
+    : []),
+];
 ---
-<Layout title={pageTitle} description={pageDescription} noindex={isNotAi} jsonLd={breadcrumbs}>
+<Layout title={pageTitle} description={pageDescription} noindex={isNotAi} jsonLd={jsonLd}>
   <a class="back" href="/tools">← All tools</a>
 
   <header class="detail-head">
