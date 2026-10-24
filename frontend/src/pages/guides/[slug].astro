@@ -13,6 +13,7 @@ const modules = import.meta.glob<{ Content: any }>("../../guides/*.md", { eager:
 const { Content } = modules[`../../guides/${guide.slug}.md`];
 const url = guideUrl(guide);
 const org = { "@type": "Organization", name: "PolicyPeek", url: SITE };
+const author = { "@type": "Organization", name: "InkLLM", url: `${SITE}/about/` };
 const jsonLd = [
   {
     "@context": "https://schema.org",
@@ -23,7 +24,7 @@ const jsonLd = [
     dateModified: guide.modified,
     inLanguage: "en-GB",
     mainEntityOfPage: url,
-    author: org,
+    author,
     publisher: org,
   },
   ...(guide.faqs.length
@@ -55,6 +56,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
 <Layout title={guide.title} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
   <a class="back" href="/guides/">← All guides</a>
   <article class="guide">
+    <p class="byline">By <a href="/about/" rel="author">InkLLM</a></p>
     <Content />
     <p class="updated">Last updated <time datetime={guide.modified}>{fmt(guide.modified)}</time>. Plain-text version for AI tools: <a href={`/guides/${guide.slug}.md`} type="text/markdown">{guide.slug}.md</a>.</p>
   </article>
@@ -74,6 +76,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
 </Layout>
 
 <style>
+  .byline { color: var(--muted); font-size: 0.9rem; margin: 0.5rem 0 0; }
   .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; margin-top: 1rem; }
   .guide :global(table) { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; display: block; overflow-x: auto; }
   .guide :global(th), .guide :global(td) { border: 1px solid var(--line-soft); padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }

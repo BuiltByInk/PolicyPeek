@@ -9,9 +9,17 @@ import toolsData from "../../../data/tools.json";
 const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
 const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
 // Rank used by the "Verdict" sort: things worth a second look first.
+const itemListLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "AI tools checked by PolicyPeek",
+  numberOfItems: tools.length,
+  itemListElement: tools.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: `https://getpolicypeek.com/tools/${t.domain}/` })),
+};
 const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
 ---
 <Layout
+  jsonLd={itemListLd}
   title="Tools"
   description="Every tool PolicyPeek has checked, with a badge (doesn't train / opt-out available / no opt-out / policy unclear) and the one-line reason behind it."
 >
