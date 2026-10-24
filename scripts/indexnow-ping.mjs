@@ -9,7 +9,7 @@ if (!keyFile) throw new Error("no IndexNow key file in frontend/public");
 const key = keyFile.slice(0, 32);
 const locs = async (u) => [...(await (await fetch(u)).text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 let urls = [];
-for (const u of await locs(process.argv[2] || `https://${HOST}/sitemap.xml`)) {
+for (const u of await locs(process.argv[2] || `https://${HOST}/sitemap-index.xml`)) {
   if (u.endsWith(".xml")) urls.push(...(await locs(u))); else urls.push(u);
 }
 urls = [...new Set(urls)].filter((u) => new URL(u).host === HOST);
