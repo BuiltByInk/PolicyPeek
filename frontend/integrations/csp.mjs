@@ -58,10 +58,13 @@ export function buildCsp({ scriptHashes, styleHashes = new Set(), apiBase }) {
   const apiOrigin = u.origin;
   return [
     "default-src 'self'",
-    `script-src 'self' ${[...scriptHashes].sort().join(" ")} https://static.cloudflareinsights.com`.replace(/\s+/g, " "),
-    `style-src 'self' ${[...styleHashes].sort().join(" ")}`.trim(),
-    "img-src 'self' data:",
-    "font-src 'self'",
+    `script-src 'self' ${[...scriptHashes].sort().join(" ")} https://static.cloudflareinsights.com https://gumroad.com https://assets.gumroad.com`.replace(/\s+/g, " "),
+    `style-src 'self' ${[...styleHashes].sort().join(" ")} https://assets.gumroad.com`.replace(/\s+/g, " "),
+    "img-src 'self' data: https://assets.gumroad.com",
+    "font-src 'self' https://assets.gumroad.com",
+    // Gumroad checkout overlay (/policy-pack/): gumroad.js loads its bundle and
+    // CSS from assets.gumroad.com and opens the product page in an iframe.
+    "frame-src https://gumroad.com https://*.gumroad.com",
     `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
     "object-src 'none'",
     "base-uri 'self'",

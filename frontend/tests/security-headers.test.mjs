@@ -28,6 +28,12 @@ for (const beacon of [false, true]) {
       assert.match(csp, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com/);
       assert.match(csp, /connect-src[^;]*https:\/\/api\.getpolicypeek\.com[^;]*https:\/\/cloudflareinsights\.com/);
       assert.match(csp, /frame-ancestors 'none'/);
+      assert.match(csp, /script-src[^;]*https:\/\/gumroad\.com https:\/\/assets\.gumroad\.com/);
+      assert.match(csp, /frame-src https:\/\/gumroad\.com https:\/\/\*\.gumroad\.com/);
+      const pack = readFileSync(join(dir, "policy-pack/index.html"), "utf8");
+      for (const id of ["rppfze", "jhuide", "xybbay", "vfapf"]) assert.match(pack, new RegExp(`<a[^>]*class="buy gumroad-button"[^>]*href="https://inkspire776\\.gumroad\\.com/l/${id}"`), id);
+      assert.match(pack, /src="https:\/\/gumroad\.com\/js\/gumroad\.js"/);
+      assert.match(pack, /mailto:hello@getpolicypeek\.com/);
       const files = htmlFiles(dir);
       assert.ok(files.length > 30);
       for (const f of files) for (const hash of inlineScriptHashes(readFileSync(f, "utf8"))) assert.ok(csp.includes(hash), `${f} inline script not in CSP`);
