@@ -1,0 +1,44 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "PolicyPeek by InkLLM",
+    "identifier": "did:web:getpolicypeek.com",
+    "documentationUrl": "https://getpolicypeek.com/developers/"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:getpolicypeek.com:api:lookup",
+      "displayName": "PolicyPeek public lookup API (OpenAPI 3.1)",
+      "description": "Read-only, unauthenticated lookup of whether an AI tool trains on user data, based on the tool's own published policy. Not legal advice.",
+      "type": "application/vnd.oai.openapi+json;version=3.1",
+      "url": "https://getpolicypeek.com/openapi.json",
+      "representativeQueries": [
+        "does Notion AI train on my data",
+        "can I opt out of ChatGPT using my data for training",
+        "which AI tools do not train on customer data",
+        "check an AI tool's privacy policy for model training"
+      ]
+    },
+    {
+      "identifier": "urn:air:getpolicypeek.com:skill:policypeek-lookup",
+      "displayName": "PolicyPeek lookup agent skill",
+      "description": "Agent Skill explaining how to use the PolicyPeek lookup API.",
+      "type": "text/markdown",
+      "url": "https://getpolicypeek.com/.well-known/agent-skills/policypeek-lookup/SKILL.md",
+      "representativeQueries": [
+        "how to check if an AI tool trains on user data",
+        "AI tool data training verdict lookup"
+      ]
+    },
+    {
+      "identifier": "urn:air:getpolicypeek.com:docs:llms-txt",
+      "displayName": "PolicyPeek llms.txt site summary",
+      "type": "text/plain",
+      "url": "https://getpolicypeek.com/llms.txt",
+      "representativeQueries": [
+        "list of AI tools and whether they train on your data",
+        "PolicyPeek guides for UK small businesses on AI policy"
+      ]
+    }
+  ]
+}

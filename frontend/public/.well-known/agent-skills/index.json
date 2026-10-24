@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "policypeek-lookup",
+      "type": "skill-md",
+      "description": "Check whether an AI tool trains on user data, using PolicyPeek's free, read-only lookup API (no key needed). Use when someone asks if a tool uses their data for model training or offers an opt-out.",
+      "url": "/.well-known/agent-skills/policypeek-lookup/SKILL.md",
+      "digest": "sha256:1e4823a9b9557f6ab898d36f715ba7dba95dcae3684f10ba6338ec77cfd7e8c7"
+    }
+  ]
+}
