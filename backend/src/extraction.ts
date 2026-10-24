@@ -140,23 +140,98 @@ const EXCLUDED_OPT_OUT = [
   /\b(?:delet\w*|eras\w*|remov\w*)\b[^.]{0,80}\b(?:data|content|account|information)\b/i, // deleting your data
   /\b(?:clos\w*|terminat\w*|cancel\w*)\b[^.]{0,40}\baccount\b/i, // closing your account
   /\bcookies?\b|\bbrowser settings?\b/i,
-  /\b(?:marketing|newsletters?|promotional|communications|e-?mails?)\b/i,
+  /\b(?:marketing|newsletters?|promotional)\b/i,
+  /\breceiv\w*\b[^.]{0,40}\b(?:communications|e-?mails?|messages)\b/i,
   /\b(?:analytics|advertis\w*|targeted ads|ad personali[sz]ation|interest-based)\b/i,
   /\b(?:sale|sell(?:ing)?|shar(?:e|ing))\b[^.]{0,60}\bpersonal (?:data|information)\b/i, // CCPA
   /\bwithdraw\w*\b[^.]{0,30}\bconsent\b/i,
   /\bright to object\b/i,
 ];
 
-export function isTrainingOptOutClause(clause: string | null | undefined): boolean {
+// The opt-out sentence often relies on its heading or the sentence before for
+// the "training" part ("Opt out of training: You can opt out of our use of
+// your personal information..."; "You can opt-out of this at any time..."), so
+// the training-vocabulary test also looks at up to CONTEXT_BEFORE characters
+// preceding the clause in the source text, when the clause is found there.
+// The exclusion test only ever looks at the clause itself.
+const CONTEXT_BEFORE = 400;
+
+// Pages often differ from the model's quote only in whitespace before
+// punctuation ("at any time .") or curly vs straight quotes (Mistral).
+const norm = (s: string) =>
+  s
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+
+export function isTrainingOptOutClause(clause: string | null | undefined, sourceText?: string): boolean {
   if (!clause || !clause.trim()) return false;
-  if (!TRAINING_VOCAB.test(clause)) return false;
-  return !EXCLUDED_OPT_OUT.some((re) => re.test(clause));
+  if (EXCLUDED_OPT_OUT.some((re) => re.test(clause))) return false;
+  if (TRAINING_VOCAB.test(clause)) return true;
+  if (!sourceText) return false;
+  const src = norm(sourceText);
+  const q = norm(clause);
+  let at = src.indexOf(q);
+  if (at === -1) at = src.indexOf(q.slice(0, 60)); // quote trimmed or lightly paraphrased at the end
+  if (at === -1) return false;
+  return TRAINING_VOCAB.test(src.slice(Math.max(0, at - CONTEXT_BEFORE), at));
 }
 
-export function enforceTrainingOptOut(facts: ExtractedFacts, optOutClause: unknown): ExtractedFacts {
+export function enforceTrainingOptOut(facts: ExtractedFacts, optOutClause: unknown, sourceText?: string): ExtractedFacts {
   if (facts.opt_out_available !== true) return facts;
   const clause = typeof optOutClause === "string" ? optOutClause : null;
-  return isTrainingOptOutClause(clause) ? facts : { ...facts, opt_out_available: false };
+  if (!isTrainingOptOutClause(clause, sourceText)) return { ...facts, opt_out_available: false };
+  // "Doesn't train" plus a real training opt-out contradicts itself (Zapier:
+  // enterprise opted out automatically, everyone else "may opt out"). Don't
+  // guess the default: null routes to unrated / human review.
+  if (facts.trains_on_user_data === false) return { ...facts, trains_on_user_data: null };
+  return facts;
+}
+
+// Haiku sometimes leaves a double quote unescaped inside a quoted clause
+// (e.g. turning off "Improve the model for everyone"), which made JSON.parse
+// fail for deepl.com and runway.com in the 24 Oct regression. repairJson
+// escapes any '"' inside a string that isn't followed by a JSON delimiter.
+export function repairJson(json: string): string {
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    if (!inStr) {
+      if (c === '"') inStr = true;
+      out += c;
+      continue;
+    }
+    if (c === "\\") {
+      out += c + (json[i + 1] ?? "");
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      const next = json.slice(i + 1).match(/^\s*(.)/)?.[1];
+      if (next === undefined || ",:}]".includes(next)) {
+        inStr = false;
+        out += c;
+      } else out += '\\"';
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
+
+export function parseModelJson(text: string): unknown {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) throw new Error("no_json_object_in_response");
+  const slice = text.slice(start, end + 1);
+  try {
+    return JSON.parse(slice);
+  } catch {
+    return JSON.parse(repairJson(slice));
+  }
 }
 
 export const SYSTEM_PROMPT = `You extract factual data-handling claims from privacy policy or terms text. Output ONLY facts stated in the text, never a compliance judgment or verdict. The text may be excerpts joined by "[...]": the start of the document plus passages around AI/training wording.
@@ -216,14 +291,8 @@ export async function extractFacts(rawText: string, apiKey: string): Promise<Ext
   // saying to -- markdown fences and trailing prose after the closing brace
   // both show up in practice. Extract the outermost {...} object rather than
   // trusting the response to be parseable as-is.
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error("no_json_object_in_response");
-  }
-  const jsonSlice = text.slice(start, end + 1);
-  const parsed: unknown = JSON.parse(jsonSlice);
+  const parsed = parseModelJson(text);
   const optOutClause = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>).opt_out_clause : null;
 
-  return enforceTrainingOptOut(sanitizeFacts(parsed), optOutClause);
+  return enforceTrainingOptOut(sanitizeFacts(parsed), optOutClause, truncated);
 }

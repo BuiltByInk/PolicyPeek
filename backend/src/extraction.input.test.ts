@@ -5,6 +5,8 @@ import {
   isTrainingOptOutClause,
   HEAD_CHARS,
   MAX_INPUT_CHARS,
+  parseModelJson,
+  repairJson,
   type ExtractedFacts,
 } from "./extraction";
 import { computeVerdict } from "./rules";
@@ -125,5 +127,57 @@ describe("training-only opt-out", () => {
   it("leaves false/null untouched", () => {
     expect(enforceTrainingOptOut({ ...trains, opt_out_available: null }, null).opt_out_available).toBeNull();
     expect(enforceTrainingOptOut({ ...trains, opt_out_available: false }, null).opt_out_available).toBe(false);
+  });
+});
+
+describe("training opt-out: 24 Oct dry-run cases", () => {
+  it("counts an opt-out by emailing support (HeyGen, Kimi)", () => {
+    expect(isTrainingOptOutClause("You may request to opt-out of this training and enhancement by contacting us at privacy@heygen.com.")).toBe(true);
+    expect(isTrainingOptOutClause("If you do not want your conversation data to be used for training, you can contact customer support at x@kimi.com and submit a request.")).toBe(true);
+  });
+
+  it("uses the heading / previous sentence for training context (ElevenLabs, Photoroom)", () => {
+    const src = "Opt out of training: You can opt out of our use of your personal information at any time in Data use.";
+    expect(isTrainingOptOutClause("You can opt out of our use of your personal information at any time in Data use.", src)).toBe(true);
+    const pr = "you authorize Photoroom to use User Content to improve, train and develop products. You can opt-out of this at any time under Data Control.";
+    expect(isTrainingOptOutClause("You can opt-out of this at any time under Data Control.", pr)).toBe(true);
+    expect(isTrainingOptOutClause("You can opt-out of this at any time under Data Control.")).toBe(false);
+  });
+
+  it("context never rescues an excluded mechanism", () => {
+    const src = "We train models on your data. You can opt out of marketing emails at any time.";
+    expect(isTrainingOptOutClause("You can opt out of marketing emails at any time.", src)).toBe(false);
+  });
+
+  it("doesn't-train plus a real training opt-out becomes null (Zapier) -> unrated", () => {
+    const f = enforceTrainingOptOut(
+      { ...trains, trains_on_user_data: false },
+      "Enterprise customers are automatically opted out of Zapier using their content for model training and improvement purposes. All other customers may opt out at any time.",
+    );
+    expect(f.trains_on_user_data).toBeNull();
+    expect(computeVerdict(f)).toBe("unrated");
+  });
+});
+
+describe("parseModelJson", () => {
+  it("parses fenced JSON with trailing prose", () => {
+    expect(parseModelJson('```json\n{"a": [1, "x"]}\n```\nDone.')).toEqual({ a: [1, "x"] });
+  });
+  it("repairs unescaped quotes inside a clause string", () => {
+    const bad = '{"relevant_clauses": ["you can opt out by turning off "Improve the model for everyone".", "b"], "x": "say "hi" now"}';
+    expect(parseModelJson(bad)).toEqual({ relevant_clauses: ['you can opt out by turning off "Improve the model for everyone".', "b"], x: 'say "hi" now' });
+  });
+  it("leaves valid escapes alone", () => {
+    expect(repairJson('{"a": "q \\" e \\\\ z"}')).toBe('{"a": "q \\" e \\\\ z"}');
+  });
+  it("still fails honestly with no object", () => {
+    expect(() => parseModelJson("no json")).toThrow(/no_json_object_in_response/);
+  });
+});
+
+describe("training opt-out context matching", () => {
+  it("finds the clause despite space-before-period and curly quotes (Mistral)", () => {
+    const src = "may be included in Mistral\u2019s model training programs . \uD83D\uDD11 You retain full control over this processing and have the right to opt out of these programs at any time . The opt-out";
+    expect(isTrainingOptOutClause("You retain full control over this processing and have the right to opt out of these programs at any time.", src)).toBe(true);
   });
 });
