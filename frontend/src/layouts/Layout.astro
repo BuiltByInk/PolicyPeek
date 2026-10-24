@@ -272,6 +272,13 @@ const jsonLdString = jsonLd
         nav.site { white-space: nowrap; }
         nav.site a { margin-left: 0.9rem; font-size: 0.74rem; letter-spacing: 0.04em; }
       }
+      @media (max-width: 640px) {
+        /* Four nav items don't fit beside the logo on phones/narrow tablets:
+           put the nav on its own full-width row so every link stays reachable. */
+        header.site .wrap { flex-wrap: wrap; row-gap: 0.25rem; }
+        nav.site { width: 100%; display: flex; flex-wrap: wrap; gap: 0 1.1rem; white-space: normal; }
+        nav.site a { margin-left: 0; }
+      }
       /* Print: a checked result is something people save or print for a
          colleague/relative. Drop chrome and forms, force black-on-white, and
          show link targets so a printed source list is still usable. */
@@ -306,6 +313,7 @@ const jsonLdString = jsonLd
           <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
           <a href="/guides/"{...(path.startsWith("/guides") ? { "aria-current": "page" } : {})}>Guides</a>
           <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
+          <a href="/policy-pack/"{...(path.startsWith("/policy-pack") ? { "aria-current": "page" } : {})}>For businesses</a>
         </nav>
       </div>
     </header>
