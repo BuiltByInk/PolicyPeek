@@ -1,7 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { GUIDES, SITE, guideUrl, type Guide } from "../../guides";
-import { GUMROAD } from "../../gumroad";
+import { gumroadLink } from "../../gumroad";
 
 export function getStaticPaths() {
   return GUIDES.map((g) => ({ params: { slug: g.slug }, props: { guide: g } }));
@@ -58,7 +58,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
     <p class="updated">Last updated <time datetime={guide.modified}>{fmt(guide.modified)}</time>. Plain-text version for AI tools: <a href={`/guides/${guide.slug}.md`} type="text/markdown">{guide.slug}.md</a>.</p>
   </article>
   <aside class="checklist-cta" aria-label="Free AI checklist">
-    <p>Want a simple checklist to work through with your team? <a href={GUMROAD.checklist}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
+    <p>Want a simple checklist to work through with your team? <a href={gumroadLink("checklist", `guide-${guide.slug}`)}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
     <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>
   </aside>
   <section class="more-guides" aria-labelledby="more-h">

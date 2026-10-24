@@ -4,7 +4,7 @@
 // links to the Gumroad product pages; gumroad.js (allowed in the CSP) upgrades
 // them to an on-page checkout overlay, and without JS they simply open Gumroad.
 import Layout from "../layouts/Layout.astro";
-import { GUMROAD } from "../gumroad";
+import { gumroadLink } from "../gumroad";
 ---
 <Layout
   title="AI Policy Starter Pack by InkLLM"
@@ -32,7 +32,7 @@ import { GUMROAD } from "../gumroad";
         <li>AI Acceptable-Use Policy template (Word + Markdown), including AI Tool Register and EU AI Act key-dates sheet</li>
         <li>Staff Guide to Using AI Tools Safely (Word + Markdown)</li>
       </ul>
-      <a class="buy gumroad-button" href={GUMROAD.starter}>Buy now</a>
+      <a class="buy gumroad-button" href={gumroadLink("starter", "policy-pack")}>Buy now</a>
       <p class="pick">Choose "Essentials" at checkout.</p>
     </section>
     <section class="option featured">
@@ -43,7 +43,7 @@ import { GUMROAD } from "../gumroad";
         <li>AI Vendor Checklist (Word + Markdown): 30+ questions on training on your data, retention, opt-outs, sub-processors, GDPR DPAs and lawful basis, international transfers and EU AI Act risk tiers, with real example findings from PolicyPeek</li>
         <li>12 months of updates: when laws or key dates change, updated files are added to your download</li>
       </ul>
-      <a class="buy gumroad-button" href={GUMROAD.starter}>Buy now</a>
+      <a class="buy gumroad-button" href={gumroadLink("starter", "policy-pack")}>Buy now</a>
       <p class="pick">Choose "Complete" at checkout.</p>
     </section>
   </div>
@@ -57,7 +57,7 @@ import { GUMROAD } from "../gumroad";
         <li>Everything to run a short, practical AI session for your team, so staff understand the rules in your AI policy</li>
         <li>Works on its own or alongside the Starter Pack</li>
       </ul>
-      <a class="buy gumroad-button" href={GUMROAD.training}>Buy now</a>
+      <a class="buy gumroad-button" href={gumroadLink("training", "policy-pack")}>Buy now</a>
     </section>
     <section class="option">
       <h3>Starter Pack + Training Kit bundle <span class="price">£59</span></h3>
@@ -66,7 +66,7 @@ import { GUMROAD } from "../gumroad";
         <li>The Starter Pack Complete and the Staff AI Training Kit in one download</li>
         <li>£9 less than buying the two separately (£39 + £29)</li>
       </ul>
-      <a class="buy gumroad-button" href={GUMROAD.bundle}>Buy now</a>
+      <a class="buy gumroad-button" href={gumroadLink("bundle", "policy-pack")}>Buy now</a>
     </section>
     <section class="option">
       <h3>AI Incident Response One-Pager + Breach Log <span class="price">£19</span></h3>
@@ -75,12 +75,12 @@ import { GUMROAD } from "../gumroad";
         <li>A one-page plan for when AI goes wrong: data pasted into a chatbot, an unchecked AI answer sent to a client, a deepfake call</li>
         <li>A breach log (Word + PDF) to record every incident, with the ICO's 72-hour reporting rule explained</li>
       </ul>
-      <a class="buy gumroad-button" href={GUMROAD.incident}>Buy now</a>
+      <a class="buy gumroad-button" href={gumroadLink("incident", "policy-pack")}>Buy now</a>
     </section>
   </div>
 
   <aside class="freebie" aria-label="Free checklist">
-    <p><strong>Not ready to buy?</strong> The free AI checklist covers the basics of using AI tools safely at work. <a href={GUMROAD.checklist}>Get the free checklist on Gumroad</a> (free, or pay what you like).</p>
+    <p><strong>Not ready to buy?</strong> The free AI checklist covers the basics of using AI tools safely at work. <a href={gumroadLink("checklist", "policy-pack")}>Get the free checklist on Gumroad</a> (free, or pay what you like).</p>
   </aside>
 
   <h2>Who it's for</h2>

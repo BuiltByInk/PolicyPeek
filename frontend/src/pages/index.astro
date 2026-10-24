@@ -4,7 +4,7 @@ import SubmitTool from "../components/SubmitTool.astro";
 import Badge from "../components/Badge.astro";
 import type { Tool } from "../types";
 import { VERDICTS, sentence } from "../verdicts";
-import { GUMROAD } from "../gumroad";
+import { gumroadLink } from "../gumroad";
 import toolsData from "../../data/tools.json";
 
 const tools = toolsData as Tool[];
@@ -104,7 +104,7 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
       <li><strong>Starter Pack + Training Kit bundle</strong> <span class="p">£59</span><span class="d">The Complete policy pack and the training kit together.</span></li>
       <li><strong>AI Incident Response One-Pager + Breach Log</strong> <span class="p">£19</span><span class="d">A one-page plan for when AI goes wrong at work, plus a breach log.</span></li>
     </ul>
-    <p class="biz-go"><a class="btn" href="/policy-pack/">See the business resources</a> <span>or <a href={GUMROAD.checklist}>get the free AI checklist</a></span></p>
+    <p class="biz-go"><a class="btn" href="/policy-pack/">See the business resources</a> <span>or <a href={gumroadLink("checklist", "homepage")}>get the free AI checklist</a></span></p>
     <p class="biz-by">by InkLLM</p>
   </section>
 
