@@ -46,6 +46,7 @@ const jsonLd = [
 const fmt = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 // One contextual pointer to the business resources page (not part of the guide text).
 const INCIDENT_GUIDES = ["ai-tools-that-train-on-your-data-no-opt-out", "does-mailchimp-use-your-data-for-ai-training"];
+const POLICY_GUIDES = ["do-uk-small-businesses-need-an-ai-policy", "eu-ai-act-article-4-ai-literacy-small-uk-business"];
 const packLine = INCIDENT_GUIDES.includes(guide.slug)
   ? "Already using a tool like this at work? The AI Incident Response One-Pager (£19) covers what to do if the wrong data goes in, and the AI Policy Starter Pack (from £19) sets ground rules for your team."
   : "Running a small team? The AI Policy Starter Pack (from £19) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
@@ -59,7 +60,9 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   </article>
   <aside class="checklist-cta" aria-label="Free AI checklist">
     <p>Want a simple checklist to work through with your team? <a href={gumroadLink("checklist", `guide-${guide.slug}`)}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
-    <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>
+    {POLICY_GUIDES.includes(guide.slug)
+      ? <p class="pack-cta">Need this done this week? The AI Policy Starter Pack (from £19) gives you a ready-to-edit UK AI policy, and the Training Kit (£29) covers the staff session and training record. <a href={gumroadLink("starter", `guide-${guide.slug}`)}>Get the Starter Pack</a> or <a href={gumroadLink("training", `guide-${guide.slug}`)}>the Training Kit</a>.</p>
+      : <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>}
   </aside>
   <section class="more-guides" aria-labelledby="more-h">
     <h2 id="more-h">More guides</h2>
