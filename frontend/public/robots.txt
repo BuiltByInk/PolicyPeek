@@ -34,7 +34,9 @@ User-agent: Bingbot
 User-agent: Googlebot
 Allow: /
 
+# Content Signals (https://contentsignals.org/): search and AI answers yes, AI training no.
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 
 Sitemap: https://getpolicypeek.com/sitemap-index.xml
