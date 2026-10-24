@@ -151,7 +151,7 @@ const EXCLUDED_OPT_OUT = [
 
 // The clause must actually describe a way to stop: "select preferences about
 // your data" (Mailchimp) is not an opt-out.
-const OPT_OUT_ACTION = /\b(?:opt(?:-| )?(?:s|ed|ing)? ?out|opted out|turn(?:ing)? off|disabl\w*|deselect\w*|switch(?:ing)? off|toggle|do not want|don't want|stop using|exclude)\b/i;
+const OPT_OUT_ACTION = /\b(?:opt(?:-| )?(?:s|ed|ing)? ?out|opted out|turn(?:ing)? off|disabl\w*|deselect\w*|switch(?:ing)? off|toggle|do not want|don't want|stop using|exclude|enabl\w*|decide whether|choose whether|(?:training|data) controls?|privacy mode)\b/i;
 
 // The opt-out sentence often relies on its heading or the sentence before for
 // the "training" part ("Opt out of training: You can opt out of our use of

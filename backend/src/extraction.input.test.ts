@@ -194,3 +194,12 @@ describe("training opt-out: held-tool false positives", () => {
     expect(isTrainingOptOutClause("You can opt out at any time.", src)).toBe(false);
   });
 });
+
+describe("training opt-out: published caveats phrasings (24 Oct regression)", () => {
+  it("Cursor: enabling Privacy Mode counts", () => {
+    expect(isTrainingOptOutClause('If you enable "Privacy Mode" in Cursor\'s settings: Customer Data will not be used for training by Cursor.')).toBe(true);
+  });
+  it("Grammarly: training controls count", () => {
+    expect(isTrainingOptOutClause("You can decide whether Superhuman can use your user content to train our AI models by adjusting the available training control(s) in your account settings.")).toBe(true);
+  });
+});
