@@ -44,6 +44,11 @@ const jsonLd = [
   },
 ];
 const fmt = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+// One contextual pointer to the business resources page (not part of the guide text).
+const INCIDENT_GUIDES = ["ai-tools-that-train-on-your-data-no-opt-out", "does-mailchimp-use-your-data-for-ai-training"];
+const packLine = INCIDENT_GUIDES.includes(guide.slug)
+  ? "Already using a tool like this at work? The AI Incident Response One-Pager (£19) covers what to do if the wrong data goes in, and the AI Policy Starter Pack (from £19) sets ground rules for your team."
+  : "Running a small team? The AI Policy Starter Pack (from £19) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
 const others = GUIDES.filter((g) => g.slug !== guide.slug);
 ---
 <Layout title={guide.title} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
@@ -54,6 +59,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   </article>
   <aside class="checklist-cta" aria-label="Free AI checklist">
     <p>Want a simple checklist to work through with your team? <a href={GUMROAD.checklist}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
+    <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>
   </aside>
   <section class="more-guides" aria-labelledby="more-h">
     <h2 id="more-h">More guides</h2>
@@ -74,6 +80,7 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   .updated { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line-soft); padding-top: 0.75rem; margin-top: 2rem; }
   .checklist-cta { border: 2px solid var(--line-soft); padding: 0.75rem 1rem; margin: 1.5rem 0; }
   .checklist-cta p { margin: 0; }
+  .checklist-cta p.pack-cta { margin-top: 0.5rem; color: var(--muted); font-size: 0.92rem; }
   .more-guides ul { list-style: none; padding: 0; margin: 0.5rem 0; }
   .more-guides li { margin: 0.35rem 0; }
 </style>

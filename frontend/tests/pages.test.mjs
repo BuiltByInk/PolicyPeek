@@ -87,3 +87,34 @@ test("SEO: tool page title/description from the verdict, related links, every to
   assert.match(h, /<link rel="canonical" href="https:\/\/getpolicypeek\.com\/tools\/claude\.com\/">/);
   assert.match(h, /og:url" content="https:\/\/getpolicypeek\.com\/tools\/claude\.com\/"/);
 });
+
+test("nav: 'For businesses' links to /policy-pack/ on every page", () => {
+  for (const p of ["index.html", "guides/index.html", "tools/openai.com/index.html", "about/index.html"]) {
+    assert.match(read(plain, p), /<nav class="site"[^>]*>[\s\S]*?<a href="\/policy-pack\/"[^>]*>For businesses<\/a>[\s\S]*?<\/nav>/, p);
+  }
+  assert.match(read(plain, "policy-pack/index.html"), /<a href="\/policy-pack\/" aria-current="page"[^>]*>For businesses<\/a>/);
+});
+
+test("homepage: calm 'For UK small businesses' section with 4 products, shop link and free checklist", () => {
+  const h = read(plain, "index.html");
+  const m = h.match(/<section class="biz"[\s\S]*?<\/section>/);
+  assert.ok(m, "biz section present");
+  const s = m[0];
+  assert.match(s, /For UK small businesses/);
+  for (const n of ["AI Policy Starter Pack", "Staff AI Training Kit", "Starter Pack + Training Kit bundle", "AI Incident Response One-Pager"]) assert.ok(s.includes(n), n);
+  for (const p of ["£19 / £39", "£29", "£59", "£19"]) assert.ok(s.includes(p), p);
+  assert.match(s, /href="\/policy-pack\/"/);
+  assert.match(s, /inkspire776\.gumroad\.com\/l\/rhfram/);
+  assert.match(s, /by InkLLM/);
+  assert.match(s, /include VAT for UK buyers/);
+  assert.ok(h.indexOf('class="register"') < h.indexOf('class="biz"'), "below the verdict summary");
+});
+
+test("guides: each ends with the free checklist and a contextual business-resources line", () => {
+  const g = read(plain, "guides/does-mailchimp-use-your-data-for-ai-training/index.html");
+  assert.match(g, /rhfram/);
+  assert.match(g, /class="pack-cta"[^>]*>[^<]*Incident Response[\s\S]*?href="\/policy-pack\/"/);
+  const c = read(plain, "guides/do-ai-coding-assistants-train-on-your-code/index.html");
+  assert.match(c, /class="pack-cta"[^>]*>[^<]*Starter Pack[\s\S]*?href="\/policy-pack\/"/);
+  assert.doesNotMatch(read(plain, "guides/does-chatgpt-train-on-your-data.md"), /policy-pack/);
+});

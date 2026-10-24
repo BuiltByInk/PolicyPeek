@@ -4,6 +4,7 @@ import SubmitTool from "../components/SubmitTool.astro";
 import Badge from "../components/Badge.astro";
 import type { Tool } from "../types";
 import { VERDICTS, sentence } from "../verdicts";
+import { GUMROAD } from "../gumroad";
 import toolsData from "../../data/tools.json";
 
 const tools = toolsData as Tool[];
@@ -91,6 +92,20 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
         </li>
       ))}
     </ul>
+  </section>
+
+
+  <section class="biz" aria-labelledby="biz-h">
+    <h2 id="biz-h">For UK small businesses</h2>
+    <p class="biz-def">PolicyPeek is free and stays free. If you run a small team, InkLLM, the people behind it, also make a few plain-English templates for using AI at work. Prices include VAT for UK buyers.</p>
+    <ul>
+      <li><strong>AI Policy Starter Pack</strong> <span class="p">£19 / £39</span><span class="d">A ready-to-edit AI use policy for your team, in Essentials or Complete.</span></li>
+      <li><strong>Staff AI Training Kit</strong> <span class="p">£29</span><span class="d">Everything to run a short, practical AI session for your team.</span></li>
+      <li><strong>Starter Pack + Training Kit bundle</strong> <span class="p">£59</span><span class="d">The Complete policy pack and the training kit together.</span></li>
+      <li><strong>AI Incident Response One-Pager + Breach Log</strong> <span class="p">£19</span><span class="d">A one-page plan for when AI goes wrong at work, plus a breach log.</span></li>
+    </ul>
+    <p class="biz-go"><a class="btn" href="/policy-pack/">See the business resources</a> <span>or <a href={GUMROAD.checklist}>get the free AI checklist</a></span></p>
+    <p class="biz-by">by InkLLM</p>
   </section>
 
   {/* Every tool as a plain crawlable link (SEO 2026-10-23). */}
@@ -240,6 +255,19 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
     .row-link .n { grid-row: auto; }
     .row-link .go { display: inline; }
   }
+
+  .biz { border: 2px solid var(--line-soft); padding: 1rem 1.1rem; margin: 0 0 2rem; }
+  .biz h2 { margin: 0; font-size: 1.3rem; }
+  .biz-def { margin: 0.3rem 0 0.8rem; color: var(--muted); font-size: 0.92rem; max-width: 62ch; }
+  .biz ul { list-style: none; margin: 0 0 0.9rem; padding: 0; }
+  .biz li { padding: 0.45rem 0; border-bottom: 1px solid var(--line-soft); }
+  .biz li:last-child { border-bottom: none; }
+  .biz .p { font-family: var(--font-mono); margin-left: 0.4rem; }
+  .biz .d { display: block; color: var(--muted); font-size: 0.9rem; }
+  .biz-go { margin: 0; }
+  .biz .btn { display: inline-block; padding: 0.45rem 0.8rem; border: 2px solid var(--line); color: var(--fg); text-decoration: none; font-weight: 700; margin-right: 0.5rem; }
+  .biz .btn:hover { background: var(--fg); color: var(--bg); }
+  .biz-by { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--muted); }
 
   .how ol { padding-left: 1.25rem; font-family: var(--font-body); max-width: 62ch; }
   .how li { margin-bottom: 0.4rem; }
