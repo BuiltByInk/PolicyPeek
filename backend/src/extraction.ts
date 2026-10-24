@@ -146,15 +146,20 @@ const EXCLUDED_OPT_OUT = [
   /\b(?:sale|sell(?:ing)?|shar(?:e|ing))\b[^.]{0,60}\bpersonal (?:data|information)\b/i, // CCPA
   /\bwithdraw\w*\b[^.]{0,30}\bconsent\b/i,
   /\bright to object\b/i,
+  /\brevok\w*\b[^.]{0,40}\b(?:authori[sz]ation|licen[cs]e|consent|permission)\b/i, // revoking a content licence (Kling)
 ];
+
+// The clause must actually describe a way to stop: "select preferences about
+// your data" (Mailchimp) is not an opt-out.
+const OPT_OUT_ACTION = /\b(?:opt(?:-| )?(?:s|ed|ing)? ?out|opted out|turn(?:ing)? off|disabl\w*|deselect\w*|switch(?:ing)? off|toggle|do not want|don't want|stop using|exclude)\b/i;
 
 // The opt-out sentence often relies on its heading or the sentence before for
 // the "training" part ("Opt out of training: You can opt out of our use of
 // your personal information..."; "You can opt-out of this at any time..."), so
-// the training-vocabulary test also looks at up to CONTEXT_BEFORE characters
-// preceding the clause in the source text, when the clause is found there.
-// The exclusion test only ever looks at the clause itself.
-const CONTEXT_BEFORE = 400;
+// the training-vocabulary test also looks at the sentence immediately before
+// the clause in the source text (at most CONTEXT_BEFORE characters), when the
+// clause is found there. The exclusion and action tests look at the clause only.
+const CONTEXT_BEFORE = 300;
 
 // Pages often differ from the model's quote only in whitespace before
 // punctuation ("at any time .") or curly vs straight quotes (Mistral).
@@ -169,6 +174,7 @@ const norm = (s: string) =>
 export function isTrainingOptOutClause(clause: string | null | undefined, sourceText?: string): boolean {
   if (!clause || !clause.trim()) return false;
   if (EXCLUDED_OPT_OUT.some((re) => re.test(clause))) return false;
+  if (!OPT_OUT_ACTION.test(clause)) return false;
   if (TRAINING_VOCAB.test(clause)) return true;
   if (!sourceText) return false;
   const src = norm(sourceText);
@@ -176,7 +182,13 @@ export function isTrainingOptOutClause(clause: string | null | undefined, source
   let at = src.indexOf(q);
   if (at === -1) at = src.indexOf(q.slice(0, 60)); // quote trimmed or lightly paraphrased at the end
   if (at === -1) return false;
-  return TRAINING_VOCAB.test(src.slice(Math.max(0, at - CONTEXT_BEFORE), at));
+  // Drop trailing non-text (emoji bullets, list markers) first (Mistral: "programs. 🔑 You retain").
+  const before = src.slice(Math.max(0, at - CONTEXT_BEFORE), at).replace(/[^\p{L}\p{N}.!?:)"']+$/u, "");
+  // Previous sentence only: cut at the last sentence end before the one that
+  // closes it (headings like "Opt out of training:" have no period).
+  const body = before.replace(/[.!?]$/, "");
+  const prevSentence = body.slice(Math.max(body.lastIndexOf(". "), body.lastIndexOf("? "), body.lastIndexOf("! ")) + 1);
+  return TRAINING_VOCAB.test(prevSentence);
 }
 
 export function enforceTrainingOptOut(facts: ExtractedFacts, optOutClause: unknown, sourceText?: string): ExtractedFacts {

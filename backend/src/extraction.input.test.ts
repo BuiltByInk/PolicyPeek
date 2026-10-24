@@ -181,3 +181,16 @@ describe("training opt-out context matching", () => {
     expect(isTrainingOptOutClause("You retain full control over this processing and have the right to opt out of these programs at any time.", src)).toBe(true);
   });
 });
+
+describe("training opt-out: held-tool false positives", () => {
+  it("Mailchimp: 'select preferences' is not an opt-out", () => {
+    expect(isTrainingOptOutClause("You may select preferences about your data by visiting your account settings.", "We may use your Inputs for machine learning purposes. You may select preferences about your data by visiting your account settings.")).toBe(false);
+  });
+  it("Kling: revoking the content licence is not a training opt-out", () => {
+    expect(isTrainingOptOutClause("If you do not wish us to continue using all or part of the Content, you may notify us to revoke the authorization by sending an email to support@kling.ai.", "(f) train models. 4.7.4 If you do not wish us to continue using all or part of the Content, you may notify us to revoke the authorization by sending an email to support@kling.ai.")).toBe(false);
+  });
+  it("only the immediately preceding sentence gives training context", () => {
+    const src = "We train models on your data. We send invoices monthly. You can opt out at any time.";
+    expect(isTrainingOptOutClause("You can opt out at any time.", src)).toBe(false);
+  });
+});
