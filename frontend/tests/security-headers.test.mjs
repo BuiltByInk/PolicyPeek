@@ -22,6 +22,8 @@ for (const beacon of [false, true]) {
       execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env, stdio: "pipe" });
       const h = readFileSync(join(dir, "_headers"), "utf8");
       assert.ok(!h.includes("__CSP__"));
+      assert.match(h, /\/\*\n(?:.*\n)*?  Permissions-Policy: [^\n]*payment=\(\)/, "global payment=() kept");
+      assert.match(h, /\/policy-pack\/\n  ! Permissions-Policy\n  Permissions-Policy: [^\n]*payment=\(self "https:\/\/gumroad\.com"[^\n]*"https:\/\/js\.stripe\.com"[^\n]*"https:\/\/pay\.google\.com"/, "policy-pack wallet pay");
       for (const name of ["Strict-Transport-Security: max-age=86400", "X-Frame-Options: DENY", "X-Content-Type-Options: nosniff", "Referrer-Policy:", "Permissions-Policy:"]) assert.ok(h.includes(name), name);
       const csp = h.match(/Content-Security-Policy: (.*)/)[1];
       assert.ok(!/'unsafe-(inline|eval|hashes)'/.test(csp), "no unsafe-* anywhere");
