@@ -63,3 +63,22 @@ describe("sanitizeFacts", () => {
     }
   });
 });
+
+describe("extractFacts opt-out enforcement (mocked model)", () => {
+  const reply = (obj: unknown) =>
+    vi.fn(async () => new Response(JSON.stringify({ content: [{ type: "text", text: JSON.stringify(obj) }] }), { status: 200 }));
+
+  it("turns a marketing opt-out into opt_out_available=false", async () => {
+    vi.stubGlobal("fetch", reply({ trains_on_user_data: true, opt_out_available: true, opt_out_clause: "You can opt out of marketing emails at any time.", relevant_clauses: [] }));
+    const f = await extractFacts("We use your content to train our models.", "k");
+    expect(f.opt_out_available).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps a training opt-out", async () => {
+    vi.stubGlobal("fetch", reply({ trains_on_user_data: true, opt_out_available: true, opt_out_clause: "You can turn off model training in Settings.", relevant_clauses: [] }));
+    const f = await extractFacts("We use your content to train our models.", "k");
+    expect(f.opt_out_available).toBe(true);
+    vi.unstubAllGlobals();
+  });
+});
