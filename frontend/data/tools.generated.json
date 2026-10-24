@@ -8,13 +8,12 @@
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/service-improvement.html",
-      "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html"
+      "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/service-improvement.html"
     ],
     "verified": true,
-    "auto_published": false,
+    "auto_published": true,
     "shared_domain": true,
-    "last_checked_at": "2026-08-18T19:39:10.413Z"
+    "last_checked_at": "2026-10-16T04:01:08.276Z"
   },
   {
     "name": "Bolt.new",
@@ -144,14 +143,30 @@
     "verified": true,
     "auto_published": true,
     "shared_domain": false,
-    "last_checked_at": "2026-08-17T20:59:42.366Z"
+    "last_checked_at": "2026-10-16T04:00:59.231Z"
+  },
+  {
+    "name": "Frase",
+    "domain": "frase.io",
+    "compliance_status": "compliant",
+    "summary": "\"Frase does not use Customer Data to develop or train generalized artificial intelligence or machine learning models\".",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://www.frase.io/company/terms"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:07.587Z"
   },
   {
     "name": "Gemini",
     "domain": "google.com",
     "compliance_status": "shared_domain_unverified",
     "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
-    "data_retention": "Default 18 months, changeable to 3 months, 36 months, or indefinite. Chats reviewed by human reviewers retained up to 3 years. Some data retained until Google Account deletion.",
+    "data_retention": "Default 18 months, configurable to 3 months, 36 months, or indefinite. Chats reviewed by human reviewers retained for up to three years. Some data retained until Google Account deletion.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
@@ -160,7 +175,7 @@
     "verified": true,
     "auto_published": true,
     "shared_domain": true,
-    "last_checked_at": "2026-09-01T21:28:01.884Z"
+    "last_checked_at": "2026-10-22T04:01:18.111Z"
   },
   {
     "name": "GitHub Copilot",
@@ -244,6 +259,22 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
+    "name": "HubSpot",
+    "domain": "hubspot.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "HubSpot \"may use customer data ... to train and improve HubSpot's own AI models.\" \"By default, the setting will be turned on.\" \"Super Admins can opt out of AI model training at any time\". Same terms on the free CRM.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://knowledge.hubspot.com/account-management/hubspot-ai-mode-training"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:11.684Z"
+  },
+  {
     "name": "Ideogram",
     "domain": "ideogram.ai",
     "compliance_status": "not_compliant",
@@ -296,8 +327,8 @@
     "name": "Kagi",
     "domain": "kagi.com",
     "compliance_status": "compliant",
-    "summary": "For Kagi, user data is only a liability - we do not need or want it.",
-    "data_retention": "Load Balancer Logs: 7 days; Virtual Machine Logs: 7 days; Sentry: 90 days; Kagi Assistant conversation threads: deleted after one day by default; Summaries of public web pages cached not more than one day",
+    "summary": "When using third party AI model providers, we are using privacy-respecting services that do not save the data or use it for training, whenever possible.",
+    "data_retention": "Load Balancer Logs: 7 days; Virtual Machine Logs: 7 days; Sentry: 90 days; Assistant threads: 1 day (default, auto-delete); Reported threads: 30 days; Web page summaries: max 1 day",
     "trains_on_user_data": false,
     "gdpr_mentioned": true,
     "source_urls": [
@@ -306,7 +337,39 @@
     "verified": true,
     "auto_published": true,
     "shared_domain": false,
-    "last_checked_at": "2026-08-17T20:59:44.727Z"
+    "last_checked_at": "2026-10-16T04:01:05.043Z"
+  },
+  {
+    "name": "Kimi",
+    "domain": "kimi.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"the platform may use users' input data, instructions, and generated responses for model training\". Opt-out by request: \"If you do not want your content to be used for model training, you may contact our customer service\".",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://www.kimi.com/en/help/others/data-usage"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:12.658Z"
+  },
+  {
+    "name": "Lovable",
+    "domain": "lovable.dev",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Trains on Customer Content; \"You can opt out of model training at any time in your account settings, on any plan, at no cost\". Business/Enterprise content is not trained on.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://lovable.dev/privacy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:03.657Z"
   },
   {
     "name": "Luma AI (Dream Machine)",
@@ -328,8 +391,8 @@
     "name": "Microsoft Copilot",
     "domain": "microsoft.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Company-wide policy, not product-verified \u2014 and the best available Copilot-specific source (Microsoft's privacy FAQ) states it covers \"the older version\" of the app, with no current replacement page that states enough to verify facts against.",
-    "data_retention": "By default, conversation activity is stored for 18 months",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "data_retention": "18 months by default",
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
@@ -338,7 +401,7 @@
     "verified": true,
     "auto_published": true,
     "shared_domain": true,
-    "last_checked_at": "2026-09-01T21:31:53.345Z"
+    "last_checked_at": "2026-10-18T04:01:07.085Z"
   },
   {
     "name": "Midjourney",
@@ -355,6 +418,38 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-15T16:02:55.792Z"
+  },
+  {
+    "name": "Mistral Vibe (formerly Le Chat)",
+    "domain": "mistral.ai",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"Input and output data are used by default to train our artificial intelligence models, unless you opt out of training at any time.\" \"Vibe: users are not opted out by default and can opt out at any time in their settings.\"",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:12.161Z"
+  },
+  {
+    "name": "n8n",
+    "domain": "n8n.io",
+    "compliance_status": "compliant",
+    "summary": "\"We do not use any personal data, including data received through any third-party services, for developing, improving, or training AI and/or ML models.\"",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://n8n.io/legal/privacy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:16.453Z"
   },
   {
     "name": "Notion AI",
@@ -405,6 +500,22 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
+    "name": "Photoroom",
+    "domain": "photoroom.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"By using the Services, you acknowledge and expressly authorize Photoroom to use User Content to improve, train and develop Photoroom's products and services.\" \"You can opt-out of this at any time by changing the settings on your account in the app under Data Control.\"",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://www.photoroom.com/legal/terms-and-conditions"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:15.948Z"
+  },
+  {
     "name": "Replit AI",
     "domain": "replit.com",
     "compliance_status": "unrated",
@@ -437,20 +548,36 @@
     "last_checked_at": "2026-09-03T10:43:26.706Z"
   },
   {
+    "name": "Semrush",
+    "domain": "semrush.com",
+    "compliance_status": "compliant",
+    "summary": "\"Semrush does not train or develop its models, and does not allow its third-party providers to train or develop its models on User Input.\"",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://www.semrush.com/company/legal/semrush-artificial-intelligence-services-terms/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:08.099Z"
+  },
+  {
     "name": "Sourcegraph Cody",
     "domain": "sourcegraph.com",
     "compliance_status": "compliant",
     "summary": "Sourcegraph and Sourcegraph Partner LLMs do not use code from Cody Enterprise or Cody Pro teams to train models.",
-    "data_retention": "Zero Retention - Sourcegraph Partner LLMs will not retain any input or output from the model, including embeddings, beyond the time it takes to generate the output",
+    "data_retention": "Zero Retention: Sourcegraph Partner LLMs will not retain any input or output from the model, including embeddings, beyond the time it takes to generate the output",
     "trains_on_user_data": false,
-    "gdpr_mentioned": null,
+    "gdpr_mentioned": false,
     "source_urls": [
       "https://sourcegraph.com/terms/cody-notice"
     ],
     "verified": true,
     "auto_published": true,
     "shared_domain": false,
-    "last_checked_at": "2026-09-06T12:29:13.996Z"
+    "last_checked_at": "2026-10-21T04:01:09.276Z"
   },
   {
     "name": "Stability AI (DreamStudio)",
@@ -467,6 +594,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-09-03T10:43:26.815Z"
+  },
+  {
+    "name": "Tabnine",
+    "domain": "tabnine.com",
+    "compliance_status": "compliant",
+    "summary": "\"Tabnine has a *no-train-no-retain* policy.\" and \"Tabnine does not train on your code.\"",
+    "data_retention": "Context window deleted immediately after server returns answer. Operational metrics and logs retained for one week.",
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://docs.tabnine.com/main/welcome/readme/privacy.md"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:04.143Z"
   },
   {
     "name": "v0",
@@ -502,11 +645,27 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
+    "name": "Writesonic",
+    "domain": "writesonic.com",
+    "compliance_status": "compliant",
+    "summary": "\"Writesonic does not use Customer Data to train or fine-tune any general-purpose, foundation, or large-language model\", which \"applies equally to\u2026 any Trial or free tier\".",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": false,
+    "source_urls": [
+      "https://writesonic.com/legal/terms"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T06:39:07.109Z"
+  },
+  {
     "name": "You.com",
     "domain": "you.com",
     "compliance_status": "compliant",
-    "summary": "This data will not be used for developing, improving, or training third party AI and/or ML models.",
-    "data_retention": null,
+    "summary": "We do not use the substance of your prompts, files, or generated outputs to train or fine-tune our own models, and our contracts with our large language model providers prohibit them from using it to train their models, except where you have separately opted in.",
+    "data_retention": "User Content retained for periods described in 'Data Retention' section (specific periods not stated in provided text)",
     "trains_on_user_data": false,
     "gdpr_mentioned": true,
     "source_urls": [
@@ -515,7 +674,7 @@
     "verified": true,
     "auto_published": true,
     "shared_domain": false,
-    "last_checked_at": "2026-08-17T20:59:43.393Z"
+    "last_checked_at": "2026-10-17T04:01:00.827Z"
   },
   {
     "name": "Zoom AI Companion",
