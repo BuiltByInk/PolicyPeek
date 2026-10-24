@@ -21,7 +21,7 @@ It depends on the account:
 - **Free and personal ChatGPT:** OpenAI's policy says it may use your content to train its models, and points to instructions for opting out. PolicyPeek's badge is **Trains by default, you can opt out**. ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
 - **ChatGPT Business, Enterprise and the API:** OpenAI says it does not train on this business data by default, and it can sign a Data Processing Addendum (DPA) for these plans to support GDPR compliance. ([OpenAI enterprise privacy](https://openai.com/enterprise-privacy/))
 
-Other tools vary a lot. Of 59 AI tools PolicyPeek checked (24 October 2026), 14 say they don't train on your data and 15 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
+Other tools vary a lot. Of 59 AI tools PolicyPeek checked (24 October 2026), 14 say they don't train on your data and 14 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
 
 ## A safer way to use ChatGPT with customer data
 

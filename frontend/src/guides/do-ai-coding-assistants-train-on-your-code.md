@@ -2,7 +2,7 @@
 
 *Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-It depends on the tool and plan. Tabnine and Sourcegraph Cody (Pro teams and Enterprise) say they don't train on your code. Cursor, Windsurf, JetBrains AI (free licence), Lovable and Bolt.new train by default but let you opt out. Base44's terms allow training with no opt-out found. GitHub Copilot's policy is unclear to PolicyPeek. ([All tools](https://getpolicypeek.com/tools/))
+It depends on the tool and plan. Tabnine and Sourcegraph Cody (Pro teams and Enterprise) say they don't train on your code. Cursor, Windsurf, GitHub Copilot (Free, Pro and Pro+), JetBrains AI (free licence), Lovable and Bolt.new train by default but let you opt out. Base44's terms allow training with no opt-out found. ([All tools](https://getpolicypeek.com/tools/))
 
 ## Which coding tools train on your code?
 
@@ -16,7 +16,7 @@ It depends on the tool and plan. Tabnine and Sourcegraph Cody (Pro teams and Ent
 | [Lovable](https://getpolicypeek.com/tools/lovable.dev/) | **Trains by default, you can opt out** | Trains on Customer Content; "You can opt out of model training at any time in your account settings, on any plan, at no cost". Business/Enterprise content is not trained on. | [policy](https://lovable.dev/privacy) | 2026-10-24 |
 | [Bolt.new](https://getpolicypeek.com/tools/bolt.new/) | **Trains by default, you can opt out** | Unless you opt out ... we may use Bolt Model Development Content ... to train, fine-tune, evaluate, benchmark, and improve artificial-intelligence models. Accounts in the EEA, UK and Switzerland don't need to opt out. | [policy](https://stackblitz.com/privacy-policy) | 2026-10-15 |
 | [Base44](https://getpolicypeek.com/tools/base44.com/) | **Trains on your data, no opt-out** | Terms licence Customer Data and Generated Output "for the purpose of maintaining, providing and improving the Platform", including to "(5) train Company software tools (e.g. artificial intelligence and machine learning models)"; no training opt-out. | [policy](https://base44.com/terms-of-service) | 2026-10-24 |
-| [GitHub Copilot](https://getpolicypeek.com/tools/github.com/) | **Policy unclear** | Users can view and update their information directly through their account settings. | [policy](https://github.com/trust-center/privacy) | 2026-09-03 |
+| [GitHub Copilot](https://getpolicypeek.com/tools/github.com/) | **Trains by default, you can opt out** | Rated on Copilot Free, Pro and Pro+: from 24 April 2026 GitHub uses "interaction data—specifically inputs, outputs, code snippets, and associated context ... to train and improve our AI models unless you opt out". Business and Enterprise aren't affected. | [GitHub changelog](https://github.blog/changelog/2026-03-25-updates-to-our-privacy-statement-and-terms-of-service-how-we-use-your-data/) | 2026-10-24 |
 | [Amazon Q Developer](https://getpolicypeek.com/tools/amazon.com/) | **Company-wide policy only** | Policy text is shared across multiple company products — not verified as specific to this tool. | [policy](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/service-improvement.html) | 2026-10-16 |
 | [v0](https://getpolicypeek.com/tools/vercel.com/) | **Company-wide policy only** | Company-wide policy, not product-verified — the only available source is Vercel's general Privacy Notice, which was never scoped to v0 specifically and has no v0-specific policy text to verify facts against. | [policy](https://vercel.com/legal/privacy-notice) | 2026-09-01 |
 
@@ -30,7 +30,7 @@ Bolt's policy says accounts in the EEA, UK and Switzerland don't need to opt out
 
 ## What about GitHub Copilot, Amazon Q and v0?
 
-PolicyPeek rates GitHub Copilot "Policy unclear" from GitHub's privacy page. Amazon Q Developer and v0 only have company-wide policies, so PolicyPeek doesn't give them a product verdict.
+Since 24 April 2026 GitHub trains on Copilot Free, Pro and Pro+ interaction data unless you opt out in your GitHub settings under "Privacy"; GitHub says "Copilot Business and Copilot Enterprise users are not affected by this update." PolicyPeek rates it "Trains by default, you can opt out". Amazon Q Developer and v0 only have company-wide policies, so PolicyPeek doesn't give them a product verdict.
 
 ## How PolicyPeek decides
 
@@ -56,4 +56,4 @@ By default, yes, but Lovable says you can opt out in account settings on any pla
 
 ### Does GitHub Copilot train on my code?
 
-PolicyPeek rates it 'Policy unclear' based on GitHub's privacy page, which doesn't clearly say.
+On Free, Pro and Pro+, yes by default since 24 April 2026, unless you opt out in GitHub settings under "Privacy". GitHub says Business and Enterprise users aren't affected.

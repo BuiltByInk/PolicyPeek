@@ -8,7 +8,7 @@ An AI acceptable use policy tells staff which AI tools they can use for work and
 
 The ICO says data protection law almost certainly applies to small businesses, because nearly all of them hold customer and staff details. ([ICO advice for small organisations](https://ico.org.uk/for-organisations/advice-for-small-organisations/getting-started-with-gdpr/data-protection-advice-on-common-topics)) When staff paste that information into an AI tool, that is processing personal data, and you are responsible for it. An acceptable use policy is how you set the rules before it happens.
 
-It also matters which tools people pick. PolicyPeek's checks of 59 AI tools' own policies (24 October 2026) found 17 that train on your data by default with an opt-out and 15 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+It also matters which tools people pick. PolicyPeek's checks of 59 AI tools' own policies (24 October 2026) found 19 that train on your data by default with an opt-out and 14 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
 
 ## Decisions to make first
 

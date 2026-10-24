@@ -16,7 +16,7 @@ Article 4 has applied since 2 February 2025, and national authorities supervise 
 
 ## What is the real risk without one?
 
-The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's checks of AI tools' own policies (24 October 2026) found 17 that train by default with an opt-out and 15 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's checks of AI tools' own policies (24 October 2026) found 19 that train by default with an opt-out and 14 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
 
 Without a policy, each member of staff decides alone which tool to use and what to paste in.
 
