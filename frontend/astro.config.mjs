@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import csp from "./integrations/csp.mjs";
 import guideCta from "./integrations/guide-cta.mjs";
+import pageMarkdown from "./integrations/page-markdown.mjs";
 import { readFileSync } from "node:fs";
 
 const SITE = "https://getpolicypeek.com";
@@ -20,5 +21,5 @@ const noindexUrls = new Set(
 export default defineConfig({
   output: "static",
   site: SITE,
-  integrations: [guideCta(), csp(), sitemap({ filter: (page) => !noindexUrls.has(page) })],
+  integrations: [guideCta(), pageMarkdown(), csp(), sitemap({ filter: (page) => !noindexUrls.has(page) })],
 });
