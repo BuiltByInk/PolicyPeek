@@ -13,3 +13,11 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+
+# Gumroad checkout overlay (/policy-pack/): let the Gumroad iframe (and the
+# Stripe / Apple Pay / Google Pay frames nested in it) use the Payment Request
+# API so Apple Pay and Google Pay work. Only this page; everywhere else keeps
+# payment=(). The global value is detached and replaced, not comma-joined.
+/policy-pack/
+  ! Permissions-Policy
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://gumroad.com" "https://*.gumroad.com" "https://js.stripe.com" "https://*.stripe.com" "https://pay.google.com" "https://applepay.cdn-apple.com"), usb=(), interest-cohort=()
