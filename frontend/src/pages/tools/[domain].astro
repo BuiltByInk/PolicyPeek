@@ -4,6 +4,7 @@ import Badge from "../../components/Badge.astro";
 import type { Tool } from "../../types";
 import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
+import { guidesForDomain } from "../../guides";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -113,6 +114,7 @@ const related = [
   ...others.filter((t) => t.compliance_status === tool.compliance_status).sort(byName),
   ...others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName),
 ].slice(0, 6);
+const guides = guidesForDomain(tool.domain);
 const breadcrumbs = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -209,6 +211,15 @@ const breadcrumbs = {
     </>
   )}
 
+  {guides.length > 0 && (
+    <section class="guides-for" aria-labelledby="guides-h">
+      <h2 id="guides-h">Guides that cover {tool.name}</h2>
+      <ul>
+        {guides.map((g) => <li><a href={`/guides/${g.slug}/`}>Read: {g.title}</a></li>)}
+      </ul>
+    </section>
+  )}
+
   {related.length > 0 && (
     <section class="related" aria-labelledby="rel-h">
       <h2 id="rel-h">Related tools</h2>
@@ -257,6 +268,8 @@ const breadcrumbs = {
 <style>
   .related ul { list-style: none; padding: 0; margin: 0.5rem 0; }
   .related li { margin: 0.35rem 0; }
+  .guides-for ul { list-style: none; padding: 0; margin: 0.5rem 0; }
+  .guides-for li { margin: 0.35rem 0; }
   .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
   .detail-head { margin: 0.75rem 0 1.25rem; }
   .detail-head h1 {

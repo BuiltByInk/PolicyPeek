@@ -8,9 +8,11 @@ export interface Props {
   ogImage?: string;
   /** schema.org structured data for the page: one object or an array. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /** Path of a plain-Markdown copy of this page (advertised as rel="alternate" for AI agents). */
+  markdownAlt?: string;
 }
 
-const { title, description, noindex = false, ogImage = "/og-image.png", jsonLd } = Astro.props;
+const { title, description, noindex = false, ogImage = "/og-image.png", jsonLd, markdownAlt } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
 const path = Astro.url.pathname;
@@ -37,6 +39,7 @@ const jsonLdString = jsonLd
     <title>{title} · PolicyPeek</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalURL} />
+    {markdownAlt && <link rel="alternate" type="text/markdown" href={new URL(markdownAlt, Astro.site)} />}
     {noindex && <meta name="robots" content="noindex, follow" />}
 
     <meta property="og:type" content="website" />
@@ -301,6 +304,7 @@ const jsonLdString = jsonLd
         <a class="brand" href="/">POLICYPEEK</a>
         <nav class="site" aria-label="Main">
           <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
+          <a href="/guides/"{...(path.startsWith("/guides") ? { "aria-current": "page" } : {})}>Guides</a>
           <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
         </nav>
       </div>
@@ -310,7 +314,7 @@ const jsonLdString = jsonLd
     </main>
     <footer class="site">
       <div class="wrap">
-        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>.
+        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a> or read the <a href="/guides/">guides</a>.
         <span class="foot-extra">From the same team: <a href="/policy-pack">AI Policy Starter Pack by InkLLM</a>.</span>
       </div>
     </footer>

@@ -1,0 +1,34 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { GUIDES, SITE } from "../../guides";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "PolicyPeek guides",
+  url: `${SITE}/guides/`,
+  hasPart: GUIDES.map((g) => ({ "@type": "Article", headline: g.title, url: `${SITE}/guides/${g.slug}/` })),
+};
+---
+<Layout title="Guides: does this AI tool train on your data?" description="Plain answers on which AI tools train on your data and how to opt out, built from PolicyPeek's verdicts on each company's own published policy." jsonLd={jsonLd}>
+  <h1>Guides</h1>
+  <p class="lede">Plain answers to common questions about AI tools and your data. Every claim comes from PolicyPeek's verdicts, which quote each company's own published policy. Not legal advice.</p>
+  <ul class="guide-list">
+    {GUIDES.map((g) => (
+      <li>
+        <a href={`/guides/${g.slug}/`}>{g.title}</a>
+        <p>{g.description}</p>
+      </li>
+    ))}
+  </ul>
+  <p class="for-agents">For AI tools and scrapers: each guide has a plain Markdown copy at <code>/guides/&lt;slug&gt;.md</code>, and the site summary is at <a href="/llms.txt">/llms.txt</a> (full text: <a href="/llms-full.txt">/llms-full.txt</a>).</p>
+</Layout>
+
+<style>
+  .lede { color: var(--muted); }
+  .guide-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .guide-list li { border-top: 1px solid var(--line-soft); padding: 0.9rem 0; }
+  .guide-list a { font-weight: 700; font-size: 1.05rem; }
+  .guide-list p { margin: 0.3rem 0 0; color: var(--muted); font-size: 0.92rem; }
+  .for-agents { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line-soft); padding-top: 0.75rem; }
+</style>
