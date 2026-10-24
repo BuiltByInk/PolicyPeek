@@ -1,5 +1,21 @@
 [
   {
+    "name": "Ahrefs",
+    "domain": "ahrefs.com",
+    "compliance_status": "not_compliant",
+    "summary": "Terms say \"we may use User Content, including any content you provide to us in connection with your use of AI Tools, to train our machine learning models\"; no opt-out found.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://ahrefs.com/legal/terms"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Amazon Q Developer",
     "domain": "amazon.com",
     "compliance_status": "shared_domain_unverified",
@@ -16,6 +32,23 @@
     "last_checked_at": "2026-10-16T04:01:08.276Z"
   },
   {
+    "name": "Base44",
+    "domain": "base44.com",
+    "compliance_status": "not_compliant",
+    "summary": "Terms licence Customer Data and Generated Output \"for the purpose of maintaining, providing and improving the Platform\", including to \"(5) train Company software tools (e.g. artificial intelligence and machine learning models)\"; no training opt-out.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://base44.com/terms-of-service",
+      "https://base44.com/privacy-policy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Bolt.new",
     "domain": "bolt.new",
     "compliance_status": "compliant_with_caveats",
@@ -30,6 +63,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-15T16:02:55.792Z"
+  },
+  {
+    "name": "Buffer",
+    "domain": "buffer.com",
+    "compliance_status": "unrated",
+    "summary": "Asked \"Does Buffer scrape my content to train the AI?\", Buffer says text entered in AI Assistant \"will be shared with OpenAI\" but never states whether training happens; legal pages are silent.",
+    "data_retention": null,
+    "trains_on_user_data": null,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://buffer.com/ai-assistant"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
     "name": "ChatGPT",
@@ -112,6 +161,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-15T16:02:55.792Z"
+  },
+  {
+    "name": "DeepSeek",
+    "domain": "deepseek.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Uses Inputs and Outputs to improve its services; \"you can opt out by turning off \"Improve the model for everyone\".\"",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
     "name": "ElevenLabs",
@@ -291,6 +356,22 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
+    "name": "InVideo",
+    "domain": "invideo.io",
+    "compliance_status": "not_compliant",
+    "summary": "\"We may use your User Data to train, fine-tune or otherwise adjust the parameters of our artificial intelligence and machine-learning models. You can stop this use by deleting the relevant User Data or closing your account\". There's no setting to opt out.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://invideo.io/privacy-policy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Jasper",
     "domain": "jasper.ai",
     "compliance_status": "unrated",
@@ -356,6 +437,22 @@
     "last_checked_at": "2026-10-24T06:39:12.658Z"
   },
   {
+    "name": "Kling AI",
+    "domain": "kling.ai",
+    "compliance_status": "not_compliant",
+    "summary": "\"Kling AI may process usage data, aggregated data, or Input for its lawful business purposes\" including to \"(f) create, test, improve, train, or otherwise develop the artificial intelligence or machine learning models ... used by Kling AI\"; no training opt-out in the terms or the privacy policy.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://kling.ai/docs/user-policy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Lovable",
     "domain": "lovable.dev",
     "compliance_status": "compliant_with_caveats",
@@ -386,6 +483,39 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-09-18T09:20:36.869Z"
+  },
+  {
+    "name": "Mailchimp",
+    "domain": "mailchimp.com",
+    "compliance_status": "not_compliant",
+    "summary": "Terms say \"We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model\"; no opt-out found.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://mailchimp.com/legal/terms/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
+    "name": "Meshy",
+    "domain": "meshy.ai",
+    "compliance_status": "not_compliant",
+    "summary": "Terms (Sep 19, 2026): \"Meshy may use Customer Inputs and Customer Outputs ... from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order.\" No opt-out for Free/Pro.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://www.meshy.ai/terms-of-use",
+      "https://www.meshy.ai/privacy-policy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
     "name": "Microsoft Copilot",
@@ -434,6 +564,23 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-24T06:39:12.161Z"
+  },
+  {
+    "name": "Moises",
+    "domain": "moises.ai",
+    "compliance_status": "compliant",
+    "summary": "\"MOISES DOES NOT HAVE THE RIGHT TO AND WILL NOT USE YOUR USER CONTENT OR OUTPUT TO TRAIN OR FINE-TUNE ARTIFICIAL INTELLIGENCE OR MACHINE LEARNING MODELS UNLESS YOU HAVE EXPRESSLY AUTHORIZED SUCH USE IN WRITING OR VIA AN ELECTRONIC OPT-IN MECHANISM.\"",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://moises.ai/terms/",
+      "https://moises.ai/privacy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
     "name": "n8n",
@@ -516,6 +663,70 @@
     "last_checked_at": "2026-10-24T06:39:15.948Z"
   },
   {
+    "name": "Pictory AI",
+    "domain": "pictory.ai",
+    "compliance_status": "compliant",
+    "summary": "\"Pictory will not use your Customer Content or Pictoried Content to train or fine-tune its general artificial intelligence or machine learning models, except as expressly agreed by you in writing.\"",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://pictory.ai/terms-of-service"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
+    "name": "Pika",
+    "domain": "pika.art",
+    "compliance_status": "not_compliant",
+    "summary": "\"Pika may use anonymized or aggregated Content, including Inputs, Outputs, and your interactions with the Service, and Usage Data to train, improve, and develop its machine learning models\"; no training opt-out found.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://pika.art/terms-of-service"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
+    "name": "Poe",
+    "domain": "poe.com",
+    "compliance_status": "not_compliant",
+    "summary": "\"Developers that create bots and apps on Poe using APIs may view and store your chats on their servers to train their models.\" Poe account settings cover model providers, not developers; no opt-out for developer training.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://poe.com/pages/privacy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
+    "name": "Remove.bg",
+    "domain": "remove.bg",
+    "compliance_status": "not_compliant",
+    "summary": "\"We may also analyze your activity, content, media uploads and related data in your account ... to train our algorithms, models and AI products and services using machine learning to develop, improve and provide our Service.\" The only opt-outs offered are analytics and marketing.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://www.remove.bg/privacy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Replit AI",
     "domain": "replit.com",
     "compliance_status": "unrated",
@@ -596,6 +807,22 @@
     "last_checked_at": "2026-09-03T10:43:26.815Z"
   },
   {
+    "name": "Suno",
+    "domain": "suno.com",
+    "compliance_status": "not_compliant",
+    "summary": "Uses Submissions and other Content \"to train and enhance the models that power our Services\". No training opt-out is stated.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://suno.com/privacy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
+  },
+  {
     "name": "Tabnine",
     "domain": "tabnine.com",
     "compliance_status": "compliant",
@@ -610,6 +837,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-24T06:39:04.143Z"
+  },
+  {
+    "name": "tl;dv",
+    "domain": "tldv.io",
+    "compliance_status": "compliant",
+    "summary": "\"Tldx Solutions GmbH does not use Customer Content, including meeting recordings, transcripts, notes, files, or other data processed through the Services, to train, fine-tune, or improve foundation models, large language models, or other generative AI models\".",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://tldv.io/privacy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
     "name": "v0",
