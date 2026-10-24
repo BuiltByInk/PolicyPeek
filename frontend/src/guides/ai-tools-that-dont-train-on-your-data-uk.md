@@ -41,7 +41,7 @@ PolicyPeek also explains why an opt-out doesn't get the green badge: "GDPR gener
 ## Popular tools that do train by default
 
 [ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) are **Trains by default, you can opt out**.
-[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier), [Otter.ai](https://getpolicypeek.com/tools/otter.ai/) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
+[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
 [Gemini](https://getpolicypeek.com/tools/google.com/) has no product verdict yet, because only a company-wide policy was found.
 
 ## How PolicyPeek decides

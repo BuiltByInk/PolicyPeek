@@ -9,9 +9,9 @@
 | Badge | Meaning | Tools on 24 October 2026 |
 |---|---|---|
 | Doesn't train on your data | The policy says your data isn't used for training, or only if you opt in | 14 |
-| Trains by default, you can opt out | Training happens unless you switch it off | 17 |
-| Trains on your data, no opt-out | Training allowed and no opt-out found | 15 |
-| Policy unclear | The policy doesn't clearly say | 8 |
+| Trains by default, you can opt out | Training happens unless you switch it off | 19 |
+| Trains on your data, no opt-out | Training allowed and no opt-out found | 14 |
+| Policy unclear | The policy doesn't clearly say | 7 |
 | Company-wide policy only | Only a parent-company policy exists | 4 |
 
 (One more listed site isn't an AI tool.) ([All tools](https://getpolicypeek.com/tools/))

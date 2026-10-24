@@ -30,7 +30,7 @@ PolicyPeek keeps "you can opt out" separate from the green badge on purpose. An 
 
 ## How does ChatGPT compare with other AI tools?
 
-On 24 Oct 2026, PolicyPeek listed 59 tools. 14 had **Doesn't train on your data**, 17 had **Trains by default, you can opt out**, 15 had **Trains on your data, no opt-out** and 8 had **Policy unclear**. 4 more had only a company-wide policy, and 1 isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
+On 24 Oct 2026, PolicyPeek listed 59 tools. 14 had **Doesn't train on your data**, 19 had **Trains by default, you can opt out**, 14 had **Trains on your data, no opt-out** and 7 had **Policy unclear**. 4 more had only a company-wide policy, and 1 isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
 
 Some other tools in the opt-out group: [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans; PolicyPeek notes that commercial plans don't train by default), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Mistral Vibe](https://getpolicypeek.com/tools/mistral.ai/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/). ([All tools](https://getpolicypeek.com/tools/))
 

@@ -19,7 +19,7 @@
     "name": "Amazon Q Developer",
     "domain": "amazon.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "summary": "Policy text is shared across multiple company products — not verified as specific to this tool.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -230,7 +230,7 @@
     "name": "Gemini",
     "domain": "google.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "summary": "Policy text is shared across multiple company products — not verified as specific to this tool.",
     "data_retention": "Default 18 months, configurable to 3 months, 36 months, or indefinite. Chats reviewed by human reviewers retained for up to three years. Some data retained until Google Account deletion.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -245,18 +245,20 @@
   {
     "name": "GitHub Copilot",
     "domain": "github.com",
-    "compliance_status": "unrated",
-    "summary": "Users can view and update their information directly through their account settings.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Rated on Copilot Free, Pro and Pro+: \"from April 24 onward we will begin using interaction data—specifically inputs, outputs, code snippets, and associated context—from Copilot Free, Pro, and Pro+ users to train and improve our AI models unless you opt out.\" Opt out in settings under \"Privacy\". GitHub says \"Copilot Business and Copilot Enterprise users are not affected by this update.\"",
     "data_retention": null,
-    "trains_on_user_data": null,
+    "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
+      "https://github.blog/changelog/2026-03-25-updates-to-our-privacy-statement-and-terms-of-service-how-we-use-your-data/",
+      "https://github.blog/news-insights/company-news/updates-to-github-copilot-interaction-data-usage-policy/",
       "https://github.com/trust-center/privacy"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.349Z"
+    "last_checked_at": "2026-10-24T16:00:00.000Z"
   },
   {
     "name": "Grammarly",
@@ -521,7 +523,7 @@
     "name": "Microsoft Copilot",
     "domain": "microsoft.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "summary": "Policy text is shared across multiple company products — not verified as specific to this tool.",
     "data_retention": "18 months by default",
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -617,18 +619,19 @@
   {
     "name": "Otter.ai",
     "domain": "otter.ai",
-    "compliance_status": "not_compliant",
-    "summary": "Improve and monitor the Services, including training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Privacy policy: \"training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)\". Otter's help centre gives an opt-out: Account Settings > Meetings > Feedback and Training, set Help improve Otter to \"Don't allow sharing\", and \"Otter will not access your conversation for training and product improvement.\" The policy doesn't say whether this also covers de-identified training.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://otter.ai/privacy-policy"
+      "https://otter.ai/privacy-policy",
+      "https://help.otter.ai/hc/en-us/articles/25352082563863-Provide-feedback-to-Otter"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.535Z"
+    "last_checked_at": "2026-10-24T16:00:00.000Z"
   },
   {
     "name": "Perplexity AI",
@@ -858,7 +861,7 @@
     "name": "v0",
     "domain": "vercel.com",
     "compliance_status": "shared_domain_unverified",
-    "summary": "Company-wide policy, not product-verified \u2014 the only available source is Vercel's general Privacy Notice, which was never scoped to v0 specifically and has no v0-specific policy text to verify facts against.",
+    "summary": "Company-wide policy, not product-verified — the only available source is Vercel's general Privacy Notice, which was never scoped to v0 specifically and has no v0-specific policy text to verify facts against.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -874,7 +877,7 @@
     "name": "Windsurf",
     "domain": "windsurf.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "\"By default, we may use your data for model training purposes to improve and enhance the Services.\" \u2026 \"After you opt out, your data will not be used for training\". Enterprise: never trained on without express prior written consent.",
+    "summary": "\"By default, we may use your data for model training purposes to improve and enhance the Services.\" … \"After you opt out, your data will not be used for training\". Enterprise: never trained on without express prior written consent.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -891,7 +894,7 @@
     "name": "Writesonic",
     "domain": "writesonic.com",
     "compliance_status": "compliant",
-    "summary": "\"Writesonic does not use Customer Data to train or fine-tune any general-purpose, foundation, or large-language model\", which \"applies equally to\u2026 any Trial or free tier\".",
+    "summary": "\"Writesonic does not use Customer Data to train or fine-tune any general-purpose, foundation, or large-language model\", which \"applies equally to… any Trial or free tier\".",
     "data_retention": null,
     "trains_on_user_data": false,
     "gdpr_mentioned": false,
