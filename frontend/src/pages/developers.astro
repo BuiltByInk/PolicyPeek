@@ -1,0 +1,18 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout title="API for developers and agents" description="PolicyPeek's free, read-only lookup API: get the AI-training verdict for a tool's domain. OpenAPI spec and API catalog included.">
+  <h1>API for developers and agents</h1>
+  <p>PolicyPeek has one public, read-only endpoint. No key or sign-up is needed. Please keep usage reasonable; requests may be rate limited. Verdicts are not legal advice.</p>
+  <h2>Look up a tool</h2>
+  <pre><code>GET https://api.getpolicypeek.com/v1/lookup?domain=ahrefs.com</code></pre>
+  <p>Returns JSON with <code>name</code>, <code>compliance_status</code>, <code>summary</code>, <code>shared_domain</code> and <code>last_checked_at</code>. Unknown domains return 404.</p>
+  <p>The status values and their meanings are listed in the OpenAPI spec below, matching the badges on the site: doesn't train, opt-out available, no opt-out, policy unclear, company-wide policy, not an AI tool.</p>
+  <h2>Machine-readable</h2>
+  <ul>
+    <li><a href="/openapi.json">OpenAPI 3.1 spec</a></li>
+    <li><a href="/.well-known/api-catalog">API catalog (RFC 9727)</a></li>
+    <li><a href="https://api.getpolicypeek.com/health">Health check</a></li>
+    <li>Every page is also available as Markdown: send <code>Accept: text/markdown</code>, or see <a href="/llms.txt">llms.txt</a>.</li>
+  </ul>
+</Layout>

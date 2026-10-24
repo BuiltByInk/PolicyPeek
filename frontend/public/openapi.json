@@ -1,0 +1,49 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PolicyPeek public lookup API",
+    "version": "1.0.0",
+    "description": "Read-only, unauthenticated lookup of PolicyPeek's AI-training verdict for a tool's domain. Verdicts come from each tool's own published policy. Not legal advice. Fair use; requests may be rate limited.",
+    "contact": { "url": "https://getpolicypeek.com/developers/" }
+  },
+  "servers": [{ "url": "https://api.getpolicypeek.com" }],
+  "paths": {
+    "/v1/lookup": {
+      "get": {
+        "operationId": "lookupDomain",
+        "summary": "Get the verdict for a domain",
+        "parameters": [{ "name": "domain", "in": "query", "required": true, "schema": { "type": "string", "example": "ahrefs.com" }, "description": "Domain or URL of the AI tool." }],
+        "responses": {
+          "200": { "description": "Verdict found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Verdict" } } } },
+          "400": { "description": "Missing or invalid domain", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Domain not checked yet", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Service health",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "service": { "type": "string" } } } } } } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Verdict": {
+        "type": "object",
+        "required": ["domain", "matched_domain", "name", "compliance_status", "shared_domain"],
+        "properties": {
+          "domain": { "type": "string" },
+          "matched_domain": { "type": "string" },
+          "name": { "type": "string" },
+          "compliance_status": { "type": "string", "enum": ["compliant", "compliant_with_caveats", "not_compliant", "unrated", "shared_domain_unverified", "not_ai_tool"], "description": "compliant = doesn't train on your data; compliant_with_caveats = trains by default, opt-out available; not_compliant = trains, no opt-out found; unrated = policy unclear; shared_domain_unverified = company-wide policy only; not_ai_tool = not an AI product." },
+          "summary": { "type": ["string", "null"] },
+          "shared_domain": { "type": "boolean" },
+          "last_checked_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "Error": { "type": "object", "properties": { "error": { "type": "string" }, "domain": { "type": "string" } } }
+    }
+  }
+}
