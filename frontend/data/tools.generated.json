@@ -486,10 +486,10 @@
   {
     "name": "Perplexity AI",
     "domain": "perplexity.ai",
-    "compliance_status": "unrated",
-    "summary": null,
+    "compliance_status": "not_compliant",
+    "summary": "Perplexity's privacy notice lists \"Improve or create services and products, including our AI models.\" as a use of your data. The only opt-outs it describes are for targeted advertising, not training.",
     "data_retention": null,
-    "trains_on_user_data": null,
+    "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
       "https://www.perplexity.ai/hub/legal/privacy-notice"
@@ -497,7 +497,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-24T07:25:50.915Z"
   },
   {
     "name": "Photoroom",
@@ -675,6 +675,23 @@
     "auto_published": true,
     "shared_domain": false,
     "last_checked_at": "2026-10-17T04:01:00.827Z"
+  },
+  {
+    "name": "Zapier",
+    "domain": "zapier.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"Enterprise customers are automatically opted out of Zapier using their content for model training and improvement purposes. All other customers may opt out at any time.\"",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://zapier.com/legal/automation-platform-information",
+      "https://zapier.com/legal/terms-of-service"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-24T07:25:50.915Z"
   },
   {
     "name": "Zoom AI Companion",
