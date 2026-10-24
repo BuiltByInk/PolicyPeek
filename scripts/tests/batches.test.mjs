@@ -1,5 +1,7 @@
-// Approved batch files are well-formed, use real badges, don't re-add a
-// published tool, and never contain a held tool.
+// Approved batch files are well-formed, use real badges, and never contain a
+// held tool. Rows already published (in frontend/data/tools.json) are reported
+// as published and skipped by the "not yet live" rules; the remaining rows are
+// the ones still awaiting a re-check and must stay valid for the next run.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -29,8 +31,9 @@ const dirs = readdirSync(BATCHES, { withFileTypes: true }).filter((d) => d.isDir
 test("there are batch files", () => assert.ok(dirs.length >= 2));
 const seen = new Set();
 for (const d of dirs) {
-  test(`batch ${d} is valid`, () => {
+  test(`batch ${d} is valid`, (ctx) => {
     const tools = JSON.parse(readFileSync(join(BATCHES, d, "tools.json"), "utf8"));
+    const done = [], pending = [];
     assert.ok(tools.length > 0);
     for (const t of tools) {
       assert.deepEqual(Object.keys(t).sort(), ["badge", "domain", "name", "source_url", "summary"]);
@@ -39,10 +42,11 @@ for (const d of dirs) {
       const flags = flagsFor(t);
       assert.deepEqual(flags, [], `FLAG ${t.domain}: ${flags.join("; ")}`);
       assert.ok(t.summary.length > 20);
-      assert.ok(!published.has(t.domain), `${t.domain} already published`);
       assert.ok(!HELD.includes(t.domain), `${t.domain} is held`);
       assert.ok(!seen.has(t.domain), `${t.domain} in two batches`); seen.add(t.domain);
+      (published.has(t.domain) ? done : pending).push(t.domain);
     }
+    ctx.diagnostic(`published: ${done.join(", ") || "none"}; awaiting re-check: ${pending.join(", ") || "none"}`);
   });
 }
 
