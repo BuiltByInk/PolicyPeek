@@ -1,0 +1,1 @@
+{ "version": 1, "include": ["/*"], "exclude": ["/_astro/*", "/fonts/*", "/*.png", "/*.ico", "/*.svg", "/*.xml", "/*.txt", "/*.md", "/guides/*.md", "/tools/*.md"] }
