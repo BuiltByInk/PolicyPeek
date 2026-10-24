@@ -294,6 +294,19 @@ const jsonLdString = jsonLd
         a { text-decoration: underline; }
         body { font-size: 11pt; }
       }
+      /* Starter Pack / free checklist boxes (guides, tool pages, homepage). Global
+         because the mid-article box is injected into Markdown by a rehype plugin. */
+      .pack-box { border: 3px solid var(--line); border-left-width: 8px; background: var(--panel); padding: 0.9rem 1.1rem; margin: 1.75rem 0; max-width: 46rem; }
+      .pack-box p { margin: 0.35rem 0 0; }
+      .pack-box p:first-child { margin-top: 0; }
+      .pack-box-title { font-family: var(--font-head); font-weight: 700; font-size: 1.1rem; }
+      .pack-box-go { margin-top: 0.7rem !important; }
+      .pack-box .btn { display: inline-block; padding: 0.5rem 0.85rem; border: 2px solid var(--fg); background: var(--fg); color: var(--bg); text-decoration: none; font-weight: 700; margin: 0 0.5rem 0.3rem 0; }
+      .pack-box .btn:hover, .pack-box .btn:focus-visible { background: var(--bg); color: var(--fg); }
+      .pack-box-small { font-size: 0.85rem; color: var(--muted); }
+      .pack-box.compact { padding: 0.7rem 0.9rem; font-size: 0.95rem; }
+      .pack-box.free { border-left-color: var(--id); }
+      @media print { .pack-box { display: none; } }
     </style>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />

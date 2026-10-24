@@ -110,9 +110,15 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
       <li><strong>Starter Pack + Training Kit bundle</strong> <span class="p">£59</span><span class="d">The Complete policy pack and the training kit together.</span></li>
       <li><strong>AI Incident Response One-Pager + Breach Log</strong> <span class="p">£19</span><span class="d">A one-page plan for when AI goes wrong at work, plus a breach log.</span></li>
     </ul>
-    <p class="biz-go"><a class="btn" href="/policy-pack/">See the business resources</a> <span>or <a href={gumroadLink("checklist", "homepage")}>get the free AI checklist</a></span></p>
+    <p class="biz-go"><a class="btn" href={gumroadLink("starter", "homepage-biz")}>Get the Starter Pack, £19</a> <span>or <a href="/policy-pack/">see all business resources</a></span></p>
     <p class="biz-by">by InkLLM</p>
   </section>
+
+  <aside class="pack-box free" aria-labelledby="free-h">
+    <p class="pack-box-title" id="free-h">Free: the AI-at-work checklist for small teams</p>
+    <p>One page to work through with your staff: which AI tools are approved, what never goes in, training settings, and who checks the output. Free on Gumroad (or pay what you like). Enter your email and it's sent straight to you.</p>
+    <p class="pack-box-go"><a class="btn" href={gumroadLink("checklist", "homepage-free")}>Get the free checklist</a></p>
+  </aside>
 
   {/* Every tool as a plain crawlable link (SEO 2026-10-23). */}
   <section class="all-tools" aria-labelledby="all-h">
