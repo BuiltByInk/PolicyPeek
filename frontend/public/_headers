@@ -21,3 +21,19 @@
 /policy-pack/
   ! Permissions-Policy
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://gumroad.com" "https://*.gumroad.com" "https://js.stripe.com" "https://*.stripe.com" "https://pay.google.com" "https://applepay.cdn-apple.com"), usb=(), interest-cohort=()
+
+# RFC 9727 API catalog and OpenAPI spec
+/.well-known/api-catalog
+  Content-Type: application/linkset+json
+  Access-Control-Allow-Origin: *
+/openapi.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+/auth.md
+  Content-Type: text/markdown; charset=utf-8
+
+# RFC 8288 discovery links on the homepage (HTML and Markdown)
+/
+  Link: </.well-known/api-catalog>; rel="api-catalog", </openapi.json>; rel="service-desc", </developers/>; rel="service-doc", </llms.txt>; rel="describedby"
+/index.md
+  Link: </.well-known/api-catalog>; rel="api-catalog", </openapi.json>; rel="service-desc", </developers/>; rel="service-doc", </llms.txt>; rel="describedby"
