@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { GUIDES, SITE, guideUrl, type Guide } from "../../guides";
+import { GUMROAD } from "../../gumroad";
 
 export function getStaticPaths() {
   return GUIDES.map((g) => ({ params: { slug: g.slug }, props: { guide: g } }));
@@ -51,6 +52,9 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
     <Content />
     <p class="updated">Last updated <time datetime={guide.modified}>{fmt(guide.modified)}</time>. Plain-text version for AI tools: <a href={`/guides/${guide.slug}.md`} type="text/markdown">{guide.slug}.md</a>.</p>
   </article>
+  <aside class="checklist-cta" aria-label="Free AI checklist">
+    <p>Want a simple checklist to work through with your team? <a href={GUMROAD.checklist}>Get the free AI checklist</a> from InkLLM, the team behind PolicyPeek. It's free on Gumroad.</p>
+  </aside>
   <section class="more-guides" aria-labelledby="more-h">
     <h2 id="more-h">More guides</h2>
     <ul>
@@ -68,6 +72,8 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   .guide :global(blockquote) { margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--id); background: var(--panel); }
   .guide :global(h3) { font-size: 1.3rem; margin-top: 1.5rem; }
   .updated { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line-soft); padding-top: 0.75rem; margin-top: 2rem; }
+  .checklist-cta { border: 2px solid var(--line-soft); padding: 0.75rem 1rem; margin: 1.5rem 0; }
+  .checklist-cta p { margin: 0; }
   .more-guides ul { list-style: none; padding: 0; margin: 0.5rem 0; }
   .more-guides li { margin: 0.35rem 0; }
 </style>

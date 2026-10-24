@@ -1,9 +1,10 @@
 ---
-// Product page for the separate paid template pack. Copy is taken from
-// /workspace/deliverables/ink-products/listing-copy.md (the Lemon Squeezy
-// listing draft); the independence statement is required by the brief.
-// The buy buttons are disabled placeholders until the checkout URL exists.
+// Product page for the separate paid InkLLM products, sold through Gumroad.
+// The independence statement is required by the brief. Buy buttons are plain
+// links to the Gumroad product pages; gumroad.js (allowed in the CSP) upgrades
+// them to an on-page checkout overlay, and without JS they simply open Gumroad.
 import Layout from "../layouts/Layout.astro";
+import { GUMROAD } from "../gumroad";
 ---
 <Layout
   title="AI Policy Starter Pack by InkLLM"
@@ -22,27 +23,65 @@ import Layout from "../layouts/Layout.astro";
   <p>Written in plain English for UK and EU businesses, and updated for the EU AI Act timeline as amended in 2026. Fill in the [brackets], add your approved tools, and you're ready to go.</p>
 
   <h2>Choose your option</h2>
-  <p class="note">Prices in GBP, VAT included. One-off digital download via Lemon Squeezy.</p>
+  <p class="note">One-off digital downloads, sold and delivered through Gumroad. Prices shown are what UK buyers pay, including 20% UK VAT, which Gumroad adds at checkout. Outside the UK, Gumroad works out the total from your local VAT or sales tax, so it may differ.</p>
   <div class="options">
     <section class="option">
       <h3>Essentials <span class="price">£19</span></h3>
+      <p class="vat">inc. VAT for UK buyers</p>
       <ul>
         <li>AI Acceptable-Use Policy template (Word + Markdown), including AI Tool Register and EU AI Act key-dates sheet</li>
         <li>Staff Guide to Using AI Tools Safely (Word + Markdown)</li>
       </ul>
-      <button type="button" class="buy" disabled aria-disabled="true">Checkout coming soon</button>
+      <a class="buy gumroad-button" href={GUMROAD.starter}>Buy now</a>
+      <p class="pick">Choose "Essentials" at checkout.</p>
     </section>
     <section class="option featured">
-      <h3>Starter Pack <span class="price">£39</span></h3>
-      <p class="tag">Most popular</p>
+      <h3>Complete <span class="price">£39</span></h3>
+      <p class="vat">inc. VAT for UK buyers</p>
       <ul>
         <li>Everything in Essentials</li>
         <li>AI Vendor Checklist (Word + Markdown): 30+ questions on training on your data, retention, opt-outs, sub-processors, GDPR DPAs and lawful basis, international transfers and EU AI Act risk tiers, with real example findings from PolicyPeek</li>
         <li>12 months of updates: when laws or key dates change, updated files are added to your download</li>
       </ul>
-      <button type="button" class="buy" disabled aria-disabled="true">Checkout coming soon</button>
+      <a class="buy gumroad-button" href={GUMROAD.starter}>Buy now</a>
+      <p class="pick">Choose "Complete" at checkout.</p>
     </section>
   </div>
+
+  <h2>More from InkLLM</h2>
+  <div class="options">
+    <section class="option">
+      <h3>Staff AI Training Kit <span class="price">£29</span></h3>
+      <p class="vat">inc. VAT for UK buyers</p>
+      <ul>
+        <li>Everything to run a short, practical AI session for your team, so staff understand the rules in your AI policy</li>
+        <li>Works on its own or alongside the Starter Pack</li>
+      </ul>
+      <a class="buy gumroad-button" href={GUMROAD.training}>Buy now</a>
+    </section>
+    <section class="option">
+      <h3>Starter Pack + Training Kit bundle <span class="price">£59</span></h3>
+      <p class="vat">inc. VAT for UK buyers</p>
+      <ul>
+        <li>The Starter Pack Complete and the Staff AI Training Kit in one download</li>
+        <li>£9 less than buying the two separately (£39 + £29)</li>
+      </ul>
+      <a class="buy gumroad-button" href={GUMROAD.bundle}>Buy now</a>
+    </section>
+    <section class="option">
+      <h3>AI Incident Response One-Pager + Breach Log <span class="price">£19</span></h3>
+      <p class="vat">inc. VAT for UK buyers</p>
+      <ul>
+        <li>A one-page plan for when AI goes wrong: data pasted into a chatbot, an unchecked AI answer sent to a client, a deepfake call</li>
+        <li>A breach log (Word + PDF) to record every incident, with the ICO's 72-hour reporting rule explained</li>
+      </ul>
+      <a class="buy gumroad-button" href={GUMROAD.incident}>Buy now</a>
+    </section>
+  </div>
+
+  <aside class="freebie" aria-label="Free checklist">
+    <p><strong>Not ready to buy?</strong> The free AI checklist covers the basics of using AI tools safely at work. <a href={GUMROAD.checklist}>Get the free checklist on Gumroad</a> (free, or pay what you like).</p>
+  </aside>
 
   <h2>Who it's for</h2>
   <ul>
@@ -68,14 +107,15 @@ import Layout from "../layouts/Layout.astro";
     <dt>Can I use it across my company?</dt>
     <dd>Yes, for one business (your organisation and its staff). Not for resale or redistribution.</dd>
     <dt>How do updates work?</dt>
-    <dd>Starter Pack buyers can re-download from their purchase email or the Lemon Squeezy order page for 12 months; we replace the files when we update them.</dd>
+    <dd>Complete and bundle buyers can re-download from their Gumroad receipt email or Gumroad library for 12 months; we replace the files when we update them.</dd>
     <dt>Can I get a refund?</dt>
     <dd>Because this is digital content delivered instantly, you'll be asked at checkout to agree to immediate access and acknowledge that you lose your 14-day right to cancel once the download starts. So we don't offer refunds after download. If a file is faulty or won't open, email <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a> and we'll fix or replace it. This doesn't affect your statutory rights.</dd>
   </dl>
 
   <h2>Important note</h2>
   <p class="small">The AI Policy Starter Pack by InkLLM provides general information and editable templates only. It is not legal advice, does not create a solicitor–client relationship, and does not guarantee compliance. Laws and vendor terms change; check current sources before relying on it. Example vendor findings reflect published sources on the date checked (23 October 2026).</p>
-  <p class="small">Questions or a faulty file: <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>.</p>
+  <p class="small">Questions before you buy, or a faulty file: <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>.</p>
+  <script is:inline src="https://gumroad.com/js/gumroad.js" async></script>
 </Layout>
 
 <style>
@@ -92,7 +132,12 @@ import Layout from "../layouts/Layout.astro";
   .option ul { flex: 1; }
   .price { font-size: 1.5rem; }
   .tag { margin: -0.5rem 0 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-  .buy { font: inherit; font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.75rem 1rem; border: 3px solid var(--line); background: var(--bg); color: var(--muted); cursor: not-allowed; }
+  .buy { display: block; text-align: center; text-decoration: none; font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.75rem 1rem; border: 3px solid var(--line); background: var(--line); color: var(--bg); }
+  .buy:hover, .buy:focus-visible { background: var(--bg); color: var(--line); }
+  .vat { margin: -0.5rem 0 0.5rem; color: var(--muted); font-size: 0.85rem; }
+  .pick { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+  .freebie { border: 3px dashed var(--line-soft); padding: 0.75rem 1rem; margin: 0 0 2rem; }
+  .freebie p { margin: 0; }
   .faq dt { font-weight: 700; margin-top: 1rem; }
   .faq dd { margin: 0.25rem 0 0; }
 </style>
