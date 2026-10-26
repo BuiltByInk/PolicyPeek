@@ -104,7 +104,7 @@ test("homepage: calm 'For UK small businesses' section with 4 products, shop lin
   for (const n of ["AI Policy Starter Pack", "Staff AI Training Kit", "Starter Pack + Training Kit bundle", "AI Incident Response One-Pager"]) assert.ok(s.includes(n), n);
   for (const p of ["£19 / £39", "£29", "£59", "£19"]) assert.ok(s.includes(p), p);
   assert.match(s, /href="\/policy-pack\/"/);
-  assert.match(s, /inkspire776\.gumroad\.com\/l\/rhfram/);
+  assert.match(s, /inkspire776\.gumroad\.com\/l\/rppfze\?[^"]*utm_campaign=homepage-biz/);
   assert.match(s, /by InkLLM/);
   assert.match(s, /include VAT for UK buyers/);
   assert.ok(h.indexOf('class="register"') < h.indexOf('class="biz"'), "below the verdict summary");
