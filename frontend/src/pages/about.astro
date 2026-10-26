@@ -25,15 +25,15 @@ const aboutLd = {
 
   <ol class="steps">
     <li>
-      <strong>Facts, extracted from the tool's own policy.</strong>
+      <strong>An AI model extracts the facts from the tool's own policy.</strong>
       We fetch the privacy policy the tool itself publishes and pull out a
       handful of factual claims — does it say it trains on your data, is there
       a stated retention period, does it mention GDPR. This step is not
       allowed to make a judgment call; it only reports what the text says.
     </li>
     <li>
-      <strong>A fixed rule, not an opinion, decides the badge.</strong>
-      The facts above run through one fixed rule, the same for every tool:
+      <strong>Then fixed rules decide the badge.</strong>
+      The facts above run through the same fixed rules for every tool:
       <ul>
         <li><strong>Doesn't train on your data</strong> — doesn't train on your data by default, or only trains on it if you opt in.</li>
         <li><strong>Trains by default, you can opt out</strong> — trains on your data <em>by default</em>, but a real opt-out exists somewhere in the policy.</li>
