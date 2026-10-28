@@ -78,14 +78,14 @@ test("SEO: tool page title/description from the verdict, related links, every to
     assert.ok(home.includes(`href="/tools/${t.domain}/"`), `homepage links ${t.domain}`);
     assert.ok(list.includes(`href="/tools/${t.domain}/"`), `/tools/ links ${t.domain}`);
   }
-  const h = read(plain, "tools/cursor.com/index.html");
-  assert.match(h, /<title>Does Cursor train on my data\? AI training &amp; GDPR · PolicyPeek<\/title>/);
-  assert.match(h, /name="description" content="Does Cursor train on my data\? Opt-out available: /);
+  const h = read(plain, "tools/github.com/index.html");
+  assert.match(h, /<title>Does GitHub Copilot train on my data\? AI training &amp; GDPR · PolicyPeek<\/title>/);
+  assert.match(h, /name="description" content="Does GitHub Copilot train on my data\? Opt-out available: /);
   assert.match(h, /id="rel-h"[^>]*>Related tools</);
   assert.ok((h.match(/class="related"[\s\S]*?<\/section>/)[0].match(/href="\/tools\/[^"]+\/"/g) || []).length >= 3);
-  assert.doesNotMatch(h, /href="\/tools\/cursor\.com\/"[^>]*>Does Cursor/);
-  assert.match(h, /<link rel="canonical" href="https:\/\/getpolicypeek\.com\/tools\/cursor\.com\/">/);
-  assert.match(h, /og:url" content="https:\/\/getpolicypeek\.com\/tools\/cursor\.com\/"/);
+  assert.doesNotMatch(h, /href="\/tools\/github\.com\/"[^>]*>Does GitHub Copilot/);
+  assert.match(h, /<link rel="canonical" href="https:\/\/getpolicypeek\.com\/tools\/github\.com\/">/);
+  assert.match(h, /og:url" content="https:\/\/getpolicypeek\.com\/tools\/github\.com\/"/);
 });
 
 test("nav: 'For businesses' links to /policy-pack/ on every page", () => {
