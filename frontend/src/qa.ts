@@ -120,24 +120,52 @@ export const QA_PAGES: QaEntry[] = [
     gdpr: [],
     changelog: [
       { date: "2026-10-15", text: "Verdict checked against Notion's AI security page: doesn't train on your data." },
-      { date: "2026-10-28", text: "Q&A page published. Live page re-read: the training sentence now reads \"By default, neither Notion nor our AI providers use your Customer Data to train any models.\" The verdict is unchanged." },
+      { date: "2026-10-28", text: "Q&A page published. Live page re-read: the training sentence now reads \"By default, neither Notion nor our AI providers use your Customer Data to train any models.\" Catalog quote updated to match; the verdict is unchanged." },
     ],
   },
   {
-    // HELD (28 Oct 2026): Research is re-checking Perplexity's opt-out. Not built,
-    // not in the index, sitemap or llms.txt until the catalog verdict is settled.
     slug: "does-perplexity-ai-train-on-your-data",
     domain: "perplexity.ai",
-    draft: true,
     reviewed: "2026-10-28",
-    sources: [],
-    plans: [],
-    dataUsed: [],
-    retention: [],
-    optOutSteps: [],
-    optOutCaveats: [],
+    sources: [
+      { id: "pplx-data", url: "https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity", title: "Data Collection at Perplexity (Perplexity Help Center, no date shown)", fetched: "2026-10-28", snapshot: `${SNAP}/perplexity-data-collection.txt` },
+    ],
+    plans: [
+      {
+        plan: "Free, Pro, Max",
+        training: { text: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training.", src: "pplx-data" },
+        retention: null,
+      },
+      {
+        plan: "Enterprise (Enterprise Pro, Enterprise Max)",
+        training: { text: "As a Perplexity Enterprise user, your data is never used for AI training purposes.", src: "pplx-data" },
+        retention: { text: "Limited retention: Uploaded files are retained for only 7 days", src: "pplx-data" },
+      },
+    ],
+    dataUsed: [
+      { text: "AI model training: Some data may be used to train AI models and improve search quality, unless you opt out through Account Settings", src: "pplx-data" },
+      { text: "If the toggle is enabled, your data is being collected for AI training", src: "pplx-data" },
+    ],
+    retention: [
+      { text: "Previously collected training data cannot be deleted or removed", src: "pplx-data" },
+    ],
+    optOutSteps: [
+      { text: "Navigate to your Account settings", src: "pplx-data" },
+      { text: "Go to the Preferences page", src: "pplx-data" },
+      { text: "Locate the AI data retention toggle", src: "pplx-data" },
+      { text: "Toggle off to opt out of AI training data collection", src: "pplx-data" },
+    ],
+    optOutCaveats: [
+      { text: "Opt-outs only apply to data collected after the opt-out date", src: "pplx-data" },
+      { text: "The opt-in/out setting applies to individual users only", src: "pplx-data" },
+      { text: "Data may still be processed for service operation, legal compliance, and product improvement", src: "pplx-data" },
+      { text: "If you choose to downgrade to a Free or non-Enterprise plan, your data would then follow the standard consumer data policy, where AI data retention is enabled by default.", src: "pplx-data" },
+    ],
     gdpr: [],
-    changelog: [],
+    changelog: [
+      { date: "2026-10-24", text: "Rated \"Trains on your data, no opt-out\" from Perplexity's privacy notice, which only described advertising opt-outs." },
+      { date: "2026-10-28", text: "Re-checked against Perplexity's help centre: the \"AI data retention\" toggle is an AI-training opt-out, on by default. Verdict changed to \"Trains by default, you can opt out\". Q&A page published." },
+    ],
   },
 ];
 
