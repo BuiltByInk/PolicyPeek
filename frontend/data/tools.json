@@ -636,18 +636,18 @@
   {
     "name": "Perplexity AI",
     "domain": "perplexity.ai",
-    "compliance_status": "not_compliant",
-    "summary": "Perplexity's privacy notice lists \"Improve or create services and products, including our AI models.\" as a use of your data. The only opt-outs it describes are for targeted advertising, not training.",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
     "source_urls": [
-      "https://www.perplexity.ai/hub/legal/privacy-notice"
+      "https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-24T07:25:50.915Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Photoroom",
