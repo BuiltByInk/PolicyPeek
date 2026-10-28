@@ -1,0 +1,38 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import type { Tool } from "../../types";
+import toolsData from "../../../data/tools.json";
+import { PUBLISHED_QA } from "../../qa";
+import { qaAnswer, qaTitle, fmtDate } from "../../qa-text";
+
+const site = Astro.site!.href;
+const items = PUBLISHED_QA.map((q) => ({ q, tool: (toolsData as Tool[]).find((t) => t.domain === q.domain)! }));
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Does this AI tool train on your data? Questions answered",
+  url: `${site}questions/`,
+  publisher: { "@type": "Organization", name: "PolicyPeek", url: site },
+  hasPart: items.map(({ q, tool }) => ({ "@type": "Article", headline: qaTitle(tool), url: `${site}questions/${q.slug}/`, dateModified: q.reviewed })),
+};
+---
+<Layout title="Does this AI tool train on your data? Questions answered" description="Dated answers on whether popular AI tools train on your data, by plan, with retention, opt-out steps and UK GDPR notes quoted from each company's own policy." jsonLd={jsonLd}>
+  <h1>Questions</h1>
+  <p class="lede">One page per tool: a direct answer, a table by plan, how long data is kept, how to opt out and what the policy says about UK GDPR. Every quote links to its source. Not legal advice.</p>
+  <ul class="qa-list">
+    {items.map(({ q, tool }) => (
+      <li>
+        <a href={`/questions/${q.slug}/`}>Does {tool.name} train on your data?</a>
+        <p>{qaAnswer(tool)} Last checked {fmtDate(tool.last_checked_at!)}.</p>
+      </li>
+    ))}
+  </ul>
+  <p><a href="/tools/">Browse every tool we've checked</a> · <a href="/guides/">Guides</a></p>
+</Layout>
+<style>
+  .lede { color: var(--muted); }
+  .qa-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .qa-list li { border-top: 1px solid var(--line-soft); padding: 0.9rem 0; }
+  .qa-list a { font-weight: 700; font-size: 1.05rem; }
+  .qa-list p { margin: 0.3rem 0 0; color: var(--muted); font-size: 0.92rem; }
+</style>
