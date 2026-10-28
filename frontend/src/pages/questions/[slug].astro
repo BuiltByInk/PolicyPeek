@@ -1,0 +1,80 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import type { Tool } from "../../types";
+import { VERDICTS, safeHttpUrl } from "../../verdicts";
+import toolsData from "../../../data/tools.json";
+import { QA_PAGES } from "../../qa";
+
+export async function getStaticPaths() {
+  const tools = toolsData as Tool[];
+  return QA_PAGES.map((q) => {
+    const tool = tools.find((t) => t.domain === q.domain && t.verified);
+    if (!tool) throw new Error(`Q&A page ${q.slug}: no verified catalog entry for ${q.domain}`);
+    return { params: { slug: q.slug }, props: { q, tool } };
+  });
+}
+const { q, tool } = Astro.props as { q: (typeof QA_PAGES)[number]; tool: Tool };
+const siteUrl = Astro.site!.href;
+const url = `${siteUrl}questions/${q.slug}/`;
+const verdict = VERDICTS.find((v) => v.status === tool.compliance_status)!;
+const checked = new Date(tool.last_checked_at!);
+const checkedText = checked.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const checkedIso = tool.last_checked_at!.slice(0, 10);
+const answer = {
+  compliant: `No. ${tool.name}'s published policy says it doesn't train on your data by default.`,
+  compliant_with_caveats: `Yes, by default. ${tool.name}'s published policy says it may train on your data, but you can opt out.`,
+  not_compliant: `Yes. ${tool.name}'s published policy says it may train on your data, and we found no way to opt out.`,
+}[tool.compliance_status as "compliant" | "compliant_with_caveats" | "not_compliant"];
+const optOut = {
+  compliant: { status: "Not needed", how: `${tool.name}'s policy says it doesn't train on your data by default, so there is nothing to opt out of.` },
+  compliant_with_caveats: { status: "Yes, an AI-training opt-out is available", how: `The policy says: "${q.optOutQuote}".` },
+  not_compliant: { status: "No AI-training opt-out found", how: q.optOutQuote ? `${q.optOutQuote} Opt-outs for anything other than AI training don't count.` : "We found no AI-training opt-out in the policy." },
+}[tool.compliance_status as "compliant" | "compliant_with_caveats" | "not_compliant"];
+const title = `Does ${tool.name} train AI on your data? (checked ${checkedText})`;
+const description = `${answer} Sourced from ${tool.name}'s own policy; last checked ${checkedText}.`.slice(0, 160);
+const sources = tool.source_urls.map((raw) => ({ raw, href: safeHttpUrl(raw) }));
+const jsonLd = [
+  {
+    "@context": "https://schema.org", "@type": "FAQPage", url, inLanguage: "en-GB", dateModified: tool.last_checked_at,
+    mainEntity: [
+      { "@type": "Question", name: `Does ${tool.name} train AI on your data?`, acceptedAnswer: { "@type": "Answer", text: `${answer} Policy text: "${tool.summary}"` } },
+      { "@type": "Question", name: `Can you opt out of ${tool.name} AI training?`, acceptedAnswer: { "@type": "Answer", text: `${optOut.status}. ${optOut.how}` } },
+    ],
+  },
+];
+---
+<Layout title={title} description={description} jsonLd={jsonLd}>
+  <a class="back" href={`/tools/${tool.domain}/`}>&larr; {tool.name} in the catalog</a>
+  <article class="qa">
+    <h1>Does {tool.name} train AI on your data?</h1>
+    <p class="checked">Last checked: <time datetime={checkedIso}>{checkedText}</time></p>
+    <p class="answer">{answer}</p>
+    <p class="verdict-line">PolicyPeek verdict: <strong>{verdict.label}</strong></p>
+
+    <h2>Can you opt out?</h2>
+    <p><strong>{optOut.status}.</strong> {optOut.how}</p>
+
+    <h2>What the policy says</h2>
+    <blockquote class="quote">{tool.summary}</blockquote>
+
+    <h2>Sources</h2>
+    <ul class="sources">
+      {sources.map(({ raw, href }) => <li>{href ? <a href={href} rel="nofollow noopener noreferrer" target="_blank">{raw}<span class="sr-only"> (opens in a new tab)</span></a> : <span>{raw}</span>}</li>)}
+    </ul>
+
+    <p><a href={`/tools/${tool.domain}/`}>See the full {tool.name} catalog entry</a></p>
+    <aside class="pack-box compact">
+      <p><strong>Using another AI tool?</strong> <a href="/#home-q">Run the free PolicyPeek checker</a> to see whether it trains on your data.</p>
+    </aside>
+  </article>
+</Layout>
+<style>
+  .back { display: inline-block; color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
+  .qa { max-width: 46rem; }
+  .qa h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; margin: 0.75rem 0 0.4rem; }
+  .checked { font-family: var(--font-mono); color: var(--muted); margin: 0 0 1rem; }
+  .answer { font-size: 1.2rem; font-weight: 600; }
+  .quote { border-left: 4px solid var(--line); margin: 0; padding: 0.4rem 1rem; overflow-wrap: anywhere; }
+  .sources { padding-left: 1.25rem; }
+  .sources li { overflow-wrap: anywhere; }
+</style>
