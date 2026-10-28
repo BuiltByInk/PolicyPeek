@@ -471,22 +471,6 @@
     "last_checked_at": "2026-10-18T04:01:07.085Z"
   },
   {
-    "name": "Midjourney",
-    "domain": "midjourney.com",
-    "compliance_status": "unrated",
-    "summary": null,
-    "data_retention": "Personal Data retained only as long as necessary for stated purposes; Usage Data generally retained for shorter period except when used for security or functionality improvements or legally required; data retained to comply with legal obligations, resolve disputes, and enforce agreements",
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
-  },
-  {
     "name": "Mistral Vibe (formerly Le Chat)",
     "domain": "mistral.ai",
     "compliance_status": "compliant_with_caveats",
