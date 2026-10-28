@@ -113,22 +113,6 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
-    "name": "Copy.ai",
-    "domain": "copy.ai",
-    "compliance_status": "unrated",
-    "summary": "We retain different types of Personal Data for different periods, depending on the purposes for processing the information, our legitimate business purposes as well as pursuant to legal requirements.",
-    "data_retention": "We retain different types of Personal Data for different periods, depending on the purposes for processing the information, our legitimate business purposes as well as pursuant to legal requirements.",
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://www.copy.ai/privacy-notice"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.255Z"
-  },
-  {
     "name": "Cursor",
     "domain": "cursor.com",
     "compliance_status": "compliant_with_caveats",
@@ -372,22 +356,6 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-24T09:49:33.351Z"
-  },
-  {
-    "name": "Jasper",
-    "domain": "jasper.ai",
-    "compliance_status": "unrated",
-    "summary": "For the purpose of the GDPR, the Company is the Data Controller.",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://www.jasper.ai/legal/privacy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.448Z"
   },
   {
     "name": "JetBrains AI Assistant",
@@ -714,38 +682,6 @@
     "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
-    "name": "Replit AI",
-    "domain": "replit.com",
-    "compliance_status": "unrated",
-    "summary": "We may disclose Personal Data to advertising partners to provide you with personalized ads on third-party platforms, which may constitute a 'sale' or 'sharing' of Personal Data. To opt-out of the sale or sharing of Personal Data, use the Do Not Sell link",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://replit.com/privacy-policy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.622Z"
-  },
-  {
-    "name": "Runway",
-    "domain": "runway.com",
-    "compliance_status": "unrated",
-    "summary": "We may create aggregated, de-identified and/or anonymized data from personal data we collect. We make personal data into de-identified or anonymized data by taking steps to remove information that makes the data personally identifiable to you.",
-    "data_retention": null,
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://runway.com/privacy-policy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.706Z"
-  },
-  {
     "name": "Semrush",
     "domain": "semrush.com",
     "compliance_status": "compliant",
@@ -776,22 +712,6 @@
     "auto_published": true,
     "shared_domain": false,
     "last_checked_at": "2026-10-21T04:01:09.276Z"
-  },
-  {
-    "name": "Stability AI (DreamStudio)",
-    "domain": "stability.ai",
-    "compliance_status": "unrated",
-    "summary": "the use of information collected through the Services will be limited to the purpose of providing the Services for which you have paid for",
-    "data_retention": "We retain personal information we collect from you where we have an ongoing legitimate business need to do so (for example, to provide you with a service you have requested or to comply with applicable legal, tax, or accounting requirements). When we have no ongoing legitimate business need to process your personal information, we will either delete or anonymize it or, if this is not possible (for example, because your personal information has been stored in standard backup archives), then we will securely store your personal information and isolate it from any further processing until deletion is possible.",
-    "trains_on_user_data": null,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://stability.ai/ds-pp"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.815Z"
   },
   {
     "name": "Suno",
