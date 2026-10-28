@@ -16,7 +16,7 @@ Article 4 has applied since 2 February 2025, and national authorities supervise 
 
 ## What is the real risk without one?
 
-The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's checks of AI tools' own policies (24 October 2026) found 19 that train by default with an opt-out and 14 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's ratings of 49 AI tools' own policies (28 October 2026) found 17 that train by default with an opt-out and 12 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
 
 Without a policy, each member of staff decides alone which tool to use and what to paste in.
 
@@ -34,6 +34,11 @@ Keep it to one or two pages:
 ## How long does it take?
 
 For a small team, writing a first version is an afternoon's work, especially if you start from a template. Review it when you adopt a new tool or a tool changes its terms.
+
+
+## Changes
+
+- 28 October 2026: PolicyPeek tool counts updated to 49 rated tools after the full catalog audit took 9 verdicts down for review.
 
 ## FAQ
 
