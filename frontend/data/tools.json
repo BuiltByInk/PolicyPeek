@@ -588,7 +588,7 @@
     "name": "Notion AI",
     "domain": "notion.com",
     "compliance_status": "compliant",
-    "summary": "By default, Notion and its AI Subprocessors do not use Customer Data to train any models.",
+    "summary": "By default, neither Notion nor our AI providers use your Customer Data to train any models.",
     "data_retention": null,
     "trains_on_user_data": false,
     "gdpr_mentioned": null,
@@ -598,7 +598,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Otter.ai",
