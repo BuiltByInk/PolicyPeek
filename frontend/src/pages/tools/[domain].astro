@@ -6,6 +6,7 @@ import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
 import { gumroadLink } from "../../gumroad";
+import { qaForDomain } from "../../qa";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -87,9 +88,15 @@ const sources = tool.source_urls
 // SEO (2026-10-23): the searched question ("Does X train on my data?") plus the
 // "AI training & GDPR" topic. The description states only what the verdict
 // says, in Design's badge wording (verdicts.ts), never "Compliant".
+// Tools with a /questions/ page: that page owns the "Does X train on your
+// data?" query (title, H1 and FAQPage), so this page takes a catalog-style
+// title and drops its FAQPage. Both keep self-canonicals and link to each other.
+const qa = qaForDomain(tool.domain);
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
-  : `Does ${tool.name} train on my data? AI training & GDPR`;
+  : qa
+    ? `${tool.name} AI training verdict, policy sources & last check`
+    : `Does ${tool.name} train on my data? AI training & GDPR`;
 // Meta description (SEO pass, 2026-09-18): a fixed template -- the question
 // people search, then the verdict in plain words -- rather than the raw
 // policy quote in tool.summary, which got cut off mid-sentence in results and
@@ -139,7 +146,7 @@ const jsonLd = [
     publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
     about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
   },
-  ...(!isNotAi && plainAnswer
+  ...(!isNotAi && plainAnswer && !qa
     ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -155,6 +162,7 @@ const jsonLd = [
     <h1>{tool.name}</h1>
     {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
     {plainAnswer && <p class="answer">{plainAnswer}</p>}
+    {qa && <p class="qa-link"><a href={`/questions/${qa.slug}/`}>Full answer: does {tool.name} train on your data? Plans, retention and how to opt out</a></p>}
   </header>
 
   <section class="label" aria-labelledby="lp-h">
@@ -305,6 +313,7 @@ const jsonLd = [
     line-height: 1;
     overflow-wrap: anywhere;
   }
+  .qa-link { margin: 0.6rem 0 0; font-weight: 600; }
   .answer { margin: 0.8rem 0 0; font-size: 1.15rem; font-weight: 600; max-width: 40em; }
   .more summary { cursor: pointer; color: var(--id); font-family: var(--font-body); }
   .more[open] summary { margin-bottom: 0.4rem; }
