@@ -113,23 +113,6 @@
     "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
-    "name": "Cursor",
-    "domain": "cursor.com",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "If you choose to turn off \"Privacy Mode\": we may use and store codebase data, prompts, editor actions, code snippets ... to improve our AI features and train our models.",
-    "data_retention": "Anysphere retains your personal data only for as long as necessary to operate the Service effectively and to support legitimate business needs such as legal compliance, safety, dispute resolution, and enforcement of our agreements. The appropriate retention period varies depending on the purpose for which the personal data was collected, its sensitivity, potential risks associated with its use or exposure, and any applicable legal requirements.",
-    "trains_on_user_data": true,
-    "gdpr_mentioned": null,
-    "source_urls": [
-      "https://cursor.com/data-use",
-      "https://cursor.com/privacy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
-  },
-  {
     "name": "DeepL",
     "domain": "deepl.com",
     "compliance_status": "not_compliant",
@@ -776,23 +759,6 @@
     "auto_published": true,
     "shared_domain": true,
     "last_checked_at": "2026-09-01T19:41:05.556Z"
-  },
-  {
-    "name": "Windsurf",
-    "domain": "windsurf.com",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "\"By default, we may use your data for model training purposes to improve and enhance the Services.\" … \"After you opt out, your data will not be used for training\". Enterprise: never trained on without express prior written consent.",
-    "data_retention": null,
-    "trains_on_user_data": true,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://windsurf.com/security",
-      "https://windsurf.com/privacy-policy"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
   },
   {
     "name": "Writesonic",
