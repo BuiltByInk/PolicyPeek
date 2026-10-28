@@ -1,8 +1,8 @@
 # AI Tools That Train on Your Data With No Opt-Out (2026 List)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-On 24 October 2026, PolicyPeek rated 14 of 59 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Mailchimp, Meshy, Perplexity AI, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
+On 28 October 2026, PolicyPeek rated 12 of 58 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
 
 ## Which AI tools train on your data with no opt-out?
 
@@ -15,9 +15,7 @@ On 24 October 2026, PolicyPeek rated 14 of 59 checked tools **Trains on your dat
 | [InVideo](https://getpolicypeek.com/tools/invideo.io/) | **Trains on your data, no opt-out** | "We may use your User Data to train, fine-tune or otherwise adjust the parameters of our artificial intelligence and machine-learning models. You can stop this use by deleting the relevant User Data or closing your account". There's no setting to opt out. | [policy](https://invideo.io/privacy-policy/) | 2026-10-24 |
 | [Kling AI](https://getpolicypeek.com/tools/kling.ai/) | **Trains on your data, no opt-out** | "Kling AI may process usage data, aggregated data, or Input for its lawful business purposes" including to "(f) create, test, improve, train, or otherwise develop the artificial intelligence or machine learning models ... used by Kling AI"; no training… | [policy](https://kling.ai/docs/user-policy) | 2026-10-24 |
 | [Luma AI (Dream Machine)](https://getpolicypeek.com/tools/lumalabs.ai/) | **Trains on your data, no opt-out** | Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services | [policy](https://lumalabs.ai/legal/privacy-policy) | 2026-09-18 |
-| [Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/) | **Trains on your data, no opt-out** | Terms say "We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model"; no opt-out found. | [policy](https://mailchimp.com/legal/terms/) | 2026-10-24 |
 | [Meshy](https://getpolicypeek.com/tools/meshy.ai/) | **Trains on your data, no opt-out** | Terms (Sep 19, 2026): "Meshy may use Customer Inputs and Customer Outputs ... from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order." No opt-out for Free/Pro. | [policy](https://www.meshy.ai/terms-of-use) | 2026-10-24 |
-| [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) | **Trains on your data, no opt-out** | Perplexity's privacy notice lists "Improve or create services and products, including our AI models." as a use of your data. The only opt-outs it describes are for targeted advertising, not training. | [policy](https://www.perplexity.ai/hub/legal/privacy-notice) | 2026-10-24 |
 | [Pika](https://getpolicypeek.com/tools/pika.art/) | **Trains on your data, no opt-out** | "Pika may use anonymized or aggregated Content, including Inputs, Outputs, and your interactions with the Service, and Usage Data to train, improve, and develop its machine learning models"; no training opt-out found. | [policy](https://pika.art/terms-of-service) | 2026-10-24 |
 | [Poe](https://getpolicypeek.com/tools/poe.com/) | **Trains on your data, no opt-out** | "Developers that create bots and apps on Poe using APIs may view and store your chats on their servers to train their models." Poe account settings cover model providers, not developers; no opt-out for developer training. | [policy](https://poe.com/pages/privacy) | 2026-10-24 |
 | [Remove.bg](https://getpolicypeek.com/tools/remove.bg/) | **Trains on your data, no opt-out** | "We may also analyze your activity, content, media uploads and related data in your account ... to train our algorithms, models and AI products and services using machine learning to develop, improve and provide our Service." The only opt-outs offered are… | [policy](https://www.remove.bg/privacy) | 2026-10-24 |
@@ -36,15 +34,19 @@ Not always. PolicyPeek rates DeepL on its free tier (DeepL says Pro texts aren't
 
 An AI model extracts the facts from the company's own policy, then fixed rules pick the badge. Uncertain results are held for human review. Each tool page links the exact policy it used and the date it was checked. ([Methodology](https://getpolicypeek.com/about/))
 
+## Changes
+
+- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out** (its help centre describes an AI data retention toggle). Mailchimp taken off the list while PolicyPeek reviews it, because its training opt-out isn't clearly stated.
+
 ## FAQ
 
 ### Which AI tools train on your data with no opt-out?
 
-As of 24 October 2026, PolicyPeek lists Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Mailchimp, Meshy, Perplexity AI, Pika, Poe, Remove.bg, Suno.
+As of 28 October 2026, PolicyPeek lists Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno.
 
 ### Does Perplexity train on my data?
 
-PolicyPeek rates Perplexity 'Trains on your data, no opt-out': its privacy notice lists improving or creating AI models as a use of your data, and the only opt-outs described are for targeted advertising.
+Yes, by default, but you can opt out. Since 28 October 2026 PolicyPeek rates Perplexity 'Trains by default, you can opt out'. Its help centre says: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training." To opt out: "Toggle off to opt out of AI training data collection". It also says "Opt-outs only apply to data collected after the opt-out date". ([Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/), [source](https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity))
 
 ### Does Otter.ai train on my recordings?
 

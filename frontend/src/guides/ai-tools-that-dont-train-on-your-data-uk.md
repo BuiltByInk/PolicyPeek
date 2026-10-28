@@ -1,8 +1,8 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (October 2026)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-On 24 Oct 2026, 14 of the 59 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
+On 28 Oct 2026, 14 of the 58 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
 
 ## The 14 tools, in their policies' own words
 
@@ -40,13 +40,17 @@ PolicyPeek also explains why an opt-out doesn't get the green badge: "GDPR gener
 
 ## Popular tools that do train by default
 
-[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) are **Trains by default, you can opt out**.
-[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
+[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains by default, you can opt out**. Perplexity's help centre says: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training." ([source](https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity))
+[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) is **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
 [Gemini](https://getpolicypeek.com/tools/google.com/) has no product verdict yet, because only a company-wide policy was found.
 
 ## How PolicyPeek decides
 
 An AI model extracts the facts from the policy, then fixed rules decide the badge. Verdicts come from the company's own published policies. Uncertain results are held for human review, and a good verdict for a tool that's new to the site always waits for a person to check it first. ([Methodology](https://getpolicypeek.com/about/))
+
+## Changes
+
+- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out**. Tool count updated from 59 to 58 (Mailchimp is under review).
 
 ## FAQ
 
@@ -70,4 +74,4 @@ It means the policy doesn't clearly say either way. It isn't a middle grade. ([M
 
 Submit its website and privacy policy link for a free check. ([Home](https://getpolicypeek.com/))
 
-[Browse all 59 tools](https://getpolicypeek.com/tools/)
+[Browse all 58 tools](https://getpolicypeek.com/tools/)
