@@ -344,18 +344,18 @@
     "name": "JetBrains AI Assistant",
     "domain": "jetbrains.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "Paid and company plans: not used for training unless you agree. Free non-commercial licence: code-related data shared by default and may train JetBrains AI models; opt out in IDE settings.",
+    "summary": "\"Detailed code-related data can be used for product improvement and training AI models.\" For the free Non-commercial licence: \"We may collect analytics as specified above by default based on our legitimate interest. You may opt out in the product settings.\"",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
       "https://www.jetbrains.com/legal/docs/terms/jetbrains-ai-service/",
-      "https://www.jetbrains.com/help/ai/data-collection-and-use-policy.html"
+      "https://www.jetbrains.com/legal/docs/terms/product_data_collection/"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Kagi",
@@ -377,7 +377,7 @@
     "name": "Kimi",
     "domain": "kimi.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "\"the platform may use users' input data, instructions, and generated responses for model training\". Opt-out by request: \"If you do not want your content to be used for model training, you may contact our customer service\".",
+    "summary": "\"the platform may use users' input data, instructions, and generated responses for model training\". Opt-out by request: \"If you do not want your conversation data to be used for training, you can contact customer support ... and submit a request.\"",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": false,
@@ -387,7 +387,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-24T06:39:12.658Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Kling AI",
@@ -490,7 +490,7 @@
     "name": "Mistral Vibe (formerly Le Chat)",
     "domain": "mistral.ai",
     "compliance_status": "compliant_with_caveats",
-    "summary": "\"Input and output data are used by default to train our artificial intelligence models, unless you opt out of training at any time.\" \"Vibe: users are not opted out by default and can opt out at any time in their settings.\"",
+    "summary": "\"your input and output data (such as conversations, documents, and other user-provided content) may be included in Mistral's model training programs.\" \"Vibe: users are not opted out by default and can opt out at any time in their settings.\"",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -500,7 +500,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-24T06:39:12.161Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Moises",
@@ -813,7 +813,7 @@
     "name": "Zoom AI Companion",
     "domain": "zoom.com",
     "compliance_status": "compliant",
-    "summary": "Zoom says it doesn't use your meeting audio, video, chat, transcripts or AI outputs to train its or third-party AI models. Usage data and de-identified aggregates are outside that promise.",
+    "summary": "\"Zoom does not use any of your audio, video, chat, screen sharing, attachments or other communications-like Customer Content (such as poll results, whiteboard and reactions) to train Zoom or third-party artificial intelligence models.\"",
     "data_retention": null,
     "trains_on_user_data": false,
     "gdpr_mentioned": null,
@@ -824,6 +824,6 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   }
 ]
