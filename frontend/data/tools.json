@@ -52,7 +52,7 @@
     "name": "Bolt.new",
     "domain": "bolt.new",
     "compliance_status": "compliant_with_caveats",
-    "summary": "Unless you opt out ... we may use Bolt Model Development Content ... to train, fine-tune, evaluate, benchmark, and improve artificial-intelligence models. Accounts in the EEA, UK and Switzerland don't need to opt out.",
+    "summary": "Bolt.new links to StackBlitz's policy, which covers \"the Bolt application ( www.Bolt.new )\": \"Unless you opt out and subject to the regional and consent rules below, we may use Bolt Model Development Content ... to train, fine-tune, evaluate, benchmark, and improve artificial-intelligence models developed by or for StackBlitz.\" EEA, UK and Swiss accounts: \"We do not use Bolt Model Development Content ... for AI model development\".",
     "data_retention": "Personal information and user content retained while account active. Upon voluntary closure, data deleted or anonymized within 30 days (subject to backups, legal obligations, security requirements). Residual copies may persist in backups/logs for limited period.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
@@ -62,7 +62,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Buffer",
@@ -231,18 +231,17 @@
     "name": "Grammarly",
     "domain": "grammarly.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "You can decide whether Superhuman can use your user content to train our AI models by adjusting the available training control(s) in your account settings.",
+    "summary": "\"Product improvements include (1) training and validating our AI and machine learning models\". \"Product Improvement and Training is on for individual users by default.\" Grammarly's help page explains \"How do I turn Product Improvement and Training on or off?\"",
     "data_retention": "Personal data retained as long as necessary to provide products, complete transactions, comply with legal obligations, and resolve disputes. User content for troubleshooting and product improvement typically retained no longer than one year, then deleted or de-identified unless user retains it or legal obligations require longer retention.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.grammarly.com/privacy-policy",
-      "https://support.grammarly.com/hc/en-us/articles/25555503115277"
+      "https://support.grammarly.com/hc/en-us/articles/25555503115277-Product-Improvement-and-Training-Control"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Granola",
@@ -280,17 +279,17 @@
     "name": "HeyGen",
     "domain": "heygen.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "HeyGen says it \"may use the input that you provide us to improve our services, for example, to train and enhance the models\". The opt-out is by emailing HeyGen's privacy team, not an account setting.",
+    "summary": "HeyGen says it \"may use the input that you provide us to improve our services, for example, to train and enhance the models\". \"You may request to opt-out of this training and enhancement by contacting us\". The opt-out is by email, not an account setting.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://www.heygen.com/policy"
+      "https://www.heygen.com/privacy"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "HubSpot",
