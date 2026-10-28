@@ -14,7 +14,7 @@ const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t
 const REGISTER_ORDER = ["compliant", "compliant_with_caveats", "not_compliant", "unrated", "shared_domain_unverified", "not_ai_tool"];
 const registerRows = REGISTER_ORDER.map((s) => VERDICTS.find((v) => v.status === s)!).filter(Boolean);
 // Quick picks (audit P1): only tools that are actually in the register.
-const QUICK_PICKS = ["openai.com", "claude.com", "cursor.com", "otter.ai"];
+const QUICK_PICKS = ["openai.com", "claude.com", "github.com", "notion.com"];
 const picks = QUICK_PICKS.map((d) => tools.find((t) => t.domain === d)).filter((t): t is Tool => Boolean(t));
 // Sample verdict card: ChatGPT if listed, otherwise the first quick pick.
 const sample = tools.find((t) => t.domain === "openai.com") ?? picks[0] ?? null;
@@ -48,7 +48,7 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
     <form class="find" action="/tools/" method="get" role="search">
       <label for="home-q">Which AI tool do you use?</label>
       <div class="find-row">
-        <input id="home-q" name="q" type="search" placeholder="e.g. chatgpt, cursor, otter.ai"
+        <input id="home-q" name="q" type="search" placeholder="e.g. chatgpt, claude, notion"
           data-short-placeholder="e.g. chatgpt"
           autocomplete="off" spellcheck="false" />
         <button type="submit">Look it up</button>

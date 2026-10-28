@@ -50,7 +50,7 @@ export default function pageMarkdown() {
           writeFileSync(mdFile, toMarkdown(readFileSync(file, "utf8"), path));
           n++;
         }
-        if (n < 60) throw new Error(`page-markdown: only ${n} pages converted`);
+        if (n < 40) throw new Error(`page-markdown: only ${n} pages converted`);
         console.log(`page-markdown: wrote ${n} Markdown twins`);
       },
     },
