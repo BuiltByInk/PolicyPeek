@@ -487,22 +487,6 @@
     "last_checked_at": "2026-09-18T09:20:36.869Z"
   },
   {
-    "name": "Mailchimp",
-    "domain": "mailchimp.com",
-    "compliance_status": "not_compliant",
-    "summary": "Terms say \"We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model\"; no opt-out found.",
-    "data_retention": null,
-    "trains_on_user_data": true,
-    "gdpr_mentioned": null,
-    "source_urls": [
-      "https://mailchimp.com/legal/terms/"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-24T09:49:33.351Z"
-  },
-  {
     "name": "Meshy",
     "domain": "meshy.ai",
     "compliance_status": "not_compliant",
