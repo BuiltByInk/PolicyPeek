@@ -84,17 +84,18 @@
     "name": "ChatGPT",
     "domain": "openai.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "we may use Content you provide us to improve our Services, for example to train the models that power ChatGPT. Read our instructions on how you can opt out of our use of your Content to train our models.",
+    "summary": "\"When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models.\" \"To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal.\" \"By default, we don't use inputs or outputs from ChatGPT Business, ChatGPT Enterprise, ChatGPT Edu, or our API to improve our models.\" Conversations you give feedback on may still be used.",
     "data_retention": "Personal Data retained as long as needed to provide Services or for legitimate business purposes including resolving disputes, safety, security, and legal compliance. Specific retention periods vary by data type: user-deletable data removed within 30 days of deletion request unless retention needed for safety/legal reasons; Temporary Chats auto-deleted within 30 days unless safety/legal reasons require retention; some data retained longer for security, safety, or legal reasons.",
     "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
+      "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance",
       "https://openai.com/policies/row-privacy-policy/"
     ],
     "verified": true,
-    "auto_published": true,
+    "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-01T21:26:36.621Z"
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
     "name": "Claude",
