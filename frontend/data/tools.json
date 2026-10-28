@@ -536,23 +536,6 @@
     "last_checked_at": "2026-10-28T12:00:00.000Z"
   },
   {
-    "name": "Otter.ai",
-    "domain": "otter.ai",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "Privacy policy: \"training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)\". Otter's help centre gives an opt-out: Account Settings > Meetings > Feedback and Training, set Help improve Otter to \"Don't allow sharing\", and \"Otter will not access your conversation for training and product improvement.\" The policy doesn't say whether this also covers de-identified training.",
-    "data_retention": null,
-    "trains_on_user_data": true,
-    "gdpr_mentioned": false,
-    "source_urls": [
-      "https://otter.ai/privacy-policy",
-      "https://help.otter.ai/hc/en-us/articles/25352082563863-Provide-feedback-to-Otter"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-24T16:00:00.000Z"
-  },
-  {
     "name": "Perplexity AI",
     "domain": "perplexity.ai",
     "compliance_status": "compliant_with_caveats",
