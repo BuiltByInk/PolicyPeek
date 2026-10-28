@@ -18,10 +18,10 @@ The ICO also says you must decide and document your lawful basis before you star
 
 It depends on the account:
 
-- **Free and personal ChatGPT:** OpenAI's policy says it may use your content to train its models, and points to instructions for opting out. PolicyPeek's badge is **Trains by default, you can opt out**. ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
+- **Free and personal ChatGPT:** OpenAI's help centre says "When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models." and "To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal." ([OpenAI help](https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance)) PolicyPeek's badge is **Trains by default, you can opt out**. ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
 - **ChatGPT Business, Enterprise and the API:** OpenAI says it does not train on this business data by default, and it can sign a Data Processing Addendum (DPA) for these plans to support GDPR compliance. ([OpenAI enterprise privacy](https://openai.com/enterprise-privacy/))
 
-Other tools vary a lot. Of 59 AI tools PolicyPeek checked (24 October 2026), 14 say they don't train on your data and 14 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
+Other tools vary a lot. Of 49 AI tools PolicyPeek rates (28 October 2026), 14 say they don't train on your data and 12 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
 
 ## A safer way to use ChatGPT with customer data
 
@@ -35,6 +35,11 @@ Other tools vary a lot. Of 59 AI tools PolicyPeek checked (24 October 2026), 14 
 ## What if someone already pasted customer data in?
 
 Don't panic, and don't ignore it. Record what went in, which tool and account was used, and delete the conversation. Then decide whether it counts as a personal data breach. The ICO says you must report a breach to it within 72 hours of becoming aware of it, unless it's unlikely to result in a risk to people's rights and freedoms. ([ICO: personal data breaches](https://ico.org.uk/for-organisations/report-a-breach/personal-data-breach/))
+
+
+## Changes
+
+- 28 October 2026: PolicyPeek tool counts updated to 49 rated tools after the full catalog audit took 9 verdicts down for review.
 
 ## FAQ
 

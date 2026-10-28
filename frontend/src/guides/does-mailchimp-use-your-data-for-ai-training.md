@@ -34,8 +34,6 @@ Yes. HubSpot's own help article says the AI training setting is on by default an
 | [n8n](https://getpolicypeek.com/tools/n8n.io/) | **Doesn't train on your data** | "We do not use any personal data, including data received through any third-party services, for developing, improving, or training AI and/or ML models." | [policy](https://n8n.io/legal/privacy/) | 2026-10-24 |
 | [Frase](https://getpolicypeek.com/tools/frase.io/) | **Doesn't train on your data** | "Frase does not use Customer Data to develop or train generalized artificial intelligence or machine learning models". | [policy](https://www.frase.io/company/terms) | 2026-10-24 |
 | [Writesonic](https://getpolicypeek.com/tools/writesonic.com/) | **Doesn't train on your data** | "Writesonic does not use Customer Data to train or fine-tune any general-purpose, foundation, or large-language model", which "applies equally to… any Trial or free tier". | [policy](https://writesonic.com/legal/terms) | 2026-10-24 |
-| [Copy.ai](https://getpolicypeek.com/tools/copy.ai/) | **Policy unclear** | We retain different types of Personal Data for different periods, depending on the purposes for processing the information, our legitimate business purposes as well as pursuant to legal requirements. | [policy](https://www.copy.ai/privacy-notice) | 2026-09-03 |
-| [Jasper](https://getpolicypeek.com/tools/jasper.ai/) | **Policy unclear** | For the purpose of the GDPR, the Company is the Data Controller. | [policy](https://www.jasper.ai/legal/privacy) | 2026-09-03 |
 
 ## Which marketing tools don't train on your data?
 
@@ -48,6 +46,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 28 October 2026: Copy.ai and Jasper taken off the table while PolicyPeek reviews them (their policies don't mention training).
 - 28 October 2026: Mailchimp's verdict ("Trains on your data, no opt-out") taken down for review. Its terms point to data preferences in account settings, and the opt-out for AI training isn't clearly stated. Sources quoted word for word above.
 
 ## FAQ

@@ -2,7 +2,7 @@
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-On 28 October 2026, PolicyPeek rated 12 of 58 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
+On 28 October 2026, PolicyPeek rated 12 of 49 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
 
 ## Which AI tools train on your data with no opt-out?
 
@@ -36,6 +36,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 28 October 2026: tool count updated from 58 to 49 after the full catalog audit; Otter FAQ updated (under review).
 - 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out** (its help centre describes an AI data retention toggle). Mailchimp taken off the list while PolicyPeek reviews it, because its training opt-out isn't clearly stated.
 
 ## FAQ
@@ -50,7 +51,7 @@ Yes, by default, but you can opt out. Since 28 October 2026 PolicyPeek rates Per
 
 ### Does Otter.ai train on my recordings?
 
-Otter's privacy policy says it trains its proprietary AI on de-identified audio recordings and transcriptions. Otter's help centre describes an opt-out (Account Settings > Meetings > Feedback and Training, set Help improve Otter to "Don't allow sharing"), so since 24 October 2026 PolicyPeek rates Otter 'Trains by default, you can opt out'.
+Otter's privacy policy lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". PolicyPeek's Otter verdict is under review because its opt-out's default and scope aren't stated. ([Otter privacy policy](https://otter.ai/privacy-policy))
 
 ### How can I check a tool that isn't on this list?
 

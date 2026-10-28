@@ -33,7 +33,7 @@ A setting or process that stops your content being used for **training**. Watch 
 
 - Mailchimp's terms say "You may select preferences about your data by visiting your account settings." The only setting its help page describes is "Data analytics" ("If you prefer not to share your data, you can opt out of data analytics."), which doesn't mention AI training. PolicyPeek has taken Mailchimp's verdict down while it reviews whether that counts. ([Mailchimp terms](https://mailchimp.com/legal/terms/), [Mailchimp help](https://mailchimp.com/help/set-account-security-options/))
 - InVideo says you can stop training use "by deleting the relevant User Data or closing your account". PolicyPeek doesn't count that as an opt-out. ([InVideo](https://getpolicypeek.com/tools/invideo.io/))
-- HeyGen's opt-out is by emailing its privacy team rather than a setting; Kimi's is by contacting customer service. ([HeyGen](https://getpolicypeek.com/tools/heygen.com/), [Kimi](https://getpolicypeek.com/tools/kimi.com/))
+- HeyGen's opt-out is by emailing its privacy team rather than a setting; Kimi says "you can contact customer support ... and submit a request". ([HeyGen](https://getpolicypeek.com/tools/heygen.com/), [Kimi](https://getpolicypeek.com/tools/kimi.com/))
 
 ## Does the plan you're on change the answer?
 
@@ -41,7 +41,7 @@ Often, yes. Claude's consumer plans train unless you opt out, while commercial p
 
 ## The quick way: use a free checker
 
-[PolicyPeek](https://getpolicypeek.com/) has already read the policies of 58 tools (as of 28 October 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
+[PolicyPeek](https://getpolicypeek.com/) has already rated 49 tools (as of 28 October 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
 
 ## How PolicyPeek decides
 
@@ -49,6 +49,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 28 October 2026: tool count updated from 58 to 49 after the full catalog audit; Kimi quote made word for word.
 - 28 October 2026: Mailchimp example rewritten with word-for-word quotes; its verdict is under review because the training opt-out isn't clearly stated. Tool count updated from 59 to 58.
 
 ## FAQ
