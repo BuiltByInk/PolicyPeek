@@ -79,9 +79,9 @@ test("internal links: nav + footer link /guides/, tool pages link the guides tha
   const home = read("index.html");
   assert.match(home, /<nav class="site"[\s\S]*href="\/guides\/"[\s\S]*<\/nav>/);
   assert.match(home, /<footer class="site">[\s\S]*href="\/guides\/"/);
-  const otter = read("tools/otter.ai/index.html");
-  assert.match(otter, /Guides that cover Otter\.ai/);
-  assert.ok(otter.includes('href="/guides/ai-meeting-note-takers-that-dont-train-on-your-data/"'));
+  const granola = read("tools/granola.ai/index.html");
+  assert.match(granola, /Guides that cover Granola/);
+  assert.ok(granola.includes('href="/guides/ai-meeting-note-takers-that-dont-train-on-your-data/"'));
   assert.ok(existsSync(join(dir, "tools/openai.com/index.html")));
   assert.ok(read("tools/openai.com/index.html").includes('href="/guides/does-chatgpt-train-on-your-data/"'));
 });

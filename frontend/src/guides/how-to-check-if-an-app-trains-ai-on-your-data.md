@@ -1,6 +1,6 @@
 # How to Check If an App Trains AI on Your Data (2026)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 Open the app's privacy policy and terms and search for "train", "machine learning", "improve our models" and "opt out". If it says it may use your content to train models, check whether there is an opt-out setting. Or paste the tool into [PolicyPeek](https://getpolicypeek.com/), a free checker that reads the policy for you and quotes the line that matters.
 
@@ -31,9 +31,9 @@ Real wording from policies PolicyPeek checked:
 
 A setting or process that stops your content being used for **training**. Watch for look-alikes:
 
-- Mailchimp's terms say you "may select preferences about your data", but PolicyPeek's check found that isn't a training opt-out. ([Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/))
+- Mailchimp's terms say "You may select preferences about your data by visiting your account settings." The only setting its help page describes is "Data analytics" ("If you prefer not to share your data, you can opt out of data analytics."), which doesn't mention AI training. PolicyPeek has taken Mailchimp's verdict down while it reviews whether that counts. ([Mailchimp terms](https://mailchimp.com/legal/terms/), [Mailchimp help](https://mailchimp.com/help/set-account-security-options/))
 - InVideo says you can stop training use "by deleting the relevant User Data or closing your account". PolicyPeek doesn't count that as an opt-out. ([InVideo](https://getpolicypeek.com/tools/invideo.io/))
-- HeyGen's opt-out is by emailing its privacy team rather than a setting; Kimi's is by contacting customer service. ([HeyGen](https://getpolicypeek.com/tools/heygen.com/), [Kimi](https://getpolicypeek.com/tools/kimi.com/))
+- HeyGen's opt-out is by emailing its privacy team rather than a setting; Kimi says "you can contact customer support ... and submit a request". ([HeyGen](https://getpolicypeek.com/tools/heygen.com/), [Kimi](https://getpolicypeek.com/tools/kimi.com/))
 
 ## Does the plan you're on change the answer?
 
@@ -41,11 +41,16 @@ Often, yes. Claude's consumer plans train unless you opt out, while commercial p
 
 ## The quick way: use a free checker
 
-[PolicyPeek](https://getpolicypeek.com/) has already read the policies of 59 tools (as of 24 October 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
+[PolicyPeek](https://getpolicypeek.com/) has already rated 49 tools (as of 28 October 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
 
 ## How PolicyPeek decides
 
 An AI model extracts the facts from the company's own policy, then fixed rules pick the badge. Uncertain results are held for human review. Each tool page links the exact policy it used and the date it was checked. ([Methodology](https://getpolicypeek.com/about/))
+
+## Changes
+
+- 28 October 2026: tool count updated from 58 to 49 after the full catalog audit; Kimi quote made word for word.
+- 28 October 2026: Mailchimp example rewritten with word-for-word quotes; its verdict is under review because the training opt-out isn't clearly stated. Tool count updated from 59 to 58.
 
 ## FAQ
 

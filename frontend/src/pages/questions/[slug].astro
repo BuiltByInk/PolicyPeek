@@ -1,0 +1,151 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import type { Tool } from "../../types";
+import { VERDICTS, safeHttpUrl } from "../../verdicts";
+import toolsData from "../../../data/tools.json";
+import { PUBLISHED_QA, NOT_STATED, type QaEntry, type Quote } from "../../qa";
+import { qaAnswer, qaTitle, fmtDate } from "../../qa-text";
+
+export async function getStaticPaths() {
+  const tools = toolsData as Tool[];
+  return PUBLISHED_QA.map((q) => {
+    const tool = tools.find((t) => t.domain === q.domain && t.verified);
+    if (!tool) throw new Error(`Q&A page ${q.slug}: no verified catalog entry for ${q.domain}`);
+    if (!qaAnswer(tool)) throw new Error(`Q&A page ${q.slug}: verdict ${tool.compliance_status} has no Q&A answer`);
+    return { params: { slug: q.slug }, props: { q, tool } };
+  });
+}
+const { q, tool } = Astro.props as { q: QaEntry; tool: Tool };
+const siteUrl = Astro.site!.href;
+const url = `${siteUrl}questions/${q.slug}/`;
+const toolUrl = `/tools/${tool.domain}/`;
+const verdict = VERDICTS.find((v) => v.status === tool.compliance_status)!;
+const checkedIso = tool.last_checked_at!.slice(0, 10);
+const answer = qaAnswer(tool)!;
+const title = qaTitle(tool);
+const description = `${answer} Plans, retention, how to opt out and UK GDPR, quoted from ${tool.name}'s own policy.`;
+const srcOf = (quote: Quote) =>
+  quote.src === "catalog"
+    ? { label: "PolicyPeek catalog entry", href: toolUrl }
+    : (() => { const s = q.sources.find((x) => x.id === quote.src)!; return { label: s.title, href: s.url }; })();
+const caveats = tool.compliance_status === "compliant_with_caveats";
+const optOutStatus = tool.compliance_status === "compliant"
+  ? "No opt-out needed"
+  : caveats ? "Yes, there is an AI-training opt-out" : "No AI-training opt-out found";
+
+const faq = [
+  { q: `Does ${tool.name} train on my data?`, a: `${answer} Policy text: "${tool.summary}"` },
+  { q: `Does ${tool.name} use my data for AI?`, a: q.dataUsed.map((d) => `"${d.text}"`).join(" ") || NOT_STATED },
+  { q: `How do I opt out of ${tool.name} AI training?`, a: q.optOutSteps.length ? `${optOutStatus}. ` + q.optOutSteps.map((s, i) => `Step ${i + 1}: "${s.text}"`).join(" ") : `${optOutStatus}. ${tool.compliance_status === "compliant" ? `${tool.name}'s policy says it doesn't train on your data by default.` : ""}`.trim() },
+  { q: `Is ${tool.name} GDPR compliant?`, a: `PolicyPeek doesn't certify GDPR compliance. ${q.gdpr.length ? "What the policy says: " + q.gdpr.map((g) => `"${g.text}"`).join(" ") : `GDPR: ${NOT_STATED.toLowerCase()} (in the source we checked).`}` },
+];
+const jsonLd = [
+  {
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "PolicyPeek", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Questions", item: `${siteUrl}questions/` },
+      { "@type": "ListItem", position: 3, name: title, item: url },
+    ],
+  },
+  {
+    "@context": "https://schema.org", "@type": "Article", headline: title, description, url, mainEntityOfPage: url, inLanguage: "en-GB",
+    datePublished: q.reviewed, dateModified: q.reviewed,
+    author: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
+    publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
+    about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
+    citation: q.sources.map((s) => s.url),
+  },
+  {
+    "@context": "https://schema.org", "@type": "FAQPage", url, inLanguage: "en-GB", dateModified: q.reviewed,
+    mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+  },
+];
+---
+<Layout title={title} description={description} jsonLd={jsonLd}>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/questions/">Questions</a> / <a href={toolUrl}>{tool.name} in the catalog</a></nav>
+  <article class="qa">
+    <h1>Does {tool.name} train on your data?</h1>
+    <p class="answer">{answer}</p>
+    <p class="checked">Last checked: <time datetime={checkedIso}>{fmtDate(checkedIso)}</time> · Policy quotes re-read: <time datetime={q.reviewed}>{fmtDate(q.reviewed)}</time></p>
+    <p class="verdict-line">PolicyPeek verdict: <strong>{verdict.label}</strong>. {verdict.meaning}</p>
+    <blockquote class="quote">{tool.summary}<cite><a href={toolUrl}>PolicyPeek catalog entry</a></cite></blockquote>
+
+    <h2>By plan</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th scope="col">Plan</th><th scope="col">Training on your data</th><th scope="col">How long data is kept</th></tr></thead>
+        <tbody>
+          {q.plans.map((p) => (
+            <tr>
+              <th scope="row">{p.plan}</th>
+              <td>{p.training ? <>"{p.training.text}" <a class="src" href={srcOf(p.training).href}>source</a></> : NOT_STATED}</td>
+              <td>{p.retention ? <>"{p.retention.text}" <a class="src" href={srcOf(p.retention).href}>source</a></> : NOT_STATED}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Plans not listed here: {NOT_STATED.toLowerCase()}. We only list plans the sources name.</p>
+
+    <h2>What data is used</h2>
+    <ul class="quotes">{q.dataUsed.map((d) => <li>"{d.text}" <a class="src" href={srcOf(d).href}>source</a></li>)}</ul>
+
+    <h2>How long it's kept</h2>
+    {q.retention.length ? <ul class="quotes">{q.retention.map((d) => <li>"{d.text}" <a class="src" href={srcOf(d).href}>source</a></li>)}</ul> : <p>{NOT_STATED}.</p>}
+    <p class="note">How long data already used for training is kept: {NOT_STATED.toLowerCase()}.</p>
+
+    <h2>How to opt out of AI training</h2>
+    <p><strong>{optOutStatus}.</strong> {tool.compliance_status === "compliant" && `${tool.name}'s policy says it doesn't train on your data by default, so there is nothing to switch off.`} Only an opt-out from AI training counts here; opt-outs from marketing or analytics don't.</p>
+    {q.optOutSteps.length > 0 && (
+      <ol class="steps">{q.optOutSteps.map((s) => <li>"{s.text}" <a class="src" href={srcOf(s).href}>source</a></li>)}</ol>
+    )}
+    {q.optOutSteps.length > 0 && <p class="note">Exact menu names beyond what is quoted above: {NOT_STATED.toLowerCase()}.</p>}
+    {q.optOutCaveats.length > 0 && (
+      <>
+        <h3>{caveats ? "What the opt-out doesn't cover" : "What else the policy says"}</h3>
+        <ul class="quotes">{q.optOutCaveats.map((s) => <li>"{s.text}" <a class="src" href={srcOf(s).href}>source</a></li>)}</ul>
+      </>
+    )}
+
+    <h2>UK and GDPR</h2>
+    {q.gdpr.length
+      ? <ul class="quotes">{q.gdpr.map((g) => <li>"{g.text}" <a class="src" href={srcOf(g).href}>source</a></li>)}</ul>
+      : <p>GDPR and UK data rights: {NOT_STATED.toLowerCase()} (in the source we checked).</p>}
+    <p class="note">PolicyPeek reports what a company's own policy says. It doesn't certify GDPR compliance and isn't legal advice. If your team uses {tool.name} for work, check which plan you're on: the table above shows the answer can differ by plan.</p>
+
+    <h2>Sources</h2>
+    <ul class="sources">
+      {q.sources.map((s) => <li><a href={s.url} rel="nofollow noopener noreferrer" target="_blank">{s.title}<span class="sr-only"> (opens in a new tab)</span></a> — fetched {fmtDate(s.fetched)}</li>)}
+      {tool.source_urls.filter((u) => !q.sources.some((s) => s.url === u)).map((u) => <li>{safeHttpUrl(u) ? <a href={safeHttpUrl(u)!} rel="nofollow noopener noreferrer" target="_blank">{u}<span class="sr-only"> (opens in a new tab)</span></a> : u} — catalog source</li>)}
+    </ul>
+
+    <h2>Changelog</h2>
+    <ul class="changelog">{q.changelog.map((c) => <li><time datetime={c.date}>{fmtDate(c.date)}</time>: {c.text}</li>)}</ul>
+
+    <h2>How PolicyPeek checked this</h2>
+    <p>PolicyPeek reads each AI tool's own privacy policy and terms, quotes the clause about training on your data, and gives one verdict. {tool.auto_published ? "This verdict was published automatically by our checker." : "A person reviewed this verdict before it was published."} We re-check tools regularly. Every quote on this page is copied word for word from the source linked next to it; where a source says nothing, we write "{NOT_STATED}". See <a href="/about/">how it works</a>.</p>
+    <p><a href={toolUrl}>See {tool.name}'s full catalog entry</a> · <a href="/questions/">More questions</a></p>
+    <aside class="pack-box compact">
+      <p><strong>Using another AI tool?</strong> <a href="/#home-q">Run the free PolicyPeek checker</a> to see whether it trains on your data.</p>
+    </aside>
+  </article>
+</Layout>
+<style>
+  .crumbs { color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
+  .qa { max-width: 46rem; }
+  .qa h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; margin: 0.75rem 0 0.6rem; }
+  .answer { font-size: 1.2rem; font-weight: 600; margin: 0 0 0.5rem; }
+  .checked { font-family: var(--font-mono); color: var(--muted); margin: 0 0 1rem; font-size: 0.9rem; }
+  .quote { border-left: 4px solid var(--line); margin: 1rem 0; padding: 0.4rem 1rem; overflow-wrap: anywhere; }
+  .quote cite { display: block; font-size: 0.85rem; margin-top: 0.3rem; font-style: normal; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--line-soft); padding: 0.5rem; text-align: left; vertical-align: top; }
+  thead th { border-bottom: 3px solid var(--line); }
+  .note { color: var(--muted); font-size: 0.9rem; }
+  .quotes li, .steps li, .changelog li { margin: 0.4rem 0; }
+  .src { font-size: 0.8rem; }
+  .sources { padding-left: 1.25rem; }
+  .sources li { overflow-wrap: anywhere; margin: 0.3rem 0; }
+</style>
