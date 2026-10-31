@@ -49,8 +49,8 @@ const fmt = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en
 const INCIDENT_GUIDES = ["ai-tools-that-train-on-your-data-no-opt-out", "does-mailchimp-use-your-data-for-ai-training"];
 const POLICY_GUIDES = ["do-uk-small-businesses-need-an-ai-policy", "eu-ai-act-article-4-ai-literacy-small-uk-business", "ai-acceptable-use-policy-template-small-business-uk", "is-it-safe-to-put-customer-data-into-chatgpt-uk-gdpr", "how-to-train-staff-on-ai-30-minute-session"];
 const packLine = INCIDENT_GUIDES.includes(guide.slug)
-  ? "Already using a tool like this at work? The AI Incident Response One-Pager (£19) covers what to do if the wrong data goes in, and the AI Policy Starter Pack (from £19) sets ground rules for your team."
-  : "Running a small team? The AI Policy Starter Pack (from £19) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
+  ? "Already using a tool like this at work? The AI Incident Response One-Pager (free) covers what to do if the wrong data goes in, and the AI Policy Starter Pack (free) sets ground rules for your team."
+  : "Running a small team? The AI Policy Starter Pack (free) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
 const others = GUIDES.filter((g) => g.slug !== guide.slug);
 ---
 <Layout title={guide.title} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
@@ -63,9 +63,9 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   {POLICY_GUIDES.includes(guide.slug) ? (
     <aside class="pack-box" aria-labelledby="pack-end-h">
       <p class="pack-box-title" id="pack-end-h">Need an AI policy for your team?</p>
-      <p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist, ready to adapt in Word or Google Docs. £19, or £39 for the Complete version.</p>
-      <p class="pack-box-go"><a class="btn" href={gumroadLink("starter", `guide-end-${guide.slug}`)}>Get the Starter Pack, £19</a> <span>or <a href={gumroadLink("training", `guide-end-${guide.slug}`)}>the Staff AI Training Kit (£29)</a></span></p>
-      <p class="pack-box-small">From InkLLM, the team behind PolicyPeek. Templates, not legal advice. Prices include VAT for UK buyers.</p>
+      <p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist, ready to adapt in Word or Google Docs. Free download, Essentials or Complete.</p>
+      <p class="pack-box-go"><a class="btn" href={gumroadLink("starter", `guide-end-${guide.slug}`)}>Download the Starter Pack free</a> <span>or <a href={gumroadLink("training", `guide-end-${guide.slug}`)}>the Staff AI Training Kit (free)</a> · <a href="/#home-q">Check your AI tools with PolicyPeek</a></span></p>
+      <p class="pack-box-small">From InkLLM, the team behind PolicyPeek. Templates, not legal advice. Free downloads. <a href="https://getpolicypeek.com/">Custom policy agent: join when it opens</a>.</p>
     </aside>
   ) : (
     <aside class="checklist-cta" aria-label="Business resources">
