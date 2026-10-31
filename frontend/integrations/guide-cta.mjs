@@ -22,8 +22,8 @@ const esc = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 export function midBox(slug) {
   return `<aside class="pack-box pack-box-mid" aria-labelledby="pack-mid-h">` +
     `<p class="pack-box-title" id="pack-mid-h">Need an AI policy for your team?</p>` +
-    `<p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist. Ready to adapt in Word or Google Docs. £19.</p>` +
-    `<p class="pack-box-go"><a class="btn" href="${esc(gumroadLink("starter", `guide-mid-${slug}`))}">Get the Starter Pack, £19</a> ` +
+    `<p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist. Ready to adapt in Word or Google Docs. Free download.</p>` +
+    `<p class="pack-box-go"><a class="btn" href="${esc(gumroadLink("starter", `guide-mid-${slug}`))}">Download the Starter Pack free</a> ` +
     `<span>or <a href="${esc(gumroadLink("checklist", `guide-mid-${slug}`))}">get the free AI checklist</a></span></p></aside>`;
 }
 
