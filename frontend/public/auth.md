@@ -27,7 +27,7 @@ Requests may be rate limited. Keep volume reasonable, cache results (verdicts ch
 
 ## Content preferences
 
-Our robots.txt declares `Content-Signal: search=yes, ai-input=yes, ai-train=no`. Search and AI answer use is welcome; using this content to train AI models is not. Known AI training crawlers are blocked.
+Search engines, AI search/answer agents, and link-preview bots are welcome. GPTBot and ClaudeBot are intentionally allowed. A listed set of scrapers is blocked in `robots.txt`.
 
 ## Contact
 
