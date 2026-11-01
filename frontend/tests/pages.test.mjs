@@ -106,6 +106,8 @@ test("homepage: calm 'For UK small businesses' section with 4 products, shop lin
   assert.match(s, /href="#home-q"/);
   assert.match(s, /href="\/policy-pack\/"/);
   assert.match(s, /inkspire776\.gumroad\.com\/l\/rppfze\?[^"]*utm_campaign=homepage-biz/);
+  assert.match(s, /inkspire776\.gumroad\.com\/l\/lcuqir\?[^"]*utm_campaign=homepage-biz/);
+  assert.ok(!/join when it opens/.test(s), "waitlist CTA is live Gumroad, not placeholder");
   assert.match(s, /by InkLLM/);
   assert.match(s, /free to download/);
   assert.ok(h.indexOf('class="register"') < h.indexOf('class="biz"'), "below the verdict summary");

@@ -5,6 +5,7 @@ export const GUMROAD = {
   bundle: "https://inkspire776.gumroad.com/l/xybbay",
   incident: "https://inkspire776.gumroad.com/l/vfapf",
   checklist: "https://inkspire776.gumroad.com/l/rhfram",
+  policyAgent: "https://inkspire776.gumroad.com/l/lcuqir",
 } as const;
 
 // Adds UTM tags so Gumroad analytics show which part of the site sent the buyer.
