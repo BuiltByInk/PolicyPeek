@@ -1,50 +1,116 @@
-# getpolicypeek.com robots.txt
-# Policy (2026-11-01): allow search engines, AI search/answer agents, and
-# intentionally allow GPTBot/ClaudeBot. Block the listed scrapers below.
+# PolicyPeek robots.txt — AI SEO keep vs block (2026-11-01)
+# Source: keep search/answer + brand-training crawlers; block pure training scrapers
 
-# Allowed: search engines, AI search/answer agents, link previews,
-# and GPTBot/ClaudeBot (kept intentionally)
+# --- KEEP: search + AI answer bots (cite/link) ---
 User-agent: Googlebot
+Allow: /
+
 User-agent: bingbot
+Allow: /
+
 User-agent: Applebot
+Allow: /
+
 User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: ChatGPT-User
+Allow: /
+
 User-agent: Claude-SearchBot
+Allow: /
+
 User-agent: Claude-User
+Allow: /
+
 User-agent: PerplexityBot
+Allow: /
+
 User-agent: Perplexity-User
+Allow: /
+
 User-agent: DuckAssistBot
+Allow: /
+
 User-agent: Bravebot
+Allow: /
+
 User-agent: YouBot
+Allow: /
+
 User-agent: ExaSearchBot
+Allow: /
+
 User-agent: LinkupBot
+Allow: /
+
 User-agent: ShapBot
+Allow: /
+
+# --- KEEP: GPTBot + ClaudeBot (training, brand in future models) ---
 User-agent: GPTBot
+Allow: /
+
 User-agent: ClaudeBot
+Allow: /
+
+# --- KEEP: link preview bots ---
 User-agent: facebookexternalhit
+Allow: /
+
 User-agent: Twitterbot
 Allow: /
 
-# Blocked
+# --- BLOCK: pure AI training + scraper freeloaders ---
 User-agent: meta-externalagent
+Disallow: /
+
 User-agent: meta-externalads
+Disallow: /
+
 User-agent: Reflectionbot
+Disallow: /
+
 User-agent: ElevenlabsCrawler
+Disallow: /
+
 User-agent: AionBot
+Disallow: /
+
 User-agent: TokenFoundryBot
+Disallow: /
+
 User-agent: Bytespider
+Disallow: /
+
 User-agent: CCBot
+Disallow: /
+
 User-agent: AwarioBot
+Disallow: /
+
 User-agent: QlyzeBot
+Disallow: /
+
 User-agent: Barkrowler
+Disallow: /
+
 User-agent: SERankingBacklinksBot
+Disallow: /
+
 User-agent: SenderBot
+Disallow: /
+
 User-agent: TernCrawler
+Disallow: /
+
 User-agent: SQLSpider
+Disallow: /
+
 User-agent: SpiderLing
 Disallow: /
 
-# Everyone else
+# Default
 User-agent: *
 Allow: /
 
