@@ -79,7 +79,7 @@ test("SEO: tool page title/description from the verdict, related links, every to
     assert.ok(list.includes(`href="/tools/${t.domain}/"`), `/tools/ links ${t.domain}`);
   }
   const h = read(plain, "tools/claude.com/index.html");
-  assert.match(h, /<title>Does Claude train on my data\? AI training &amp; GDPR · PolicyPeek<\/title>/);
+  assert.match(h, /<title>Does Claude train on your data\? · PolicyPeek<\/title>/);
   assert.match(h, /name="description" content="Does Claude train on my data\? Opt-out available: /);
   assert.match(h, /id="rel-h"[^>]*>Related tools</);
   assert.ok((h.match(/class="related"[\s\S]*?<\/section>/)[0].match(/href="\/tools\/[^"]+\/"/g) || []).length >= 3);
