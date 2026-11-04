@@ -1,5 +1,21 @@
 [
   {
+    "name": "Abacus.AI",
+    "domain": "abacus.ai",
+    "compliance_status": "compliant",
+    "summary": "\"We do not use any personal information, Google user data, or customer-provided content (including prompts, uploads, or API data) to develop, improve, or train any generalized or proprietary AI or ML models.\"",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://abacus.ai/privacy-policy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-04T00:00:00.000Z"
+  },
+  {
     "name": "Ahrefs",
     "domain": "ahrefs.com",
     "compliance_status": "not_compliant",
@@ -193,6 +209,23 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-15T16:02:55.792Z"
+  },
+  {
+    "name": "Figma AI",
+    "domain": "figma.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "Rated on the free Starter plan: \"By default, content training is turned on for Starter teams. Admins of a Starter team can toggle off content training at any time in the team's settings.\" Paid plans: \"By default, content training is turned off on Organization and Enterprise plans.\"",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://help.figma.com/hc/en-us/articles/17725942479127-Manage-AI-settings-and-content-training-for-your-team-or-organization",
+      "https://www.figma.com/legal/privacy/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-04T00:00:00.000Z"
   },
   {
     "name": "Fireflies.ai",
