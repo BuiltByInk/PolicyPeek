@@ -781,18 +781,18 @@
   {
     "name": "Runway",
     "domain": "runway.com",
-    "compliance_status": "unrated",
-    "summary": "We may create aggregated, de-identified and/or anonymized data from personal data we collect. We make personal data into de-identified or anonymized data by taking steps to remove information that makes the data personally identifiable to you.",
+    "compliance_status": "not_compliant",
+    "summary": "Terms of use: \"You acknowledge that Inputs and Outputs may be used by the Company to train and improve its AI models, algorithms and related technology, products and services (including for labeling, classification, content moderation and model training purposes).\" The only opt-out in the terms is from arbitration; no training opt-out found.",
     "data_retention": null,
-    "trains_on_user_data": null,
+    "trains_on_user_data": true,
     "gdpr_mentioned": true,
     "source_urls": [
-      "https://runway.com/privacy-policy"
+      "https://runway.com/terms-of-use"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-09-03T10:43:26.706Z"
+    "last_checked_at": "2026-11-04T00:00:00.000Z"
   },
   {
     "name": "Semrush",
