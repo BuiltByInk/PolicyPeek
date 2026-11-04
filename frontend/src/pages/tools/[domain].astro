@@ -7,6 +7,7 @@ import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
 import { gumroadLink } from "../../gumroad";
 import { toolSummary } from "../../toolSummary";
+import { toolFaq, toolTitle, clamp } from "../../toolFaq";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -96,7 +97,7 @@ const sources = tool.source_urls
 // says, in Design's badge wording (verdicts.ts), never "Compliant".
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
-  : `Does ${tool.name} train on my data? AI training & GDPR`;
+  : toolTitle(tool.name); // <= 60 chars incl. " · PolicyPeek" (SEO follow-up 2026-11-04)
 // Meta description (SEO pass, 2026-09-18): a fixed template -- the question
 // people search, then the verdict in plain words -- rather than the raw
 // policy quote in tool.summary, which got cut off mid-sentence in results and
@@ -109,7 +110,7 @@ const templated = `Does ${tool.name} train on my data? ${verdictInfo ? `${verdic
 const sourcingTail = " Sourced from its own privacy policy.";
 const pageDescription = isNotAi
   ? `PolicyPeek's data-training check doesn't apply to ${tool.name}: the policy we found shows no sign it's an AI product.`
-  : templated.length + sourcingTail.length <= 160 ? templated + sourcingTail : templated;
+  : templated.length + sourcingTail.length <= 160 ? templated + sourcingTail : clamp(templated, 160);
 
 const siteUrl = Astro.site!.href;
 
@@ -130,6 +131,7 @@ const related = [
   ...rotate(others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName)),
 ].slice(0, 5);
 const guides = guidesForDomain(tool.domain);
+const faq = toolFaq(tool, allTools);
 const breadcrumbs = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -157,7 +159,7 @@ const jsonLd = [
     ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: [{ "@type": "Question", name: `Does ${tool.name} train on my data?`, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }],
+        mainEntity: [{ "@type": "Question", name: `Does ${tool.name} train on my data?`, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }, ...faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))],
       }]
     : []),
 ];
@@ -171,6 +173,13 @@ const jsonLd = [
     {plainAnswer && <p class="answer">{plainAnswer}</p>}
     {summary && <p class="tool-summary">{summary}</p>}
   </header>
+
+  {faq.length > 0 && (
+    <section class="tool-faq" aria-labelledby="faq-h">
+      <h2 id="faq-h">Common questions about {tool.name}</h2>
+      {faq.map((f) => (<><h3>{f.q}</h3><p>{f.a}</p></>))}
+    </section>
+  )}
 
   <section class="label" aria-labelledby="lp-h">
     <div class="slab">
