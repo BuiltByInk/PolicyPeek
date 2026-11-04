@@ -6,12 +6,12 @@
 
 ## What does the checker tell you?
 
-| Badge | Meaning | Tools on 24 October 2026 |
+| Badge | Meaning | Tools on 5 November 2026 |
 |---|---|---|
-| Doesn't train on your data | The policy says your data isn't used for training, or only if you opt in | 14 |
-| Trains by default, you can opt out | Training happens unless you switch it off | 17 |
-| Trains on your data, no opt-out | Training allowed and no opt-out found | 12 |
-| Policy unclear | The policy doesn't clearly say | 1 |
+| Doesn't train on your data | The policy says your data isn't used for training, or only if you opt in | 15 |
+| Trains by default, you can opt out | Training happens unless you switch it off | 21 |
+| Trains on your data, no opt-out | Training allowed and no opt-out found | 15 |
+| Policy unclear | The policy doesn't clearly say | 5 |
 | Company-wide policy only | Only a parent-company policy exists | 4 |
 
 (One more listed site isn't an AI tool.) ([All tools](https://getpolicypeek.com/tools/))
