@@ -1,8 +1,8 @@
 # Does ChatGPT Train on Your Data? What OpenAI's Own Policy Says
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 Yes, by default. PolicyPeek gives ChatGPT the badge **Trains by default, you can opt out**. Its page says: "ChatGPT's published policy says it may train on your data, but you can opt out." ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## What OpenAI's policy actually says
 

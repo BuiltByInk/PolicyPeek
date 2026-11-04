@@ -1,8 +1,8 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (October 2026)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 On 24 Oct 2026, 14 of the 59 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## The 14 tools, in their policies' own words
 

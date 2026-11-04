@@ -1,8 +1,8 @@
 # AI Acceptable Use Policy Template for a Small Business (UK, 2026)
 
-*Last checked: 24 October 2026. Based on ICO guidance, the European Commission's AI literacy Q&A, OpenAI's enterprise privacy page and AI tools' own published policies. Not legal advice.*
-
 An AI acceptable use policy tells staff which AI tools they can use for work and what they must never put into them. For a small UK business it can be one page. Below is a free outline you can copy, plus the decisions you need to make before you fill it in.
+
+*Last checked: 24 October 2026. Based on ICO guidance, the European Commission's AI literacy Q&A, OpenAI's enterprise privacy page and AI tools' own published policies. Not legal advice.*
 
 ## Why have an AI acceptable use policy?
 

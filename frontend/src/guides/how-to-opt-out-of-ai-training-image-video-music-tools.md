@@ -1,8 +1,8 @@
 # How to Opt Out of AI Training: Image, Video, Voice and Music Tools (2026)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 Of 14 creative AI tools PolicyPeek checked, only Moises and Pictory say they don't train on your content. ElevenLabs, Photoroom and HeyGen train by default but offer an opt-out. Suno, Pika, Kling, InVideo, Remove.bg, Meshy, Ideogram and Luma train with no opt-out found. Midjourney's policy is unclear. Checked 24 October 2026.
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## Which creative AI tools train on your uploads?
 

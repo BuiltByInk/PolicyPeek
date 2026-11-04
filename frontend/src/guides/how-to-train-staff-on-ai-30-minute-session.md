@@ -1,8 +1,8 @@
 # How to Train Staff on AI: A 30-Minute Session for Small Teams
 
-*Last checked: 24 October 2026. Based on the European Commission's AI literacy Q&A, ICO guidance and AI tools' own published policies. Not legal advice.*
-
 You don't need a course provider to train a small team on AI. A 30-minute session covering your approved tools, what never goes in, how to check output and who to tell when something goes wrong covers the basics. Keep a record of who attended. Below is a ready-to-run agenda.
+
+*Last checked: 24 October 2026. Based on the European Commission's AI literacy Q&A, ICO guidance and AI tools' own published policies. Not legal advice.*
 
 ## Is AI training required?
 
