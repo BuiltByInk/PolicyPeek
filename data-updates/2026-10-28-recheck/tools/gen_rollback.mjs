@@ -26,4 +26,4 @@ for (const r of snap) {
   }
 }
 console.log(`-- Note: the status UPDATE above fires trg_tools_changelog_on_update for perplexity.ai; that audit row is kept on purpose.`);
-console.log(`SELECT CASE WHEN (SELECT COUNT(*) FROM tools WHERE domain = 'mailchimp.com') = 1 AND (SELECT COUNT(*) FROM tools) = 59 THEN 'ok: rolled back' ELSE json('ROLLBACK ASSERT FAILED') END AS assert_rollback;`);
+console.log(`SELECT CASE WHEN (SELECT COUNT(*) FROM tools WHERE domain = 'mailchimp.com') = 1 AND (SELECT COUNT(*) FROM tools) = 61 THEN 'ok: rolled back' ELSE json('ROLLBACK ASSERT FAILED') END AS assert_rollback;`);

@@ -19,8 +19,8 @@ SELECT CASE WHEN (SELECT COUNT(*) FROM tools WHERE domain = 'mailchimp.com' AND 
   THEN 'ok: mailchimp.com is not_compliant' ELSE json('GUARD FAILED: mailchimp.com not in expected state') END AS guard_mailchimp;
 SELECT CASE WHEN (SELECT COUNT(*) FROM tools WHERE domain = 'notion.com' AND compliance_status = 'compliant') = 1
   THEN 'ok: notion.com is compliant' ELSE json('GUARD FAILED: notion.com not in expected state') END AS guard_notion;
-SELECT CASE WHEN (SELECT COUNT(*) FROM tools) = 59
-  THEN 'ok: 59 tools before' ELSE json('GUARD FAILED: expected 59 tools before (origin/main tools.json)') END AS guard_total;
+SELECT CASE WHEN (SELECT COUNT(*) FROM tools) = 61
+  THEN 'ok: 61 tools before' ELSE json('GUARD FAILED: expected 61 tools before (origin/main tools.json, after batch E)') END AS guard_total;
 
 -- 3. CHANGES
 -- Perplexity: not_compliant -> compliant_with_caveats. The "AI data retention" toggle (on by default for
@@ -33,11 +33,9 @@ UPDATE tools SET compliance_status = 'compliant_with_caveats', trains_on_user_da
   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE domain = 'perplexity.ai' AND compliance_status = 'not_compliant';
 
--- Mailchimp: HELD (unpublished). The terms point to "preferences about your data"; the only documented
--- setting ("Data analytics") never mentions AI training, so the opt-out is inferred -> hold rule.
--- Its changelog rows are FK-bound to the tools row, so they go first; the rollback re-inserts both.
-DELETE FROM compliance_changelog WHERE tool_id IN (SELECT id FROM tools WHERE domain = 'mailchimp.com' AND compliance_status = 'not_compliant');
-DELETE FROM tools WHERE domain = 'mailchimp.com' AND compliance_status = 'not_compliant';
+-- Mailchimp: NOT CHANGED. Elliot, 4 Nov 2026: "Keep all 61 tools in PR #25, drop the audit's removals and
+-- re-check those 10". The earlier hold (row delete) was removed from this package; Mailchimp stays
+-- not_compliant and published while it is re-checked (deliverables/dev/recheck-10-2026-11-04.md).
 
 -- Notion: stays compliant; quote replaced with the live wording (the old quote is no longer on the page).
 UPDATE tools SET summary = 'By default, neither Notion nor our AI providers use your Customer Data to train any models.',
@@ -53,17 +51,17 @@ SELECT 'after_counts' AS v, compliance_status, COUNT(*) AS n FROM tools GROUP BY
 -- 5. ASSERTS
 SELECT CASE WHEN
       (SELECT COUNT(*) FROM tools WHERE domain = 'perplexity.ai' AND compliance_status = 'compliant_with_caveats' AND opt_out_available = 1 AND manual_override = 1) = 1
-  AND (SELECT COUNT(*) FROM tools WHERE domain = 'mailchimp.com') = 0
+  AND (SELECT COUNT(*) FROM tools WHERE domain = 'mailchimp.com' AND compliance_status = 'not_compliant') = 1
   AND (SELECT COUNT(*) FROM tools WHERE domain = 'notion.com' AND compliance_status = 'compliant' AND summary LIKE 'By default, neither Notion nor our AI providers%') = 1
-  THEN 'ok: all three rows changed' ELSE json('ASSERT FAILED: not every target row was changed') END AS assert_rows;
--- Totals: origin/main tools.json (59: caveats 19, compliant 14, not_compliant 14, unrated 7, shared 4,
+  THEN 'ok: perplexity and notion changed, mailchimp kept' ELSE json('ASSERT FAILED: target rows not in expected state') END AS assert_rows;
+-- Totals: origin/main tools.json (61: caveats 20, compliant 15, not_compliant 14, unrated 7, shared 4,
 -- not_ai_tool 1) after this update.
 SELECT CASE WHEN
-      (SELECT COUNT(*) FROM tools WHERE compliance_status = 'compliant_with_caveats') = 20
-  AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'compliant') = 14
-  AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'not_compliant') = 12
+      (SELECT COUNT(*) FROM tools WHERE compliance_status = 'compliant_with_caveats') = 21
+  AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'compliant') = 15
+  AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'not_compliant') = 13
   AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'unrated') = 7
   AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'shared_domain_unverified') = 4
   AND (SELECT COUNT(*) FROM tools WHERE compliance_status = 'not_ai_tool') = 1
-  AND (SELECT COUNT(*) FROM tools) = 58
-  THEN 'ok: totals 20/14/12/7/4/1 (58)' ELSE json('ASSERT FAILED: final totals wrong') END AS assert_totals;
+  AND (SELECT COUNT(*) FROM tools) = 61
+  THEN 'ok: totals 21/15/13/7/4/1 (61)' ELSE json('ASSERT FAILED: final totals wrong') END AS assert_totals;

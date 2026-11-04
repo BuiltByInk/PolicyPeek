@@ -1,6 +1,6 @@
 # How to Opt Out of AI Training: Image, Video, Voice and Music Tools (2026)
 
-Of 13 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't train on your content. ElevenLabs, Photoroom and HeyGen train by default but offer an opt-out. Suno, Pika, Kling, InVideo, Remove.bg, Meshy, Ideogram and Luma train with no opt-out found. Midjourney is under review. Checked 28 October 2026.
+Of 14 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't train on your content. ElevenLabs, Photoroom and HeyGen train by default but offer an opt-out. Suno, Pika, Kling, InVideo, Remove.bg, Meshy, Ideogram and Luma train with no opt-out found. Midjourney's policy is unclear. Checked 28 October 2026.
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -21,6 +21,7 @@ Of 13 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't
 | [Meshy](https://getpolicypeek.com/tools/meshy.ai/) | **Trains on your data, no opt-out** | Terms (Sep 19, 2026): "Meshy may use Customer Inputs and Customer Outputs ... from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order." No opt-out for Free/Pro. | [policy](https://www.meshy.ai/terms-of-use) | 2026-10-24 |
 | [Ideogram](https://getpolicypeek.com/tools/ideogram.ai/) | **Trains on your data, no opt-out** | User information is used "as a matter of our legitimate interests, including ... training the models that power our Services"; the policy lists opt-outs only for marketing and analytics, not training. | [policy](https://ideogram.ai/legal/privacy) | 2026-10-15 |
 | [Luma AI (Dream Machine)](https://getpolicypeek.com/tools/lumalabs.ai/) | **Trains on your data, no opt-out** | Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services | [policy](https://lumalabs.ai/legal/privacy-policy) | 2026-09-18 |
+| [Midjourney](https://getpolicypeek.com/tools/midjourney.com/) | **Policy unclear** |  | [policy](https://docs.midjourney.com/hc/en-us/articles/32083472637453-Privacy-Policy) | 2026-10-15 |
 
 ## How do I opt out in ElevenLabs?
 
@@ -44,7 +45,8 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 28 October 2026: Midjourney taken down for review (policy unclear). HeyGen source updated to its current privacy page.
+- 4 November 2026: Midjourney kept on the site as **Policy unclear** while PolicyPeek re-checks it.
+- 28 October 2026: HeyGen source updated to its current privacy page.
 
 ## FAQ
 
@@ -66,4 +68,4 @@ Moises' terms say it will not use your content or output to train AI models unle
 
 ### Does Midjourney train on my images?
 
-PolicyPeek's Midjourney verdict is under review: its policy doesn't clearly say, and PolicyPeek couldn't re-read the page (docs.midjourney.com blocks automated reads).
+PolicyPeek rates Midjourney 'Policy unclear': the policy it checked doesn't clearly say either way.

@@ -1,6 +1,6 @@
 # AI Tools That Train on Your Data With No Opt-Out (2026 List)
 
-On 28 October 2026, PolicyPeek rated 12 of 49 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
+On 4 November 2026, PolicyPeek rated 13 of 61 checked tools **Trains on your data, no opt-out**: Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Mailchimp, Meshy, Pika, Poe, Remove.bg, Suno. Each one's own policy or terms allow training on your content, and PolicyPeek found no training opt-out. Details and sources are below.
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -15,6 +15,7 @@ On 28 October 2026, PolicyPeek rated 12 of 49 checked tools **Trains on your dat
 | [InVideo](https://getpolicypeek.com/tools/invideo.io/) | **Trains on your data, no opt-out** | "We may use your User Data to train, fine-tune or otherwise adjust the parameters of our artificial intelligence and machine-learning models. You can stop this use by deleting the relevant User Data or closing your account". There's no setting to opt out. | [policy](https://invideo.io/privacy-policy/) | 2026-10-24 |
 | [Kling AI](https://getpolicypeek.com/tools/kling.ai/) | **Trains on your data, no opt-out** | "Kling AI may process usage data, aggregated data, or Input for its lawful business purposes" including to "(f) create, test, improve, train, or otherwise develop the artificial intelligence or machine learning models ... used by Kling AI"; no training… | [policy](https://kling.ai/docs/user-policy) | 2026-10-24 |
 | [Luma AI (Dream Machine)](https://getpolicypeek.com/tools/lumalabs.ai/) | **Trains on your data, no opt-out** | Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services | [policy](https://lumalabs.ai/legal/privacy-policy) | 2026-09-18 |
+| [Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/) | **Trains on your data, no opt-out** | Terms say "We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model"; no opt-out found. | [policy](https://mailchimp.com/legal/terms/) | 2026-10-24 |
 | [Meshy](https://getpolicypeek.com/tools/meshy.ai/) | **Trains on your data, no opt-out** | Terms (Sep 19, 2026): "Meshy may use Customer Inputs and Customer Outputs ... from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order." No opt-out for Free/Pro. | [policy](https://www.meshy.ai/terms-of-use) | 2026-10-24 |
 | [Pika](https://getpolicypeek.com/tools/pika.art/) | **Trains on your data, no opt-out** | "Pika may use anonymized or aggregated Content, including Inputs, Outputs, and your interactions with the Service, and Usage Data to train, improve, and develop its machine learning models"; no training opt-out found. | [policy](https://pika.art/terms-of-service) | 2026-10-24 |
 | [Poe](https://getpolicypeek.com/tools/poe.com/) | **Trains on your data, no opt-out** | "Developers that create bots and apps on Poe using APIs may view and store your chats on their servers to train their models." Poe account settings cover model providers, not developers; no opt-out for developer training. | [policy](https://poe.com/pages/privacy) | 2026-10-24 |
@@ -36,14 +37,14 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 28 October 2026: tool count updated from 58 to 49 after the full catalog audit; Otter FAQ updated (under review).
-- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out** (its help centre describes an AI data retention toggle). Mailchimp taken off the list while PolicyPeek reviews it, because its training opt-out isn't clearly stated.
+- 4 November 2026: tool count updated to 61. Mailchimp, Otter.ai and the other tools from the 28 October audit stay on the site while PolicyPeek re-checks them.
+- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out** (its help centre describes an AI data retention toggle).
 
 ## FAQ
 
 ### Which AI tools train on your data with no opt-out?
 
-As of 28 October 2026, PolicyPeek lists Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Meshy, Pika, Poe, Remove.bg, Suno.
+As of 4 November 2026, PolicyPeek lists Ahrefs, Base44, DeepL, Ideogram, InVideo, Kling AI, Luma AI (Dream Machine), Mailchimp, Meshy, Pika, Poe, Remove.bg, Suno.
 
 ### Does Perplexity train on my data?
 
@@ -51,7 +52,7 @@ Yes, by default, but you can opt out. Since 28 October 2026 PolicyPeek rates Per
 
 ### Does Otter.ai train on my recordings?
 
-Otter's privacy policy lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". PolicyPeek's Otter verdict is under review because its opt-out's default and scope aren't stated. ([Otter privacy policy](https://otter.ai/privacy-policy))
+Otter's privacy policy lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". Otter's help centre describes an opt-out (Account Settings > Meetings > Feedback and Training), so PolicyPeek rates Otter 'Trains by default, you can opt out'. ([Otter privacy policy](https://otter.ai/privacy-policy))
 
 ### How can I check a tool that isn't on this list?
 

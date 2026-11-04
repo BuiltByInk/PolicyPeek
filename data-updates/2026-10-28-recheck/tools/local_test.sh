@@ -9,7 +9,7 @@ cd "$B"; W="npx wrangler d1 execute policypeek-db --local --persist-to $S/state"
 dump(){ $W --command="SELECT * FROM tools ORDER BY id" --json 2>/dev/null > "$1"; $W --command="SELECT * FROM compliance_changelog WHERE tool_id = (SELECT id FROM tools WHERE domain='mailchimp.com') ORDER BY id" --json 2>/dev/null > "$1.log"; }
 (cd "$D/../.." && python3 "$D/tools/gen_seed.py") > $S/seed.sql
 $W --file=schema.sql >/dev/null 2>&1; $W --file=$S/seed.sql >/dev/null 2>&1; dump $S/d0.json
-sed "s/compliance_status = 'compliant') = 14/compliance_status = 'compliant') = 15/" "$D/apply.sql" > $S/fail.sql
+sed "s/compliance_status = 'compliant') = 15/compliance_status = 'compliant') = 16/" "$D/apply.sql" > $S/fail.sql
 $W --file=$S/fail.sql >/dev/null 2>&1 && { echo "FAIL: broken assert did not error"; exit 1; } || true; dump $S/d1.json
 $W --file="$D/apply.sql" --json 2>/dev/null > $S/out.json; dump $S/da.json
 node "$D/tools/gen_rollback.mjs" $S/out.json > $S/rb.sql; $W --file=$S/rb.sql >/dev/null 2>&1; dump $S/d2.json

@@ -32,9 +32,9 @@ PolicyPeek keeps "you can opt out" separate from the green badge on purpose. An 
 
 ## How does ChatGPT compare with other AI tools?
 
-On 28 Oct 2026, PolicyPeek rated 49 tools. 14 had **Doesn't train on your data**, 17 had **Trains by default, you can opt out**, 12 had **Trains on your data, no opt-out** and 1 had **Policy unclear**. 4 more had only a company-wide policy, and 1 isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
+On 4 Nov 2026, PolicyPeek rated 61 tools. 15 had **Doesn't train on your data**, 21 had **Trains by default, you can opt out**, 13 had **Trains on your data, no opt-out** and 7 had **Policy unclear**. 4 more had only a company-wide policy, and 1 isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
 
-Some other tools in the opt-out group: [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans; PolicyPeek notes that commercial plans don't train by default), [GitHub Copilot](https://getpolicypeek.com/tools/github.com/), [Mistral Vibe](https://getpolicypeek.com/tools/mistral.ai/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/). ([All tools](https://getpolicypeek.com/tools/))
+Some other tools in the opt-out group: [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans; PolicyPeek notes that commercial plans don't train by default), [GitHub Copilot](https://getpolicypeek.com/tools/github.com/), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Mistral Vibe](https://getpolicypeek.com/tools/mistral.ai/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/). ([All tools](https://getpolicypeek.com/tools/))
 
 If you'd rather use a tool that doesn't train by default, see the [Doesn't train on your data list](https://getpolicypeek.com/tools/).
 
@@ -64,7 +64,7 @@ The policy says Temporary Chats are deleted automatically within 30 days, unless
 
 ### Where does PolicyPeek get this from?
 
-From the company's own published pages. The source links is listed on the [ChatGPT page](https://getpolicypeek.com/tools/openai.com/).
+From the company's own published pages. The source links are listed on the [ChatGPT page](https://getpolicypeek.com/tools/openai.com/).
 
 ### Is PolicyPeek free?
 

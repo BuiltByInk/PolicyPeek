@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# LOCAL ONLY (--local, miniflare state in a temp dir; never --remote). Seeds origin/main's 59 tools, runs
-# 2026-10-28-recheck, then proves for this package: a failing assert changes nothing; apply reaches 49 tools
-# 17/14/12/1/4/1; the generated rollback restores every tools row and the held tools' changelog exactly;
+# LOCAL ONLY (--local, miniflare state in a temp dir; never --remote). Seeds origin/main's 61 tools, runs
+# 2026-10-28-recheck, then proves for this package: a failing assert changes nothing; apply reaches 61 tools
+# 21/15/13/7/4/1 (nothing held since 4 Nov 2026); the generated rollback restores every tools row exactly;
 # re-apply after rollback works. VARIANT=d1-old seeds github.com unrated + otter.ai not_compliant (as if
 # 2026-10-24-copilot-otter never ran on D1), then runs that package first: the required run order.
 set -euo pipefail
@@ -17,7 +17,7 @@ $W --file=schema.sql >/dev/null 2>&1; $W --file=$S/seed.sql >/dev/null 2>&1
 if [ "${VARIANT:-}" = d1-old ]; then $W --file="$D/../2026-10-24-copilot-otter/apply.sql" >/dev/null 2>&1 && echo "d1-old: ran 2026-10-24-copilot-otter first"; fi
 $W --file="$R/apply.sql" --json > $S/r.json 2>&1 || { echo "FAIL: 2026-10-28-recheck did not apply"; grep -o "GUARD FAILED[^\"]*\|ASSERT FAILED[^\"]*" $S/r.json | sort -u; exit 1; }
 dump $S/d0.json
-sed "s/compliance_status = 'compliant') = 14/compliance_status = 'compliant') = 15/" "$D/apply.sql" > $S/fail.sql
+sed "s/compliance_status = 'compliant') = 15/compliance_status = 'compliant') = 16/" "$D/apply.sql" > $S/fail.sql
 $W --file=$S/fail.sql >/dev/null 2>&1 && { echo "FAIL: broken assert did not error"; exit 1; } || true; dump $S/d1.json
 $W --file="$D/apply.sql" --json 2>/dev/null > $S/out.json || { echo "FAIL: apply errored"; grep -o 'GUARD FAILED[^"]*\|ASSERT FAILED[^"]*' $S/out.json; exit 1; }
 dump $S/da.json
@@ -34,6 +34,6 @@ print('D1 domains == tools.json domains:',set(after)==set(tj))
 bad=[d for d in tj if after[d]['compliance_status']!=tj[d]['compliance_status'] or after[d]['summary']!=tj[d]['summary'] or json.loads(after[d]['source_urls'])!=tj[d]['source_urls']]
 print('rows differing from tools.json (status/summary/sources):',bad)
 print('rollback restores tools rows:',a==L('d2.json'))
-print('rollback restores held changelog:',L('d0.json.log')==L('d2.json.log'))
+print('changelog of the 9 kept tools unchanged:',L('d0.json.log')==L('da.json.log'))
 PY
-grep -o "ok: totals[^\"]*\|ok: 9 held" $S/out.json | sort -u
+grep -o "ok: totals[^\"]*\|ok: 9 kept" $S/out.json | sort -u

@@ -1,13 +1,14 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (October 2026)
 
-On 28 Oct 2026, 14 of the 49 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
+On 4 Nov 2026, 15 of the 61 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-## The 14 tools, in their policies' own words
+## The 15 tools, in their policies' own words
 
 | Tool | What the policy says (as quoted on PolicyPeek) |
 |---|---|
+| [Abacus.AI](https://getpolicypeek.com/tools/abacus.ai/) | "We do not use any personal information, Google user data, or customer-provided content (including prompts, uploads, or API data) to develop, improve, or train any generalized or proprietary AI or ML models." |
 | [Fireflies.ai](https://getpolicypeek.com/tools/fireflies.ai/) | "We do not use personal information for AI model training and we contractually prohibit our vendors from using this information for their own model training." |
 | [Frase](https://getpolicypeek.com/tools/frase.io/) | "Frase does not use Customer Data to develop or train generalized artificial intelligence or machine learning models" |
 | [Kagi](https://getpolicypeek.com/tools/kagi.com/) | Uses third-party AI providers "that do not save the data or use it for training, whenever possible." |
@@ -40,7 +41,7 @@ PolicyPeek also explains why an opt-out doesn't get the green badge: "GDPR gener
 
 ## Popular tools that do train by default
 
-[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains by default, you can opt out**. Perplexity's help centre says: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training." ([source](https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity))
+[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains by default, you can opt out**. Perplexity's help centre says: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training." ([source](https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity))
 [DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) is **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
 [Gemini](https://getpolicypeek.com/tools/google.com/) has no product verdict yet, because only a company-wide policy was found.
 
@@ -50,8 +51,9 @@ An AI model extracts the facts from the policy, then fixed rules decide the badg
 
 ## Changes
 
-- 28 October 2026: tool count updated from 58 to 49 after PolicyPeek's full catalog audit took 9 verdicts down for review; Cursor removed from the opt-out examples; Zoom quote replaced with the word-for-word terms text.
-- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out**. Tool count updated from 59 to 58 (Mailchimp is under review).
+- 4 November 2026: tool count updated to 61; Abacus.AI added to the list.
+- 28 October 2026: Zoom quote replaced with the word-for-word terms text.
+- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out**.
 
 ## FAQ
 
@@ -75,4 +77,4 @@ It means the policy doesn't clearly say either way. It isn't a middle grade. ([M
 
 Submit its website and privacy policy link for a free check. ([Home](https://getpolicypeek.com/))
 
-[Browse all 49 tools](https://getpolicypeek.com/tools/)
+[Browse all 61 tools](https://getpolicypeek.com/tools/)

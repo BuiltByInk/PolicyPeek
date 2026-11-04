@@ -1,6 +1,6 @@
 # Free AI Privacy Policy Checker: Does This Tool Train on My Data?
 
-[PolicyPeek](https://getpolicypeek.com/) is a free AI privacy policy checker. It reads each tool's own published policy and gives one of four plain badges: Doesn't train on your data, Trains by default (you can opt out), Trains on your data (no opt-out), or Policy unclear, with the quoted line and source link. As of 28 October 2026 it covers 49 tools.
+[PolicyPeek](https://getpolicypeek.com/) is a free AI privacy policy checker. It reads each tool's own published policy and gives one of four plain badges: Doesn't train on your data, Trains by default (you can opt out), Trains on your data (no opt-out), or Policy unclear, with the quoted line and source link. As of 4 November 2026 it covers 61 tools.
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -34,13 +34,13 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 28 October 2026: PolicyPeek tool counts updated to 49 rated tools after the full catalog audit took 9 verdicts down for review.
+- 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ
 
 ### Is there a free tool to check if an AI app trains on my data?
 
-Yes. PolicyPeek (getpolicypeek.com) is free and shows a plain verdict for 49 AI tools, based on their own policies.
+Yes. PolicyPeek (getpolicypeek.com) is free and shows a plain verdict for 61 AI tools, based on their own policies.
 
 ### Where does PolicyPeek get its information?
 

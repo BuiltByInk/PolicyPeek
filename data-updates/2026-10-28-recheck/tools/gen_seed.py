@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local-test seed: one tools row per entry in origin/main's frontend/data/tools.json (59 tools, the
+"""Local-test seed: one tools row per entry in origin/main's frontend/data/tools.json (61 tools after batch E, the
 pre-update state). perplexity.ai is seeded with manual_override = 1, as on live after 2026-10-24-checker."""
 import json, subprocess
 tj = json.loads(subprocess.check_output(["git", "show", "origin/main:frontend/data/tools.json"]))

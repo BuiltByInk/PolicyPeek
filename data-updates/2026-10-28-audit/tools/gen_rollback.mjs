@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Builds rollback SQL from the LIVE before-snapshot in apply-output.json (wrangler d1 execute --json output).
 // Usage: node tools/gen_rollback.mjs apply-output.json > rollback.sql
-// Restores the 9 updated rows column by column, re-inserts the 9 held tools with their original ids, then
-// re-inserts their changelog rows with original ids (removing the insert trigger's extra rows).
+// Restores the 9 updated rows column by column. (Since 4 Nov 2026 the package holds nothing, so the held-tool
+// re-insert branch below never runs; it is kept for older apply outputs.)
 import { readFileSync } from "node:fs";
 const HELD = ["copy.ai", "jasper.ai", "replit.com", "runway.com", "stability.ai", "cursor.com", "windsurf.com", "midjourney.com", "otter.ai"];
 const out = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -11,7 +11,7 @@ const find = (tag) => sets.find((rows) => rows.length && rows[0].snapshot === ta
 const snap = find("before_snapshot");
 const log = find("before_changelog");
 const total = find("before_counts").reduce((n, r) => n + r.n, 0);
-if (snap.length !== 18) { console.error(`expected 18 before_snapshot rows, got ${snap.length}`); process.exit(1); }
+if (snap.length !== 9) { console.error(`expected 9 before_snapshot rows, got ${snap.length}`); process.exit(1); }
 const lit = (v) => (v === null || v === undefined ? "NULL" : typeof v === "number" ? String(v) : "'" + String(v).replaceAll("'", "''") + "'");
 const cols = (r) => Object.keys(r).filter((c) => c !== "snapshot");
 console.log(`-- Rollback generated ${new Date().toISOString()} from the live before-snapshot. Run as one --file batch.`);

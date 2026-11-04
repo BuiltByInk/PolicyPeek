@@ -21,7 +21,7 @@ It depends on the account:
 - **Free and personal ChatGPT:** OpenAI's help centre says "When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models." and "To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal." ([OpenAI help](https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance)) PolicyPeek's badge is **Trains by default, you can opt out**. ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
 - **ChatGPT Business, Enterprise and the API:** OpenAI says it does not train on this business data by default, and it can sign a Data Processing Addendum (DPA) for these plans to support GDPR compliance. ([OpenAI enterprise privacy](https://openai.com/enterprise-privacy/))
 
-Other tools vary a lot. Of 49 AI tools PolicyPeek rates (28 October 2026), 14 say they don't train on your data and 12 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
+Other tools vary a lot. Of 61 AI tools PolicyPeek rates (4 November 2026), 15 say they don't train on your data and 13 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
 
 ## A safer way to use ChatGPT with customer data
 
@@ -39,7 +39,7 @@ Don't panic, and don't ignore it. Record what went in, which tool and account wa
 
 ## Changes
 
-- 28 October 2026: PolicyPeek tool counts updated to 49 rated tools after the full catalog audit took 9 verdicts down for review.
+- 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ
 

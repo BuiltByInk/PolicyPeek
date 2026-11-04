@@ -1,6 +1,6 @@
 # Do AI Meeting Note-Takers Train on Your Recordings? Zoom, Fireflies, tl;dv, Granola and Otter
 
-Zoom AI Companion, Fireflies.ai and tl;dv say in their own policies that they don't train AI on your meeting content. Granola trains on de-identified data but lets you opt out in account settings. Otter.ai is under review: its policy says it trains on de-identified recordings and transcripts, but its opt-out's default and scope aren't stated. ([All tools](https://getpolicypeek.com/tools/))
+Zoom AI Companion, Fireflies.ai and tl;dv say in their own policies that they don't train AI on your meeting content. Granola trains on de-identified data but lets you opt out in account settings. Otter.ai's policy says it trains on de-identified recordings and transcripts, and its help centre describes an opt-out in account settings. ([All tools](https://getpolicypeek.com/tools/))
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -12,14 +12,15 @@ Zoom AI Companion, Fireflies.ai and tl;dv say in their own policies that they do
 | [Fireflies.ai](https://getpolicypeek.com/tools/fireflies.ai/) | **Doesn't train on your data** | We do not use personal information for AI model training and we contractually prohibit our vendors from using this information for their own model training. | [policy](https://fireflies.ai/privacy-policy) | 2026-10-16 |
 | [tl;dv](https://getpolicypeek.com/tools/tldv.io/) | **Doesn't train on your data** | "Tldx Solutions GmbH does not use Customer Content, including meeting recordings, transcripts, notes, files, or other data processed through the Services, to train, fine-tune, or improve foundation models, large language models, or other generative AI models". | [policy](https://tldv.io/privacy/) | 2026-10-24 |
 | [Granola](https://getpolicypeek.com/tools/granola.ai/) | **Trains by default, you can opt out** | We only use de-identified data to train AI models, which you can opt-out of within your Granola account settings. | [policy](https://www.granola.ai/privacy) | 2026-10-15 |
+| [Otter.ai](https://getpolicypeek.com/tools/otter.ai/) | **Trains by default, you can opt out** | Policy: "training our proprietary AI technology on de-identified audio recordings and on transcriptions". Help centre opt-out: Account Settings > Meetings > Feedback and Training > Help improve Otter > "Don't allow sharing". | [help centre](https://help.otter.ai/hc/en-us/articles/25352082563863-Provide-feedback-to-Otter) | 2026-10-24 |
 
 ## How do I opt out of Granola training?
 
 Granola's privacy policy says it only uses de-identified data to train AI models, "which you can opt-out of within your Granola account settings". ([Granola](https://getpolicypeek.com/tools/granola.ai/))
 
-## Why isn't Otter.ai rated?
+## Can I opt out of Otter.ai training?
 
-Otter.ai is under review. Its [privacy policy](https://otter.ai/privacy-policy) lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". Its [help centre](https://help.otter.ai/hc/en-us/articles/25352082563863-Provide-feedback-to-Otter) says: "Manage your feedback and training permissions in Account Settings > Meetings. You have the option to allow Otter and its third-party service provider(s) permission to access your conversations for training and product improvement, including through human review." An [admin help page](https://help.otter.ai/hc/en-us/articles/13352505516695-Enterprise-Admin-Controls-Overview) says: "By default, Enterprise workspaces are opted out of AI model training." None of these pages says what the setting defaults to for individual plans, which plans it covers, or whether it also covers the de-identified training, so PolicyPeek has taken its verdict down until it can.
+Yes, according to Otter's help centre. Its [privacy policy](https://otter.ai/privacy-policy) lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". Its [help centre](https://help.otter.ai/hc/en-us/articles/25352082563863-Provide-feedback-to-Otter) says: "Manage your feedback and training permissions in Account Settings > Meetings. You have the option to allow Otter and its third-party service provider(s) permission to access your conversations for training and product improvement, including through human review." An [admin help page](https://help.otter.ai/hc/en-us/articles/13352505516695-Enterprise-Admin-Controls-Overview) says: "By default, Enterprise workspaces are opted out of AI model training." None of these pages says what the setting defaults to for individual plans, which plans it covers, or whether it also covers the de-identified training, so the tools above that say they don't train are the safer choice. ([Otter.ai](https://getpolicypeek.com/tools/otter.ai/))
 
 ## Is Zoom's promise unconditional?
 
@@ -35,13 +36,14 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 28 October 2026: Otter.ai taken down for review (the opt-out's default, plans and coverage of de-identified training aren't stated). Zoom quote replaced with the word-for-word terms text.
+- 4 November 2026: Otter.ai's verdict kept on the site (**Trains by default, you can opt out**) while PolicyPeek re-checks its opt-out wording.
+- 28 October 2026: Zoom quote replaced with the word-for-word terms text.
 
 ## FAQ
 
 ### Does Otter.ai train on my recordings?
 
-Otter's privacy policy lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". PolicyPeek's verdict is under review because the opt-out's default and scope aren't stated.
+Otter's privacy policy lists "training our proprietary AI technology on de-identified audio recordings and on transcriptions (which may contain Personal Information)". Its help centre describes an opt-out under Account Settings > Meetings > Feedback and Training.
 
 ### Does Zoom use my meetings to train AI?
 
