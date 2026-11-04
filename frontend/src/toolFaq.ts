@@ -51,4 +51,3 @@ export function toolTitle(name: string, max = 60 - TITLE_SUFFIX.length): string 
   for (const t of [`Does ${name} train on your data?`, `Does ${name} train on data?`, `${name}: AI training policy`, `${name}: AI training`]) if (t.length <= max) return t;
   return clamp(name, max);
 }
-

@@ -10,13 +10,13 @@ const items = PUBLISHED_QA.map((q) => ({ q, tool: (toolsData as Tool[]).find((t)
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Does this AI tool train on your data? Questions answered",
+  name: "AI tool data training questions, answered",
   url: `${site}questions/`,
   publisher: { "@type": "Organization", name: "PolicyPeek", url: site },
   hasPart: items.map(({ q, tool }) => ({ "@type": "Article", headline: qaTitle(tool), url: `${site}questions/${q.slug}/`, dateModified: q.reviewed })),
 };
 ---
-<Layout title="Does this AI tool train on your data? Questions answered" description="Dated answers on whether popular AI tools train on your data, by plan, with retention, opt-out steps and UK GDPR notes quoted from each company's own policy." jsonLd={jsonLd}>
+<Layout title="AI tool data training questions, answered" description="Dated answers on whether popular AI tools train on your data, by plan, with retention, opt-out steps and UK GDPR notes quoted from each company's own policy." jsonLd={jsonLd}>
   <h1>Questions</h1>
   <p class="lede">One page per tool: a direct answer, a table by plan, how long data is kept, how to opt out and what the policy says about UK GDPR. Every quote links to its source. Not legal advice.</p>
   <ul class="qa-list">

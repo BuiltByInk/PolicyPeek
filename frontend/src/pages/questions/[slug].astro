@@ -1,4 +1,5 @@
 ---
+import { clamp } from "../../toolFaq";
 import Layout from "../../layouts/Layout.astro";
 import type { Tool } from "../../types";
 import { VERDICTS, safeHttpUrl } from "../../verdicts";
@@ -23,7 +24,7 @@ const verdict = VERDICTS.find((v) => v.status === tool.compliance_status)!;
 const checkedIso = tool.last_checked_at!.slice(0, 10);
 const answer = qaAnswer(tool)!;
 const title = qaTitle(tool);
-const description = `${answer} Plans, retention, how to opt out and UK GDPR, quoted from ${tool.name}'s own policy.`;
+const description = clamp(`${answer} Plans, retention, opt-out and UK GDPR, quoted.`, 160);
 const srcOf = (quote: Quote) =>
   quote.src === "catalog"
     ? { label: "PolicyPeek catalog entry", href: toolUrl }

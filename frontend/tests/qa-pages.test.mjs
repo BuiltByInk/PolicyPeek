@@ -60,7 +60,7 @@ test("each page: title, one H1, one-sentence answer first, Last checked, section
   for (const q of published) {
     const t = tool(q.domain);
     const h = read(`questions/${q.slug}/index.html`);
-    assert.match(h, new RegExp(`<title>Does ${t.name} train on your data\\? \\(Checked [A-Z][a-z]{2} \\d{4}\\)`), q.slug);
+    assert.match(h, new RegExp(`<title>${t.name} training on your data \\([A-Z][a-z]{2} \\d{4}\\)`), q.slug);
     assert.equal((h.match(/<h1[\s>]/g) || []).length, 1, q.slug);
     assert.match(h, new RegExp(`<h1[^>]*>Does ${t.name} train on your data\\?</h1>\\s*<p class="answer"[^>]*>${ANSWER[t.compliance_status].replace(/[.?()]/g, "\\$&")}`), q.slug);
     assert.ok(h.includes(`datetime="${t.last_checked_at.slice(0, 10)}"`) && h.includes("Last checked:"), q.slug);
@@ -92,13 +92,13 @@ test("JSON-LD: FAQPage with the 4 questions and dateModified, Article published 
   }
 });
 
-test("/tools/ pages link to their Q&A page, drop the competing FAQPage/title, and keep self-canonicals", () => {
+test("/tools/ pages link to their Q&A page, drop the competing FAQPage, keep a distinct title, and keep self-canonicals", () => {
   for (const q of published) {
     const t = tool(q.domain);
     const h = read(`tools/${t.domain}/index.html`);
     assert.ok(h.includes(`href="/questions/${q.slug}/"`), t.domain);
     assert.ok(!h.includes('"@type":"FAQPage"'), t.domain);
-    assert.ok(!/<title>Does /.test(h), t.domain);
+    assert.ok(!/<title>[^<]*training on your data \(/.test(h), t.domain); // tool page keeps its own SEO title, not the Q&A one
     assert.match(h, new RegExp(`<link rel="canonical" href="https://getpolicypeek\\.com/tools/${t.domain.replace(/\./g, "\\.")}/">`));
   }
 });

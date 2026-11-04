@@ -96,9 +96,10 @@ const sources = tool.source_urls
 // SEO (2026-10-23): the searched question ("Does X train on my data?") plus the
 // "AI training & GDPR" topic. The description states only what the verdict
 // says, in Design's badge wording (verdicts.ts), never "Compliant".
-// Tools with a /questions/ page: that page owns the "Does X train on your
-// data?" query (title, H1 and FAQPage), so this page takes a catalog-style
-// title and drops its FAQPage. Both keep self-canonicals and link to each other.
+// Tools with a /questions/ page: that page carries the FAQPage for the "Does X
+// train on your data?" query, so this page drops its FAQPage. The <title> keeps
+// the SEO follow-up wording (toolTitle, <= 60 chars). Both keep self-canonicals
+// and link to each other.
 const qa = qaForDomain(tool.domain);
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`

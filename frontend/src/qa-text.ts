@@ -13,4 +13,6 @@ export const qaAnswer = (t: Tool): string | null => ({
   not_compliant: `Yes: ${t.name}'s published policy says it may train on your data, and we found no way to opt out.`,
 } as Record<string, string>)[t.compliance_status] ?? null;
 
-export const qaTitle = (t: Tool) => `Does ${t.name} train on your data? (Checked ${monYear(t.last_checked_at!)})`;
+// <= 60 chars incl. " · PolicyPeek" (SEO follow-up, PR #31). Distinct from the
+// tool page's "Does X train on your data?" title so the two don't compete.
+export const qaTitle = (t: Tool) => `${t.name} training on your data (${monYear(t.last_checked_at!)})`;
