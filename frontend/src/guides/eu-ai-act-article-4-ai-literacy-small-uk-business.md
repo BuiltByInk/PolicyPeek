@@ -1,8 +1,8 @@
 # EU AI Act Article 4 AI Literacy: What a 10-Person UK Business Must Do
 
-*Last checked: 24 October 2026. Based on the EU AI Act (Regulation (EU) 2024/1689) as amended by the Digital Omnibus on AI, and the European Commission's AI literacy Q&A. Not legal advice.*
-
 Article 4 of the EU AI Act says businesses that use AI systems must take measures to support the AI literacy of their staff. For a small team using everyday tools like ChatGPT, that means: know which AI tools you use, tell staff about the risks, give them short training suited to their role, and keep a simple record. No certificate, no AI officer, no specific test.
+
+*Last checked: 24 October 2026. Based on the EU AI Act (Regulation (EU) 2024/1689) as amended by the Digital Omnibus on AI, and the European Commission's AI literacy Q&A. Not legal advice.*
 
 ## What does Article 4 actually say?
 

@@ -1,8 +1,8 @@
 # How to Check If an App Trains AI on Your Data (2026)
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 Open the app's privacy policy and terms and search for "train", "machine learning", "improve our models" and "opt out". If it says it may use your content to train models, check whether there is an opt-out setting. Or paste the tool into [PolicyPeek](https://getpolicypeek.com/), a free checker that reads the policy for you and quotes the line that matters.
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## Where do companies say whether they train on your data?
 

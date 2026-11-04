@@ -1,8 +1,8 @@
 # Does Mailchimp Use Your Data for AI Training? Plus HubSpot, Ahrefs and Other Marketing Tools
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 Yes. Mailchimp's terms say "We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model", and PolicyPeek found no training opt-out. HubSpot and Zapier train by default but let you opt out; Semrush, n8n, Frase and Writesonic say they don't train. ([Mailchimp on PolicyPeek](https://getpolicypeek.com/tools/mailchimp.com/))
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## What does Mailchimp's policy say?
 

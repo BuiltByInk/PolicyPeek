@@ -53,7 +53,7 @@ const packLine = INCIDENT_GUIDES.includes(guide.slug)
   : "Running a small team? The AI Policy Starter Pack (free) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
 const others = GUIDES.filter((g) => g.slug !== guide.slug);
 ---
-<Layout title={guide.title} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
+<Layout title={guide.seoTitle} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
   <a class="back" href="/guides/">← All guides</a>
   <article class="guide">
     <p class="byline">By <a href="/about/" rel="author">InkLLM</a></p>

@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Badge from "../../components/Badge.astro";
 import SubmitTool from "../../components/SubmitTool.astro";
 import type { Tool } from "../../types";
-import { VERDICTS, reasonFor } from "../../verdicts";
+import { VERDICTS, VERDICT_SLUG, reasonFor } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 
 const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -45,7 +45,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
     </div>
     <div class="chips" role="group" aria-label="Filter by verdict">
       {VERDICTS.map((v) => (
-        <button type="button" class="chip" data-status={v.status} aria-pressed="false">
+        <button type="button" class="chip" data-status={v.status} data-slug={VERDICT_SLUG[v.status]} aria-pressed="false">
           <span class={`swatch ${v.swatch}`} aria-hidden="true"></span>
           {v.short} <span class="n">{counts[v.status]}</span>
         </button>
@@ -249,8 +249,13 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
     const params = new URLSearchParams(location.search);
     const validStatuses = new Set(chips.map((c) => c.dataset.status));
     if (params.get("q")) q.value = params.get("q")!.slice(0, 100);
+    // ?v= takes the public slug (e.g. "doesnt-train"). Legacy links that used
+    // the internal status name still resolve, then get rewritten to the slug.
     const v = params.get("v") || "";
-    if (validStatuses.has(v)) status = v;
+    const bySlug = chips.find((c) => c.dataset.slug === v);
+    if (bySlug) status = bySlug.dataset.status ?? "";
+    else if (validStatuses.has(v)) status = v;
+    const slugFor = (st: string) => chips.find((c) => c.dataset.status === st)?.dataset.slug ?? "";
     if (params.get("sort") === "verdict") sort.value = "verdict";
 
     function apply(updateUrl: boolean) {
@@ -273,7 +278,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
       if (updateUrl) {
         const u = new URL(location.href);
         needle ? u.searchParams.set("q", needle) : u.searchParams.delete("q");
-        status ? u.searchParams.set("v", status) : u.searchParams.delete("v");
+        status ? u.searchParams.set("v", slugFor(status)) : u.searchParams.delete("v");
         sort.value === "verdict" ? u.searchParams.set("sort", "verdict") : u.searchParams.delete("sort");
         history.replaceState(null, "", u);
       }
@@ -298,6 +303,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
       if (dom && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(typed) && !dom.value) dom.value = typed.toLowerCase();
       setTimeout(() => dom?.focus(), 0);
     });
-    apply(false);
+    // Rewrite a legacy ?v=<status> to the slug form without adding history.
+    apply(Boolean(v) && !bySlug && Boolean(status));
   }
 </script>

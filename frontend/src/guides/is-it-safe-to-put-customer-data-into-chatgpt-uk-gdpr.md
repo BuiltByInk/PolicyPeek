@@ -1,8 +1,8 @@
 # Is It Safe to Put Customer Data into ChatGPT? A UK GDPR Guide for Small Businesses
 
-*Last checked: 24 October 2026. Based on ICO guidance, OpenAI's own published policies and PolicyPeek's checks of AI tools' policies. Not legal advice.*
-
 Short answer: not on a free or personal ChatGPT account without thinking it through first. Customer names, emails and order details are personal data under UK GDPR, so you need a lawful basis, the right account type and clear rules before staff paste them in. On a ChatGPT business plan with a data processing agreement, the picture is different.
+
+*Last checked: 24 October 2026. Based on ICO guidance, OpenAI's own published policies and PolicyPeek's checks of AI tools' policies. Not legal advice.*
 
 ## Does UK GDPR apply when I paste customer data into ChatGPT?
 

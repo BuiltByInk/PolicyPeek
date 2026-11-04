@@ -6,6 +6,7 @@ import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
 import { gumroadLink } from "../../gumroad";
+import { toolSummary } from "../../toolSummary";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -79,6 +80,12 @@ const plainAnswer: string | null = (() => {
   }
 })();
 
+// SEO health check (2026-11-04): the H1 is the searched question; the
+// not-an-AI-tool page (noindex) keeps the plain name since the question
+// doesn't apply. A unique summary built only from this tool's catalog row.
+const h1 = isNotAi ? tool.name : `Does ${tool.name} train on your data?`;
+const summary = toolSummary(tool);
+
 const sources = tool.source_urls
   .map((raw) => ({ raw, href: safeHttpUrl(raw) }));
 
@@ -111,10 +118,17 @@ const siteUrl = Astro.site!.href;
 const allTools = toolsData as Tool[];
 const byName = (a: Tool, b: Tool) => a.name.localeCompare(b.name);
 const others = allTools.filter((t) => t.domain !== tool.domain && t.compliance_status !== "not_ai_tool");
+// Same verdict first, starting from the next tool alphabetically (wrapping
+// round) so pages with the same verdict don't all link the same five; then
+// other verdicts if fewer than 5 share this one. 3-5 links per page.
+const rotate = (list: Tool[]) => {
+  const i = list.findIndex((t) => t.name.localeCompare(tool.name) > 0);
+  return i <= 0 ? list : [...list.slice(i), ...list.slice(0, i)];
+};
 const related = [
-  ...others.filter((t) => t.compliance_status === tool.compliance_status).sort(byName),
-  ...others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName),
-].slice(0, 6);
+  ...rotate(others.filter((t) => t.compliance_status === tool.compliance_status).sort(byName)),
+  ...rotate(others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName)),
+].slice(0, 5);
 const guides = guidesForDomain(tool.domain);
 const breadcrumbs = {
   "@context": "https://schema.org",
@@ -152,9 +166,10 @@ const jsonLd = [
   <a class="back" href="/tools">← All tools</a>
 
   <header class="detail-head">
-    <h1>{tool.name}</h1>
+    <h1>{h1}</h1>
     {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
     {plainAnswer && <p class="answer">{plainAnswer}</p>}
+    {summary && <p class="tool-summary">{summary}</p>}
   </header>
 
   <section class="label" aria-labelledby="lp-h">
@@ -301,10 +316,11 @@ const jsonLd = [
   .detail-head { margin: 0.75rem 0 1.25rem; }
   .detail-head h1 {
     margin: 0;
-    font-size: clamp(2.6rem, 8vw, 3.8rem);
+    font-size: clamp(2rem, 6vw, 3rem);
     line-height: 1;
     overflow-wrap: anywhere;
   }
+  .tool-summary { margin: 0.7rem 0 0; max-width: 46rem; line-height: 1.55; overflow-wrap: anywhere; }
   .answer { margin: 0.8rem 0 0; font-size: 1.15rem; font-weight: 600; max-width: 40em; }
   .more summary { cursor: pointer; color: var(--id); font-family: var(--font-body); }
   .more[open] summary { margin-bottom: 0.4rem; }

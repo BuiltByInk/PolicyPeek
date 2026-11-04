@@ -87,3 +87,16 @@ export function safeHttpUrl(raw: string): string | null {
     return null;
   }
 }
+
+/** Public ?v= filter values for /tools/. The internal status names contain
+ *  "compliant", which the site never says out loud (badge-wording rule), so
+ *  links and the address bar use these slugs instead. Old ?v=<status> links
+ *  still work: the /tools/ script maps them to the slug. */
+export const VERDICT_SLUG: Record<Status, string> = {
+  not_compliant: "no-opt-out",
+  compliant_with_caveats: "opt-out",
+  unrated: "unclear",
+  shared_domain_unverified: "company-wide",
+  compliant: "doesnt-train",
+  not_ai_tool: "not-ai-tool",
+};

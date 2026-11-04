@@ -1,8 +1,8 @@
 # Do UK Small Businesses Need an AI Policy? (2026)
 
-*Last checked: 24 October 2026. Based on the EU AI Act text, the European Commission's AI literacy Q&A and AI tools' own published policies. Not legal advice.*
-
 Short answer: there is no UK law that says "every small business must have an AI policy". But if your staff use ChatGPT, Copilot, Gemini or an AI note-taker for work, a short written policy is the simplest way to show you've thought about where your data goes, and if you have customers or staff in the EU, the EU AI Act's AI literacy duty may already apply to you.
+
+*Last checked: 24 October 2026. Based on the EU AI Act text, the European Commission's AI literacy Q&A and AI tools' own published policies. Not legal advice.*
 
 ## Is an AI policy a legal requirement in the UK?
 

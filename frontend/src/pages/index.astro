@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import SubmitTool from "../components/SubmitTool.astro";
 import Badge from "../components/Badge.astro";
 import type { Tool } from "../types";
-import { VERDICTS, sentence } from "../verdicts";
+import { VERDICTS, VERDICT_SLUG, sentence } from "../verdicts";
 import { gumroadLink } from "../gumroad";
 import toolsData from "../../data/tools.json";
 
@@ -89,7 +89,7 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
     <ul>
       {registerRows.map((v, i) => (
         <li class={`reg-row${i === 3 ? " group-start" : ""}`}>
-          <a class="row-link" href={`/tools/?v=${v.status}`} aria-label={`See the ${counts[v.status]} tools with the badge ${v.label}`}>
+          <a class="row-link" href={`/tools/?v=${VERDICT_SLUG[v.status]}`} aria-label={`See the ${counts[v.status]} tools with the badge ${v.label}`}>
             <span class="n">{counts[v.status]}</span>
             <span class="b"><Badge status={v.status} /></span>
             <span class="m">{v.meaning}</span>

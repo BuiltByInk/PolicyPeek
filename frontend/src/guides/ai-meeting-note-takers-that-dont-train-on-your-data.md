@@ -1,8 +1,8 @@
 # Do AI Meeting Note-Takers Train on Your Recordings? Zoom, Otter, Fireflies, tl;dv and Granola
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
-
 Zoom AI Companion, Fireflies.ai and tl;dv say in their own policies that they don't train AI on your meeting content. Granola trains on de-identified data but lets you opt out in account settings. Otter.ai's policy says it trains on de-identified recordings and transcripts, and its help centre describes an opt-out in account settings. ([All tools](https://getpolicypeek.com/tools/))
+
+*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## Which note-takers train on your meetings?
 
