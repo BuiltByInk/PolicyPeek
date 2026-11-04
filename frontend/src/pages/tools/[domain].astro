@@ -165,7 +165,7 @@ const jsonLd = [
     ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: [{ "@type": "Question", name: `Does ${tool.name} train on my data?`, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }, ...faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))],
+        mainEntity: [{ "@type": "Question", name: h1, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }, ...faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))],
       }]
     : []),
 ];
