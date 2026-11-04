@@ -124,11 +124,11 @@ test("drafts are not built; sitemap and llms.txt cover published pages only", ()
   }
 });
 
-test("robots.txt: AI training crawlers blocked, AI search bots and search engines allowed, sitemap listed", () => {
+test("robots.txt (Jump's file from PR #28): listed crawlers blocked, AI search bots and search engines allowed, sitemap listed", () => {
   const r = read("robots.txt");
   const groups = r.split(/\n\s*\n/).map((g) => ({ agents: [...g.matchAll(/^User-agent: (.+)$/gm)].map((m) => m[1].trim()), rule: g.match(/^(Allow|Disallow): (.+)$/m)?.slice(1).join(" ") }));
   const ruleFor = (a) => groups.find((g) => g.agents.includes(a))?.rule;
-  for (const a of ["GPTBot", "ClaudeBot", "Google-Extended", "CCBot", "Applebot-Extended", "meta-externalagent"]) assert.equal(ruleFor(a), "Disallow /", a);
-  for (const a of ["OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Claude-SearchBot", "Googlebot", "Bingbot", "*"]) assert.equal(ruleFor(a), "Allow /", a);
+  for (const a of ["meta-externalagent", "Bytespider", "CCBot"]) assert.equal(ruleFor(a), "Disallow /", a);
+  for (const a of ["OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Claude-SearchBot", "Googlebot", "bingbot", "GPTBot", "ClaudeBot", "*"]) assert.equal(ruleFor(a), "Allow /", a);
   assert.match(r, /^Sitemap: https:\/\/getpolicypeek\.com\/sitemap-index\.xml$/m);
 });
