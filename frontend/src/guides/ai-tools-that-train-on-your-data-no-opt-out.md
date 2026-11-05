@@ -30,7 +30,7 @@ Not always. PolicyPeek rates DeepL on its free tier (DeepL says Pro texts aren't
 
 ## What can you do instead?
 
-- Use a tool whose policy says it doesn't train. PolicyPeek lists 14, including [Notion AI](https://getpolicypeek.com/tools/notion.com/), [Zoom AI Companion](https://getpolicypeek.com/tools/zoom.com/), [tl;dv](https://getpolicypeek.com/tools/tldv.io/) and [Moises](https://getpolicypeek.com/tools/moises.ai/). See [all tools](https://getpolicypeek.com/tools/).
+- Use a tool whose policy says it doesn't train. PolicyPeek lists 15, including [Notion AI](https://getpolicypeek.com/tools/notion.com/), [Zoom AI Companion](https://getpolicypeek.com/tools/zoom.com/), [tl;dv](https://getpolicypeek.com/tools/tldv.io/) and [Moises](https://getpolicypeek.com/tools/moises.ai/). See [all tools](https://getpolicypeek.com/tools/).
 - Or pick one with an opt-out and switch it off, e.g. [DeepSeek](https://getpolicypeek.com/tools/deepseek.com/) ("Improve the model for everyone") or [ChatGPT](https://getpolicypeek.com/tools/openai.com/).
 
 ## How PolicyPeek decides
