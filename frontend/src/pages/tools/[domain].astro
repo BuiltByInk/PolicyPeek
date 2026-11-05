@@ -8,6 +8,7 @@ import { guidesForDomain } from "../../guides";
 import { gumroadLink } from "../../gumroad";
 import { toolSummary } from "../../toolSummary";
 import { toolFaq, toolTitle, clamp } from "../../toolFaq";
+import { qaForDomain } from "../../qa";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -95,6 +96,11 @@ const sources = tool.source_urls
 // SEO (2026-10-23): the searched question ("Does X train on my data?") plus the
 // "AI training & GDPR" topic. The description states only what the verdict
 // says, in Design's badge wording (verdicts.ts), never "Compliant".
+// Tools with a /questions/ page: that page carries the FAQPage for the "Does X
+// train on your data?" query, so this page drops its FAQPage. The <title> keeps
+// the SEO follow-up wording (toolTitle, <= 60 chars). Both keep self-canonicals
+// and link to each other.
+const qa = qaForDomain(tool.domain);
 const pageTitle = isNotAi
   ? `${tool.name}: not an AI tool`
   : toolTitle(tool.name); // <= 60 chars incl. " · PolicyPeek" (SEO follow-up 2026-11-04)
@@ -155,7 +161,7 @@ const jsonLd = [
     publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
     about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
   },
-  ...(!isNotAi && plainAnswer
+  ...(!isNotAi && plainAnswer && !qa
     ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -172,6 +178,7 @@ const jsonLd = [
     {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
     {plainAnswer && <p class="answer">{plainAnswer}</p>}
     {summary && <p class="tool-summary">{summary}</p>}
+    {qa && <p class="qa-link"><a href={`/questions/${qa.slug}/`}>Full answer: does {tool.name} train on your data? Plans, retention and how to opt out</a></p>}
   </header>
 
   {faq.length > 0 && (
@@ -330,6 +337,7 @@ const jsonLd = [
     overflow-wrap: anywhere;
   }
   .tool-summary { margin: 0.7rem 0 0; max-width: 46rem; line-height: 1.55; overflow-wrap: anywhere; }
+  .qa-link { margin: 0.6rem 0 0; font-weight: 600; }
   .answer { margin: 0.8rem 0 0; font-size: 1.15rem; font-weight: 600; max-width: 40em; }
   .more summary { cursor: pointer; color: var(--id); font-family: var(--font-body); }
   .more[open] summary { margin-bottom: 0.4rem; }

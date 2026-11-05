@@ -1,13 +1,14 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (October 2026)
 
-On 24 Oct 2026, 14 of the 59 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
+On 4 Nov 2026, 15 of the 61 AI tools PolicyPeek checked had the badge **Doesn't train on your data**. That means the tool's own published policy says your data isn't used to train AI models, or is used only if you opt in. ([PolicyPeek home](https://getpolicypeek.com/), [All tools](https://getpolicypeek.com/tools/))
 
-*Last checked: 24 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
-## The 14 tools, in their policies' own words
+## The 15 tools, in their policies' own words
 
 | Tool | What the policy says (as quoted on PolicyPeek) |
 |---|---|
+| [Abacus.AI](https://getpolicypeek.com/tools/abacus.ai/) | "We do not use any personal information, Google user data, or customer-provided content (including prompts, uploads, or API data) to develop, improve, or train any generalized or proprietary AI or ML models." |
 | [Fireflies.ai](https://getpolicypeek.com/tools/fireflies.ai/) | "We do not use personal information for AI model training and we contractually prohibit our vendors from using this information for their own model training." |
 | [Frase](https://getpolicypeek.com/tools/frase.io/) | "Frase does not use Customer Data to develop or train generalized artificial intelligence or machine learning models" |
 | [Kagi](https://getpolicypeek.com/tools/kagi.com/) | Uses third-party AI providers "that do not save the data or use it for training, whenever possible." |
@@ -21,7 +22,7 @@ On 24 Oct 2026, 14 of the 59 AI tools PolicyPeek checked had the badge **Doesn't
 | [tl;dv](https://getpolicypeek.com/tools/tldv.io/) | Doesn't use "Customer Content, including meeting recordings, transcripts, notes, files, or other data processed through the Services, to train, fine-tune, or improve foundation models, large language models, or other generative AI models". |
 | [Writesonic](https://getpolicypeek.com/tools/writesonic.com/) | Doesn't use Customer Data to train models, which "applies equally to… any Trial or free tier". |
 | [You.com](https://getpolicypeek.com/tools/you.com/) | Doesn't use your prompts, files or outputs to train its own models, "except where you have separately opted in." |
-| [Zoom AI Companion](https://getpolicypeek.com/tools/zoom.com/) | Doesn't use meeting audio, video, chat, transcripts or AI outputs for training. Usage data and de-identified aggregates aren't covered by that promise. |
+| [Zoom AI Companion](https://getpolicypeek.com/tools/zoom.com/) | "Zoom does not use any of your audio, video, chat, screen sharing, attachments or other communications-like Customer Content (such as poll results, whiteboard and reactions) to train Zoom or third-party artificial intelligence models." |
 
 All of these quotes are on [PolicyPeek's tools list](https://getpolicypeek.com/tools/).
 
@@ -40,13 +41,19 @@ PolicyPeek also explains why an opt-out doesn't get the green badge: "GDPR gener
 
 ## Popular tools that do train by default
 
-[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) are **Trains by default, you can opt out**.
-[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
+[ChatGPT](https://getpolicypeek.com/tools/openai.com/), [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Grammarly](https://getpolicypeek.com/tools/grammarly.com/) and [Perplexity AI](https://getpolicypeek.com/tools/perplexity.ai/) are **Trains by default, you can opt out**. Perplexity's help centre says: "For Free, Perplexity Pro and Perplexity Max users, AI Data Retention is enabled by default. However, these users can control whether their data is used for AI model training." ([source](https://www.perplexity.ai/help-center/en/articles/11564572-data-collection-at-perplexity))
+[DeepL](https://getpolicypeek.com/tools/deepl.com/) (rated on its free tier) is **Trains on your data, no opt-out**. ([All tools](https://getpolicypeek.com/tools/))
 [Gemini](https://getpolicypeek.com/tools/google.com/) has no product verdict yet, because only a company-wide policy was found.
 
 ## How PolicyPeek decides
 
 An AI model extracts the facts from the policy, then fixed rules decide the badge. Verdicts come from the company's own published policies. Uncertain results are held for human review, and a good verdict for a tool that's new to the site always waits for a person to check it first. ([Methodology](https://getpolicypeek.com/about/))
+
+## Changes
+
+- 4 November 2026: tool count updated to 61; Abacus.AI added to the list.
+- 28 October 2026: Zoom quote replaced with the word-for-word terms text.
+- 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out**.
 
 ## FAQ
 
@@ -70,4 +77,4 @@ It means the policy doesn't clearly say either way. It isn't a middle grade. ([M
 
 Submit its website and privacy policy link for a free check. ([Home](https://getpolicypeek.com/))
 
-[Browse all 59 tools](https://getpolicypeek.com/tools/)
+[Browse all 61 tools](https://getpolicypeek.com/tools/)
