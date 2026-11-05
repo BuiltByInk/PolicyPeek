@@ -1,0 +1,97 @@
+---
+// /methodology/ fact page (2026-11-04). Every statement here mirrors what the
+// code does today; the source for each is noted beside it. Keep it in step with
+// backend/src/{extraction,rules,autoPublish,cron,rateLimit}.ts and
+// backend/wrangler.toml if any of those change.
+import Layout from "../layouts/Layout.astro";
+import { RECHECK_DAYS, MAX_PER_RUN } from "../methodology";
+const title = "How PolicyPeek checks AI tools";
+const description = "What PolicyPeek reads in an AI tool's own policy, how an AI model and fixed rules set the badge, when a person reviews it, and how often tools are rechecked.";
+const url = "https://getpolicypeek.com/methodology/";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: title,
+  description,
+  url,
+  inLanguage: "en-GB",
+  publisher: { "@type": "Organization", name: "PolicyPeek", url: "https://getpolicypeek.com/" },
+};
+---
+<Layout title={title} description={description} jsonLd={jsonLd}>
+  <h1>How PolicyPeek checks AI tools</h1>
+  <p class="lede">
+    PolicyPeek reads an AI tool's own published policy, pulls out a few facts
+    with an AI model, and applies the same fixed rules to every tool to choose
+    a badge. Some results are checked by a person before they go live; others
+    publish automatically. It's free to use, and it isn't legal advice.
+  </p>
+
+  <h2 id="what">What PolicyPeek checks</h2>
+  <p>For each tool, PolicyPeek fetches the privacy policy or terms the tool publishes itself and records:</p>
+  <ul>
+    <li>whether the policy says your data is used to train AI models;</li>
+    <li>whether it describes a way to opt out of that training;</li>
+    <li>what it says about how long your data is kept;</li>
+    <li>whether it mentions GDPR;</li>
+    <li>the policy wording those answers come from, quoted on the tool's page with a link to the source.</li>
+  </ul>
+  <!-- Source: ExtractedFacts in backend/src/extraction.ts (trains_on_user_data, opt_out_available, data_retention, gdpr_mentioned, relevant_clauses). -->
+
+  <h2 id="how">How a verdict is made</h2>
+  <ol class="steps">
+    <li>
+      <strong>AI extraction.</strong> An AI model (Anthropic's Claude Haiku)
+      reads the policy text and reports only the facts above. It doesn't pick
+      the badge.
+    </li>
+    <li>
+      <strong>Fixed rules.</strong> The badge comes from the facts by the same
+      rules for every tool: no training → "Doesn't train on your data";
+      training with an opt-out → "Trains by default, you can opt out";
+      training with no opt-out found → "Trains on your data, no opt-out";
+      the policy doesn't say → "Policy unclear". A policy that only covers a
+      whole company is marked "Company-wide policy", and a site with no sign
+      of being an AI product is marked "Not an AI tool".
+    </li>
+    <li>
+      <strong>Human review, for the cases that need it.</strong> A person
+      checks the result before it goes live when it's a good verdict for a
+      tool that's new to the site, when a recheck would change a tool's
+      existing badge, when a fact needed for the badge is missing, when the
+      policy came from an archived copy instead of the live page, or when the
+      entry was curated by hand. Other results publish automatically. Each
+      tool page says whether a person reviewed it.
+    </li>
+  </ol>
+
+  <h2 id="recheck">How often tools are rechecked</h2>
+  <p>
+    Once a day, PolicyPeek rechecks up to {MAX_PER_RUN} published tools whose
+    verdict was last confirmed more than {RECHECK_DAYS} days ago, most overdue
+    first. A recheck that would change a badge waits for a person. Each tool
+    page shows the date it was last checked, so look at that date: policies
+    change.
+  </p>
+
+  <h2 id="free">It's free</h2>
+  <p>
+    Looking up any tool in the catalog is free, with no account. Asking
+    PolicyPeek to check a new site is free too, limited to one new check a day
+    per visitor.
+  </p>
+
+  <h2 id="not-legal-advice">Not legal advice</h2>
+  <p>
+    PolicyPeek reports what a company's own published policy says. It isn't
+    legal advice or a finding that a tool does or doesn't comply with GDPR or
+    any other law. If it matters, read the linked policy yourself or ask a
+    qualified adviser.
+  </p>
+
+  <p>More detail on the badges: <a href="/about/">how a rating gets made</a>. Browse <a href="/tools/">all tools</a>.</p>
+</Layout>
+<style>
+  .lede, ul, .steps, h2 + p { max-width: 68ch; }
+  .steps li { margin-bottom: 0.8rem; }
+</style>
