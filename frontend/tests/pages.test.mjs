@@ -88,36 +88,35 @@ test("SEO: tool page title/description from the verdict, related links, every to
   assert.match(h, /og:url" content="https:\/\/getpolicypeek\.com\/tools\/claude\.com\/"/);
 });
 
-test("nav: 'For businesses' links to /policy-pack/ on every page", () => {
+test("nav is Tools, Guides and Methodology, with no business link", () => {
   for (const p of ["index.html", "guides/index.html", "tools/openai.com/index.html", "about/index.html"]) {
-    assert.match(read(plain, p), /<nav class="site"[^>]*>[\s\S]*?<a href="\/policy-pack\/"[^>]*>For businesses<\/a>[\s\S]*?<\/nav>/, p);
+    const nav = read(plain, p).match(/<nav class="site"[\s\S]*?<\/nav>/)[0];
+    assert.match(nav, /href="\/tools"/, p);
+    assert.match(nav, /href="\/guides\/"/, p);
+    assert.match(nav, /href="\/about"/, p);
+    assert.doesNotMatch(nav, /For businesses|policy-pack|InkLLM/, p);
   }
-  assert.match(read(plain, "policy-pack/index.html"), /<a href="\/policy-pack\/" aria-current="page"[^>]*>For businesses<\/a>/);
 });
 
-test("homepage: calm 'For UK small businesses' section with 4 products, shop link and free checklist", () => {
+test("homepage is the checker, with no business products, waitlist or InkLLM", () => {
   const h = read(plain, "index.html");
-  const m = h.match(/<section class="biz"[\s\S]*?<\/section>/);
-  assert.ok(m, "biz section present");
-  const s = m[0];
-  assert.match(s, /For UK small businesses/);
-  for (const n of ["AI Policy Starter Pack", "Staff AI Training Kit", "Starter Pack + Training Kit bundle", "AI Incident Response One-Pager"]) assert.ok(s.includes(n), n);
-  assert.ok(!/£\d/.test(s), "no paid prices in biz box");
-  assert.match(s, /href="#home-q"/);
-  assert.match(s, /href="\/policy-pack\/"/);
-  assert.match(s, /inkspire776\.gumroad\.com\/l\/rppfze\?[^"]*utm_campaign=homepage-biz/);
-  assert.match(s, /inkspire776\.gumroad\.com\/l\/lcuqir\?[^"]*utm_campaign=homepage-biz/);
-  assert.ok(!/join when it opens/.test(s), "waitlist CTA is live Gumroad, not placeholder");
-  assert.match(s, /by InkLLM/);
-  assert.match(s, /free to download/);
-  assert.ok(h.indexOf('class="register"') < h.indexOf('class="biz"'), "below the verdict summary");
+  assert.match(h, /id="home-q"/);
+  assert.match(h, /Which AI tool do you use\?/);
+  assert.match(h, /class="register"/);
+  assert.doesNotMatch(h, /For UK small businesses|class="biz"|InkLLM|gumroad|waitlist|policy-pack|Starter Pack/i);
 });
 
-test("guides: each ends with the free checklist and a contextual business-resources line", () => {
-  const g = read(plain, "guides/does-mailchimp-use-your-data-for-ai-training/index.html");
-  assert.match(g, /rhfram/);
-  assert.match(g, /class="pack-cta"[^>]*>[^<]*Incident Response[\s\S]*?href="\/policy-pack\/"/);
-  const c = read(plain, "guides/do-ai-coding-assistants-train-on-your-code/index.html");
-  assert.match(c, /class="pack-cta"[^>]*>[^<]*Starter Pack[\s\S]*?href="\/policy-pack\/"/);
-  assert.doesNotMatch(read(plain, "guides/does-chatgpt-train-on-your-data.md"), /policy-pack/);
+test("guides and tool pages do not sell a pack or name InkLLM", () => {
+  for (const p of [
+    "guides/does-mailchimp-use-your-data-for-ai-training/index.html",
+    "guides/do-ai-coding-assistants-train-on-your-code/index.html",
+    "guides/do-uk-small-businesses-need-an-ai-policy/index.html",
+    "tools/openai.com/index.html",
+    "about/index.html",
+  ]) {
+    const h = read(plain, p);
+    assert.doesNotMatch(h, /gumroad|InkLLM|policy-pack|waitlist|Starter Pack/i, p);
+  }
+  assert.throws(() => read(plain, "policy-pack/index.html"));
+  assert.doesNotMatch(read(plain, "llms.txt"), /policy-pack|InkLLM/);
 });

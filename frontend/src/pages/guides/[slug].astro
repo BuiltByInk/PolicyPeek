@@ -1,7 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { GUIDES, SITE, guideUrl, type Guide } from "../../guides";
-import { gumroadLink } from "../../gumroad";
 
 export function getStaticPaths() {
   return GUIDES.map((g) => ({ params: { slug: g.slug }, props: { guide: g } }));
@@ -13,7 +12,6 @@ const modules = import.meta.glob<{ Content: any }>("../../guides/*.md", { eager:
 const { Content } = modules[`../../guides/${guide.slug}.md`];
 const url = guideUrl(guide);
 const org = { "@type": "Organization", name: "PolicyPeek", url: SITE };
-const author = { "@type": "Organization", name: "InkLLM", url: `${SITE}/about/` };
 const jsonLd = [
   {
     "@context": "https://schema.org",
@@ -24,7 +22,7 @@ const jsonLd = [
     dateModified: guide.modified,
     inLanguage: "en-GB",
     mainEntityOfPage: url,
-    author,
+    author: org,
     publisher: org,
   },
   ...(guide.faqs.length
@@ -45,38 +43,15 @@ const jsonLd = [
   },
 ];
 const fmt = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-// One contextual pointer to the business resources page (not part of the guide text).
-const INCIDENT_GUIDES = ["ai-tools-that-train-on-your-data-no-opt-out", "does-mailchimp-use-your-data-for-ai-training"];
-const POLICY_GUIDES = ["do-uk-small-businesses-need-an-ai-policy", "eu-ai-act-article-4-ai-literacy-small-uk-business", "ai-acceptable-use-policy-template-small-business-uk", "is-it-safe-to-put-customer-data-into-chatgpt-uk-gdpr", "how-to-train-staff-on-ai-30-minute-session"];
-const packLine = INCIDENT_GUIDES.includes(guide.slug)
-  ? "Already using a tool like this at work? The AI Incident Response One-Pager (free) covers what to do if the wrong data goes in, and the AI Policy Starter Pack (free) sets ground rules for your team."
-  : "Running a small team? The AI Policy Starter Pack (free) gives you a ready-to-edit policy for which AI tools staff can use and what they can put in them.";
 const others = GUIDES.filter((g) => g.slug !== guide.slug);
 ---
 <Layout title={guide.seoTitle} description={guide.description} jsonLd={jsonLd} markdownAlt={`/guides/${guide.slug}.md`}>
   <a class="back" href="/guides/">← All guides</a>
   <article class="guide">
-    <p class="byline">By <a href="/about/" rel="author">InkLLM</a></p>
+    <p class="byline">By <a href="/about/" rel="author">PolicyPeek</a></p>
     <Content />
     <p class="updated">Last updated <time datetime={guide.modified}>{fmt(guide.modified)}</time>. Plain-text version for AI tools: <a href={`/guides/${guide.slug}.md`} type="text/markdown">{guide.slug}.md</a>.</p>
   </article>
-  {POLICY_GUIDES.includes(guide.slug) ? (
-    <aside class="pack-box" aria-labelledby="pack-end-h">
-      <p class="pack-box-title" id="pack-end-h">Need an AI policy for your team?</p>
-      <p>The AI Policy Starter Pack: an editable UK AI policy, one-page staff rules and an EU AI Act Article 4 checklist, ready to adapt in Word or Google Docs. Free download, Essentials or Complete.</p>
-      <p class="pack-box-go"><a class="btn" href={gumroadLink("starter", `guide-end-${guide.slug}`)}>Download the Starter Pack free</a> <span>or <a href={gumroadLink("training", `guide-end-${guide.slug}`)}>the Staff AI Training Kit (free)</a> · <a href="/#home-q">Check your AI tools with PolicyPeek</a></span></p>
-      <p class="pack-box-small">From InkLLM, the team behind PolicyPeek. Templates, not legal advice. Free downloads. <a href={gumroadLink("policyAgent", "guide-pack")}>Join the custom policy agent waitlist</a>.</p>
-    </aside>
-  ) : (
-    <aside class="checklist-cta" aria-label="Business resources">
-      <p class="pack-cta">{packLine} <a href="/policy-pack/">See the business resources</a>.</p>
-    </aside>
-  )}
-  <aside class="pack-box free" aria-labelledby="free-h">
-    <p class="pack-box-title" id="free-h">Free: the AI-at-work checklist</p>
-    <p>A one-page checklist to work through with your team: which tools are approved, what never goes in, and who checks the output. Free on Gumroad. Enter your email and it's sent straight to you.</p>
-    <p class="pack-box-go"><a class="btn" href={gumroadLink("checklist", `guide-free-${guide.slug}`)}>Get the free checklist</a></p>
-  </aside>
   <section class="more-guides" aria-labelledby="more-h">
     <h2 id="more-h">More guides</h2>
     <ul>
@@ -95,9 +70,6 @@ const others = GUIDES.filter((g) => g.slug !== guide.slug);
   .guide :global(blockquote) { margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--id); background: var(--panel); }
   .guide :global(h3) { font-size: 1.3rem; margin-top: 1.5rem; }
   .updated { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line-soft); padding-top: 0.75rem; margin-top: 2rem; }
-  .checklist-cta { border: 2px solid var(--line-soft); padding: 0.75rem 1rem; margin: 1.5rem 0; }
-  .checklist-cta p { margin: 0; }
-  .checklist-cta p.pack-cta { margin-top: 0; color: var(--muted); font-size: 0.92rem; }
   .more-guides ul { list-style: none; padding: 0; margin: 0.5rem 0; }
   .more-guides li { margin: 0.35rem 0; }
 </style>

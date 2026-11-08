@@ -5,7 +5,7 @@ description: Check whether an AI tool trains on user data, using PolicyPeek's fr
 
 # PolicyPeek lookup
 
-PolicyPeek (https://getpolicypeek.com, by InkLLM) reads AI tools' own privacy
+PolicyPeek (https://getpolicypeek.com) reads AI tools' own privacy
 policies and terms and gives one verdict per tool. Verdicts come from each
 tool's published policy. They are not legal advice.
 

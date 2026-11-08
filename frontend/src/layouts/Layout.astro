@@ -264,7 +264,6 @@ const jsonLdString = jsonLd
         font-size: 0.85rem;
       }
       footer.site .wrap { padding: 1.5rem 1.25rem; }
-      footer.site .foot-extra { display: block; margin-top: 0.5rem; }
       @media (max-width: 480px) {
         /* Audit P4: keep logo + nav on one row on phones (wrapping pushed the hero down ~50px). */
         header.site .wrap { flex-wrap: nowrap; gap: 0.5rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
@@ -273,7 +272,7 @@ const jsonLdString = jsonLd
         nav.site a { margin-left: 0.9rem; font-size: 0.74rem; letter-spacing: 0.04em; }
       }
       @media (max-width: 640px) {
-        /* Four nav items don't fit beside the logo on phones/narrow tablets:
+        /* Nav links don't fit beside the logo on phones and narrow tablets:
            put the nav on its own full-width row so every link stays reachable. */
         header.site .wrap { flex-wrap: wrap; row-gap: 0.25rem; }
         nav.site { width: 100%; display: flex; flex-wrap: wrap; gap: 0 1.1rem; white-space: normal; }
@@ -294,8 +293,7 @@ const jsonLdString = jsonLd
         a { text-decoration: underline; }
         body { font-size: 11pt; }
       }
-      /* Starter Pack / free checklist boxes (guides, tool pages, homepage). Global
-         because the mid-article box is injected into Markdown by a rehype plugin. */
+      /* Callout on question pages that points back at the free checker. */
       .pack-box { border: 3px solid var(--line); border-left-width: 8px; background: var(--panel); padding: 0.9rem 1.1rem; margin: 1.75rem 0; max-width: 46rem; }
       .pack-box p { margin: 0.35rem 0 0; }
       .pack-box p:first-child { margin-top: 0; }
@@ -326,7 +324,6 @@ const jsonLdString = jsonLd
           <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
           <a href="/guides/"{...(path.startsWith("/guides") ? { "aria-current": "page" } : {})}>Guides</a>
           <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
-          <a href="/policy-pack/"{...(path.startsWith("/policy-pack") ? { "aria-current": "page" } : {})}>For businesses</a>
         </nav>
       </div>
     </header>
@@ -336,7 +333,6 @@ const jsonLdString = jsonLd
     <footer class="site">
       <div class="wrap">
         PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>, the <a href="/methodology/">methodology</a>, or read the <a href="/guides/">guides</a>.
-        <span class="foot-extra">From the same team: <a href="/policy-pack">AI Policy Starter Pack by InkLLM</a>.</span>
       </div>
     </footer>
   </body>
