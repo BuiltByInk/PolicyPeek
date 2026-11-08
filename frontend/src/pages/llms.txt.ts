@@ -16,7 +16,6 @@ Current counts: ${count("compliant")} doesn't train, ${count("compliant_with_cav
 - [All tools and verdicts](${SITE}/tools/): every checked AI tool with its badge
 - [Methodology](${SITE}/about/): how verdicts are made (AI extraction + fixed rules + human review)
 - [Check a tool](${SITE}/): search or request a new check
-- [Business resources](${SITE}/policy-pack/): separate paid AI policy templates for UK small businesses by InkLLM (not part of the ratings)
 
 ## Questions
 - [All questions](${SITE}/questions/): dated answers per tool, by plan, with quoted sources

@@ -1,4 +1,5 @@
-// Gumroad product URLs for the separate InkLLM products (not part of PolicyPeek's ratings).
+// Product URLs for the unpublished pack page (src/unpublished/policy-pack.astro).
+// Nothing under src/pages imports this, so these links are not on the public site.
 export const GUMROAD = {
   starter: "https://inkspire776.gumroad.com/l/rppfze",
   training: "https://inkspire776.gumroad.com/l/jhuide",

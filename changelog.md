@@ -13,6 +13,13 @@ real record, not an empty log.
 ---
 
 
+## 2026-11-08: public site is the free checker only (not deployed)
+
+- Homepage, nav, footer, guides, tool pages, llms.txt and the public discovery files no longer name InkLLM or link a starter pack, checklist, Gumroad download or waitlist.
+- `/policy-pack/` is not built. The page source is kept at `frontend/src/unpublished/policy-pack.astro` and is not a route.
+- Content-Security-Policy no longer allows Gumroad or a payment exception. Ratings and the catalog are unchanged.
+- Not deployed. Needs a reviewer before anything reaches getpolicypeek.com.
+
 ## 2026-10-15: production deploy (main @ a67e51b, PRs #1 submit flow and #2 frontend audit fix)
 
 - Predeploy check: all PASS. Step 1a read-only: `tools` CHECK includes `not_ai_tool`, `last_checked_at` exists, 33 tools. Migrations NOT re-run. Step 2 skipped.

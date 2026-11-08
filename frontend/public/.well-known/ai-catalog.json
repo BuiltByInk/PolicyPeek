@@ -1,7 +1,7 @@
 {
   "specVersion": "1.0",
   "host": {
-    "displayName": "PolicyPeek by InkLLM",
+    "displayName": "PolicyPeek",
     "identifier": "did:web:getpolicypeek.com",
     "documentationUrl": "https://getpolicypeek.com/developers/"
   },

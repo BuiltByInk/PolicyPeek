@@ -1,7 +1,6 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import csp from "./integrations/csp.mjs";
-import guideCta from "./integrations/guide-cta.mjs";
 import pageMarkdown from "./integrations/page-markdown.mjs";
 import { readFileSync } from "node:fs";
 
@@ -45,7 +44,7 @@ const lastmodFor = (url) => toolLastmod.get(url) ?? guideLastmod.get(url) ?? bui
 export default defineConfig({
   output: "static",
   site: SITE,
-  integrations: [guideCta(), pageMarkdown(), csp(), sitemap({
+  integrations: [pageMarkdown(), csp(), sitemap({
       filter: (page) => !noindexUrls.has(page),
       serialize: (item) => ({ ...item, lastmod: lastmodFor(item.url) }),
     })],
