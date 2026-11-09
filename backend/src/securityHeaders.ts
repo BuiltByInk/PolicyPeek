@@ -7,6 +7,8 @@ export const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+  // Keep the JSON API out of Google's web index (GSC was crawling /health and /v1/lookup).
+  "X-Robots-Tag": "noindex",
 };
 
 export function withSecurityHeaders(response: Response): Response {

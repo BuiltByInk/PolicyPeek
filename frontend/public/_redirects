@@ -1,0 +1,17 @@
+# GSC Page indexing: 301 old / missing URLs to their current canonical pages.
+# notion.so was the marketing hostname; the catalog entry is notion.com.
+/tools/notion.so /tools/notion.com/ 301
+/tools/notion.so/ /tools/notion.com/ 301
+
+# Held / never-published tool domains that still got crawled (batches HELD list).
+# No live tool page exists — send them to the tools index.
+/tools/descript.com /tools/ 301
+/tools/descript.com/ /tools/ 301
+/tools/synthesia.io /tools/ 301
+/tools/synthesia.io/ /tools/ 301
+/tools/surferseo.com /tools/ 301
+/tools/surferseo.com/ /tools/ 301
+
+# Legacy /reports path never shipped a page; /tools/ is the closest equivalent.
+/reports /tools/ 301
+/reports/ /tools/ 301
