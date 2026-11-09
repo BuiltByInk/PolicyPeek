@@ -202,6 +202,28 @@ its own confirm. Then open the live site: `/tools/hancocyber.com/` shows
 **Way back:** Cloudflare dashboard -> Pages -> Deployments -> roll back to the
 previous one.
 
+## 5a. Tell Bing and other IndexNow engines what changed (by hand, after the deploy is live)
+
+Added 2026-11-09. Run this yourself once `wrangler pages deploy` (or
+`refresh-site.mjs --deploy`) has finished and the live site shows the change.
+Nothing runs it automatically.
+
+```bash
+cd ~/policypeek
+cd frontend && npm run build && cd ..          # skip if dist/ is the build you just deployed
+node scripts/indexnow-ping.mjs --dry-run      # lists the URLs it would send; sends nothing
+node scripts/indexnow-ping.mjs                # sends new/changed URLs to https://api.indexnow.org/indexnow
+```
+- First run (no `scripts/.indexnow-state.json` yet) sends every sitemap URL.
+  After that it sends only URLs whose built page changed since the last
+  accepted send. `--all` sends everything again.
+- Expect `HTTP 200` or `HTTP 202`. A `403` means the key file isn't live yet:
+  check `https://getpolicypeek.com/0ef0c0018c782942987f6e6bc3ab2af0.txt` returns
+  the key. The state file is only saved after a 200/202, so a failed run can
+  simply be repeated.
+- The key file in `frontend/public/` is public by design (IndexNow reads it to
+  check we own the domain). It is not a secret; no environment variable needed.
+
 ## 6. Extension
 
 Reload the unpacked extension (or build and submit the new version). It now:

@@ -19,6 +19,10 @@ const picks = QUICK_PICKS.map((d) => tools.find((t) => t.domain === d)).filter((
 const sample = tools.find((t) => t.domain === "openai.com") ?? picks[0] ?? null;
 const sampleVerdict = sample ? VERDICTS.find((v) => v.status === sample.compliance_status) : null;
 const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
+// AEO (2026-11-09): answer "Which AI tools don't train on your data?" on the
+// home page from the catalog itself (the green badge), linking to the guide.
+const noTrain = tools.filter((t) => t.compliance_status === "compliant").sort((a, b) => a.name.localeCompare(b.name));
+const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").length;
 ---
 <Layout
   title="Does it train on your data?"
@@ -99,6 +103,17 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
     </ul>
   </section>
 
+  {noTrain.length > 0 && (
+    <section class="no-train" aria-labelledby="nt-h">
+      <h2 id="nt-h">Which AI tools don't train on your data?</h2>
+      <p>{noTrain.length} of the {ratedCount} AI tools PolicyPeek has checked have the badge "Doesn't train on your data": their published policies say your data isn't used to train AI models, or only if you choose to opt in.</p>
+      <ul>
+        {noTrain.map((t) => <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>)}
+      </ul>
+      <p><a href="/guides/ai-tools-that-dont-train-on-your-data-uk/">Guide: which AI tools don't train on your data (UK), with quotes and sources →</a></p>
+    </section>
+  )}
+
   {/* Every tool as a plain crawlable link (SEO 2026-10-23). */}
   <section class="all-tools" aria-labelledby="all-h">
     <h2 id="all-h">Every tool we've checked</h2>
@@ -123,6 +138,8 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
 </Layout>
 
 <style>
+  .no-train { margin: 0 0 2rem; }
+  .no-train ul { list-style: none; padding: 0; margin: 0.5rem 0 0.8rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
   .all-tools ul { list-style: none; padding: 0; margin: 0.5rem 0 2rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
   .hero { padding: 0.5rem 0 1.5rem; }
   .eyebrow {

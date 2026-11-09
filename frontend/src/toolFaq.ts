@@ -3,6 +3,7 @@
 // catalog row in data/tools.json and the catalog as a whole -- no outside facts.
 import type { Tool } from "./types";
 import { VERDICTS } from "./verdicts";
+import { genericFaq } from "./toolAnswer";
 
 export interface Faq { q: string; a: string }
 
@@ -18,6 +19,9 @@ export function toolFaq(tool: Tool, all: Tool[]): Faq[] {
     shared_domain_unverified: `The only policy found covers the whole company, so PolicyPeek can't say whether ${n} itself offers an opt-out.`,
   };
   if (optOut[tool.compliance_status]) out.push({ q: `Can I stop ${n} training on my data?`, a: optOut[tool.compliance_status] });
+  // AEO (2026-11-09): generic answer-engine questions, only where the stored
+  // policy wording answers them (see genericFaq in toolAnswer.ts).
+  out.push(...genericFaq(tool));
 
   const ret = tool.data_retention?.trim().replace(/\s+/g, " ");
   out.push({

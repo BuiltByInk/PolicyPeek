@@ -8,6 +8,7 @@ import { guidesForDomain } from "../../guides";
 import { toolSummary } from "../../toolSummary";
 import { toolFaq, toolTitle, clamp } from "../../toolFaq";
 import { qaForDomain } from "../../qa";
+import { answerLine, asOfText, checkedDate, primarySource, quoteParts, optOut, ICO_AI_GUIDANCE } from "../../toolAnswer";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -61,25 +62,23 @@ const lastCheckedText = lastCheckedValid
   ? lastCheckedDate!.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
   : "Not recorded yet";
 
-// Audit P5: one plain human answer under the H1, built from the stored
-// "trains on user data" fact plus the verdict. Wording stays descriptive of
-// the published policy (see deliverables/badge-wording.md).
-const plainAnswer: string | null = (() => {
-  switch (tool.compliance_status) {
-    case "compliant":
-      return `No. ${tool.name}'s published policy says it doesn't train on your data by default.`;
-    case "compliant_with_caveats":
-      return `Yes, by default. ${tool.name}'s published policy says it may train on your data, but you can opt out.`;
-    case "not_compliant":
-      return `Yes. ${tool.name}'s published policy says it may train on your data, and we found no way to opt out.`;
-    case "unrated":
-      return `We can't tell. ${tool.name}'s published policy doesn't clearly say.`;
-    case "shared_domain_unverified":
-      return `We can't say yet. The only policy we found covers the whole company, not ${tool.name} itself.`;
-    default:
-      return null;
-  }
-})();
+// Audit P5 / AEO (2026-11-09): one direct answer under the H1, a fixed
+// phrasing per verdict (toolAnswer.ts), then "as of <last checked>" and the
+// official source. Wording stays descriptive of the published policy (see
+// deliverables/badge-wording.md); "<Tool>'s policy says" only with a stored quote.
+const plainAnswer: string = answerLine(tool);
+const asOf = asOfText(tool);
+const asOfDate = checkedDate(tool);
+const primary = primarySource(tool);
+const parts = quoteParts(tool);
+const trainingParts = parts.filter((p) => /\btrain\w*|\bmodels?\b|\bfine-tun\w*/i.test(p));
+const trainingQuote = trainingParts.length ? trainingParts : parts;
+const opt = optOut(tool);
+const trainsText = tool.compliance_status === "shared_domain_unverified" ? "Not verified for this product (company-wide policy)"
+  : tool.trains_on_user_data === null ? "Unclear from the policy" : tool.trains_on_user_data ? "Yes, according to the policy" : "No, according to the policy";
+const gdprText = tool.gdpr_mentioned === true ? `${tool.name}'s published policy mentions GDPR.`
+  : tool.gdpr_mentioned === false ? `${tool.name}'s published policy, as read by PolicyPeek, doesn't mention GDPR.`
+  : `PolicyPeek hasn't recorded whether ${tool.name}'s published policy mentions GDPR.`;
 
 // SEO health check (2026-11-04): the H1 is the searched question; the
 // not-an-AI-tool page (noindex) keeps the plain name since the question
@@ -164,7 +163,7 @@ const jsonLd = [
     ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: [{ "@type": "Question", name: h1, acceptedAnswer: { "@type": "Answer", text: `${plainAnswer}${sourcingTail}` } }, ...faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))],
+        mainEntity: [{ "@type": "Question", name: h1, acceptedAnswer: { "@type": "Answer", text: asOf ? `${plainAnswer} ${asOf}` : plainAnswer } }, ...faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))],
       }]
     : []),
 ];
@@ -175,10 +174,50 @@ const jsonLd = [
   <header class="detail-head">
     <h1>{h1}</h1>
     {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <p class="domain">{tool.domain}</p>}
-    {plainAnswer && <p class="answer">{plainAnswer}</p>}
+    <p class="answer">{plainAnswer}{asOf && <> <span class="asof">{asOfDate && `As of ${asOfDate}.`}{asOfDate && primary && " "}{primary && <>Source: <a href={primary.href} rel="nofollow noopener noreferrer">{primary.host}</a>.</>}</span></>}</p>
     {summary && <p class="tool-summary">{summary}</p>}
     {qa && <p class="qa-link"><a href={`/questions/${qa.slug}/`}>Full answer: does {tool.name} train on your data? Plans, retention and how to opt out</a></p>}
   </header>
+
+  {!isNotAi && (
+    <section class="aeo" aria-labelledby="train-h">
+      <h2 id="train-h">Does {tool.name} train on my data?</h2>
+      <p>Two different things often get mixed up. <strong>Used to train models</strong> means your content helps build or improve the AI itself, so it can shape what the model produces later. <strong>Used to provide the feature</strong> means your content is processed to give you the answer, summary or suggestion you asked for, which any AI feature has to do. PolicyPeek's badge is about the first one only.</p>
+      <dl class="tp">
+        <div><dt>Used to train models</dt><dd>{trainsText}</dd></div>
+        <div><dt>Used to provide the feature</dt><dd>Not rated by PolicyPeek; see the source</dd></div>
+      </dl>
+      {trainingQuote.length > 0 && (
+        <>
+          <p class="qk">What {tool.name}'s policy says{primary && <> (<a href={primary.href} rel="nofollow noopener noreferrer">{primary.host}</a>)</>}:</p>
+          <blockquote cite={tool.source_urls.length === 1 ? primary?.href : undefined}>{trainingQuote.map((p) => <p>{p}</p>)}</blockquote>
+        </>
+      )}
+    </section>
+  )}
+
+  {opt && (
+    <section class="aeo" aria-labelledby="opt-h">
+      <h2 id="opt-h">How to opt out of {/\bAI$/.test(tool.name) ? `${tool.name} training` : `${tool.name} AI training`}</h2>
+      {opt.quotes.length > 0 ? (
+        <>
+          <p>What {tool.name}'s policy says about opting out:</p>
+          <blockquote cite={tool.source_urls.length === 1 ? primary?.href : undefined}>{opt.quotes.map((p) => <p>{p}</p>)}</blockquote>
+          {primary && <p>Check the current wording and steps on <a href={primary.href} rel="nofollow noopener noreferrer">{primary.host}</a> before you rely on them.</p>}
+        </>
+      ) : (
+        <p>{tool.name}'s published policy describes a way to opt out, but the wording PolicyPeek recorded doesn't give the steps.{primary && <> See <a href={primary.href} rel="nofollow noopener noreferrer">{primary.host}</a>.</>}</p>
+      )}
+    </section>
+  )}
+
+  {!isNotAi && (
+    <section class="aeo" aria-labelledby="gdpr-h">
+      <h2 id="gdpr-h">{tool.name} GDPR and AI training</h2>
+      <p>{gdprText} PolicyPeek doesn't assess whether a tool meets GDPR; the badge only reports what the policy says about training.</p>
+      <p class="uk"><strong>In the UK:</strong> if personal data is involved, the UK GDPR applies to how it's used, including for AI. The Information Commissioner's Office has <a href={ICO_AI_GUIDANCE} rel="noopener noreferrer">guidance on AI and data protection</a>.</p>
+    </section>
+  )}
 
   {faq.length > 0 && (
     <section class="tool-faq" aria-labelledby="faq-h">
@@ -334,6 +373,16 @@ const jsonLd = [
   .tool-summary { margin: 0.7rem 0 0; max-width: 46rem; line-height: 1.55; overflow-wrap: anywhere; }
   .qa-link { margin: 0.6rem 0 0; font-weight: 600; }
   .answer { margin: 0.8rem 0 0; font-size: 1.15rem; font-weight: 600; max-width: 40em; }
+  .asof { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+  .aeo { max-width: 46rem; margin: 0 0 1.5rem; }
+  .aeo blockquote { margin: 0.5rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 4px solid var(--line); overflow-wrap: anywhere; }
+  .aeo blockquote p { margin: 0.4rem 0; }
+  .aeo .qk { margin: 0.8rem 0 0; font-weight: 600; }
+  .aeo .tp { margin: 0.6rem 0; }
+  .aeo .tp div { display: flex; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line-soft); }
+  .aeo .tp dt { flex: 0 0 13rem; font-weight: 700; }
+  .aeo .tp dd { margin: 0; }
+  @media (max-width: 480px) { .aeo .tp div { flex-direction: column; gap: 0.15rem; } .aeo .tp dt { flex-basis: auto; } }
   .more summary { cursor: pointer; color: var(--id); font-family: var(--font-body); }
   .more[open] summary { margin-bottom: 0.4rem; }
   .next { margin: 2rem 0 0; border-top: 3px solid var(--line); padding-top: 1.2rem; max-width: 46rem; }

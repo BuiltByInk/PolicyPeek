@@ -10,6 +10,11 @@ import { fileURLToPath } from "node:url";
 const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
 const REPO = join(FRONTEND, "..");
 const tools = JSON.parse(readFileSync(join(FRONTEND, "data/tools.json"), "utf8"));
+// Tool pages with a published /questions/ page deliberately carry no FAQPage
+// (the Q&A page owns that query; see qa-pages.test.mjs). This test used to
+// expect one on every page with a visible FAQ, so it failed on claude.com.
+const QA_DOMAINS = new Set(JSON.parse(execFileSync(process.execPath, ["--experimental-strip-types", "--no-warnings", "--input-type=module", "-e",
+  `const m = await import(${JSON.stringify(join(FRONTEND, "src/qa.ts"))}); console.log(JSON.stringify(m.PUBLISHED_QA.map((q) => q.domain)));`], { encoding: "utf8" })));
 let dist;
 const read = (p) => readFileSync(join(dist, p), "utf8");
 const decode = (s) => s.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
@@ -30,6 +35,7 @@ test("tool pages: exactly one FAQPage, valid JSON-LD, covering every 'Common que
     const faqs = ldBlocks(h).filter((b) => b["@type"] === "FAQPage");
     const sec = h.match(/<section class="tool-faq"[\s\S]*?<\/section>/)?.[0];
     if (!sec) { assert.equal(faqs.length, 0, `${t.domain}: FAQPage without a visible section`); continue; }
+    if (QA_DOMAINS.has(t.domain)) { assert.equal(faqs.length, 0, `${t.domain}: its /questions/ page carries the FAQPage`); continue; }
     assert.equal(faqs.length, 1, t.domain);
     const f = faqs[0];
     assert.equal(f["@context"], "https://schema.org");
