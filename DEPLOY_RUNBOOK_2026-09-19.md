@@ -189,6 +189,26 @@ It sets the tool to Unrated, clears its stored training facts, and logs your rea
 
 Also new tonight: a favourable first result for a brand-new domain now waits in your queue instead of publishing itself, so expect to see those in `GET /v1/admin/pending` with the reason "brand-new domain with a favourable verdict".
 
+## 4d. Slack AI D1 update for the 9 Nov combined PR **(prod, at deploy time)**
+
+Added 2026-11-09. Elliot approved running this at deploy (9 Nov 2026, 09:04 UK:
+"Yes, run the Slack D1 update at deploy"). Jump runs it, or Dev runs it on Jump's go.
+Run it when the combined PR is merged, **before** any `refresh-site.mjs` run:
+`tools.json` is regenerated from D1, so a refresh before this would drop the new
+Slack quotes and source.
+
+```bash
+cd ~/policypeek
+npx wrangler d1 execute policypeek-db --remote --file data-updates/2026-11-09-slack-wording/apply.sql
+```
+- One guarded `UPDATE` of the `slack.com` row only (badge and `compliance_status`
+  unchanged). It prints a `before_snapshot` first and an `after` row at the end.
+- If it prints `GUARD FAILED: slack.com has changed`, stop: the live row differs
+  from the 8 Nov text the guard expects, so review it before changing anything.
+- Check: the `after` row has six quotes in `summary`, the Security for AI URL in
+  `source_urls`, and `last_checked_at` 2026-11-09T08:53:00.000Z.
+- **Way back:** the `before_snapshot` row printed above holds the old values.
+
 ## 5. Site **(prod)**
 
 ```bash
