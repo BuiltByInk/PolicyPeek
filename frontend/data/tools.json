@@ -97,23 +97,6 @@
     "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
-    "name": "ChatGPT",
-    "domain": "openai.com",
-    "compliance_status": "compliant_with_caveats",
-    "summary": "\"When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models.\" \"To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal.\" \"By default, we don't use inputs or outputs from ChatGPT Business, ChatGPT Enterprise, ChatGPT Edu, or our API to improve our models.\" Conversations you give feedback on may still be used.",
-    "data_retention": "Personal Data retained as long as needed to provide Services or for legitimate business purposes including resolving disputes, safety, security, and legal compliance. Specific retention periods vary by data type: user-deletable data removed within 30 days of deletion request unless retention needed for safety/legal reasons; Temporary Chats auto-deleted within 30 days unless safety/legal reasons require retention; some data retained longer for security, safety, or legal reasons.",
-    "trains_on_user_data": true,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance",
-      "https://openai.com/policies/row-privacy-policy/"
-    ],
-    "verified": true,
-    "auto_published": false,
-    "shared_domain": false,
-    "last_checked_at": "2026-10-28T12:00:00.000Z"
-  },
-  {
     "name": "Claude",
     "domain": "claude.com",
     "compliance_status": "compliant_with_caveats",
@@ -261,22 +244,6 @@
     "last_checked_at": "2026-10-24T06:39:07.587Z"
   },
   {
-    "name": "Gemini",
-    "domain": "google.com",
-    "compliance_status": "shared_domain_unverified",
-    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
-    "data_retention": "Default 18 months, configurable to 3 months, 36 months, or indefinite. Chats reviewed by human reviewers retained for up to three years. Some data retained until Google Account deletion.",
-    "trains_on_user_data": true,
-    "gdpr_mentioned": true,
-    "source_urls": [
-      "https://support.google.com/gemini/answer/13594961"
-    ],
-    "verified": true,
-    "auto_published": true,
-    "shared_domain": true,
-    "last_checked_at": "2026-10-22T04:01:18.111Z"
-  },
-  {
     "name": "GitHub Copilot",
     "domain": "github.com",
     "compliance_status": "compliant_with_caveats",
@@ -293,6 +260,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-24T16:00:00.000Z"
+  },
+  {
+    "name": "Gemini",
+    "domain": "google.com",
+    "compliance_status": "shared_domain_unverified",
+    "summary": "Policy text is shared across multiple company products \u2014 not verified as specific to this tool.",
+    "data_retention": "Default 18 months, configurable to 3 months, 36 months, or indefinite. Chats reviewed by human reviewers retained for up to three years. Some data retained until Google Account deletion.",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://support.google.com/gemini/answer/13594961"
+    ],
+    "verified": true,
+    "auto_published": true,
+    "shared_domain": true,
+    "last_checked_at": "2026-10-22T04:01:18.111Z"
   },
   {
     "name": "Grammarly",
@@ -389,6 +372,22 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-15T16:02:55.792Z"
+  },
+  {
+    "name": "Intercom Fin",
+    "domain": "intercom.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"The Fin CX Models are trained using de-identified customer data (as described below) from production Fin conversation logs.\" \"Conversations between our customers' human agents and their end-users are not used for training.\" \"If you want to opt out of AI model training and fine-tuning, you can request an opt-out through Settings > Workspace > Security > AI model training and fine-tuning.\" \"We will process all customer opt-out requests within 30 days of the submission of your request.\" Training on Fin conversation content is on by default for standard workspaces (with listed exclusions such as signed BAA, EU/AU regionally hosted workspaces, earlier opt-outs, negotiated contracts signed before September 2025, and trial accounts). The opt-out is workspace-level. Source: Intercom help article dated 8 September 2026.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://www.intercom.com/help/en/articles/11993352-ai-model-training-and-fine-tuning"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-09T09:09:24.000Z"
   },
   {
     "name": "InVideo",
@@ -620,6 +619,22 @@
     "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
+    "name": "Monday.com AI",
+    "domain": "monday.com",
+    "compliance_status": "compliant",
+    "summary": "\"monday.com does not use Customer Data and/or Content to train artificial intelligence models and does not allow others to do so.\" \"Such data will not be shared with third parties and may be retained by us for up to 60 days.\" \"To clarify, regardless of whether your Admin(s) opts-out, such data will not be used to train models.\" The admin opt-out covers using interaction data to improve monday.com's Services, not training (which the AI Terms say never happens). Source: monday AI Terms, last updated 5 May 2026.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://monday.com/l/legal/ai/"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-09T09:09:24.000Z"
+  },
+  {
     "name": "n8n",
     "domain": "n8n.io",
     "compliance_status": "compliant",
@@ -645,6 +660,23 @@
     "gdpr_mentioned": null,
     "source_urls": [
       "https://www.notion.com/help/notion-ai-security-practices"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-10-28T12:00:00.000Z"
+  },
+  {
+    "name": "ChatGPT",
+    "domain": "openai.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models.\" \"To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal.\" \"By default, we don't use inputs or outputs from ChatGPT Business, ChatGPT Enterprise, ChatGPT Edu, or our API to improve our models.\" Conversations you give feedback on may still be used.",
+    "data_retention": "Personal Data retained as long as needed to provide Services or for legitimate business purposes including resolving disputes, safety, security, and legal compliance. Specific retention periods vary by data type: user-deletable data removed within 30 days of deletion request unless retention needed for safety/legal reasons; Temporary Chats auto-deleted within 30 days unless safety/legal reasons require retention; some data retained longer for security, safety, or legal reasons.",
+    "trains_on_user_data": true,
+    "gdpr_mentioned": true,
+    "source_urls": [
+      "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance",
+      "https://openai.com/policies/row-privacy-policy/"
     ],
     "verified": true,
     "auto_published": false,
@@ -816,17 +848,18 @@
     "name": "Slack AI",
     "domain": "slack.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "\"We do not develop generative AI models using Customer Data. To develop predictive models for features such as emoji and channel recommendations, our systems analyse Customer Data (e.g. messages, content and files) submitted to Slack as well as Other Information (including usage information)\" \"If you want to exclude your Customer Data from helping to train Slack global models, you can opt out.\" \"To opt out, please have your org, workspace owners or primary owner contact our Customer Experience team at feedback@slack.com with your workspace/org URL and the subject line 'Slack global model opt-out request'.\" \"Slack will not use Customer Data to train generative AI models unless Customer provides affirmative opt-in consent.\" Global predictive-model training is on by default; the workspace-level opt-out must be requested by an owner. Slack does not distinguish free vs paid here. Source has no page date; fetched 8 November 2026.",
+    "summary": "\"We do not develop generative AI models using Customer Data. To develop predictive models for features such as emoji and channel recommendations, our systems analyse Customer Data (e.g. messages, content and files) submitted to Slack as well as Other Information (including usage information)\" \"If you want to exclude your Customer Data from helping to train Slack global models, you can opt out.\" \"To opt out, please have your org, workspace owners or primary owner contact our Customer Experience team at feedback@slack.com with your workspace/org URL and the subject line 'Slack global model opt-out request'.\" \"Slack will not use Customer Data to train generative AI models unless Customer provides affirmative opt-in consent.\" \"Slack aggregates and disassociates Customer Data such that Slack's use of Customer Data to update the Services will never identify any of our customers or individuals as the source of any of these improvements to any third party, other than to Slack's affiliates or sub-processors.\" Security for AI features in Slack: \"Customer data never leaves Slack-controlled infrastructure and is never used to train large language models (LLMs).\" Global predictive-model training is on by default; the workspace-level opt-out must be requested by an owner. Slack does not distinguish free vs paid here. Sources have no page date; privacy principles fetched 8 November 2026 and re-checked 9 November 2026; Security for AI features fetched 9 November 2026.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://slack.com/intl/en-gb/trust/data-management/privacy-principles"
+      "https://slack.com/intl/en-gb/trust/data-management/privacy-principles",
+      "https://slack.com/intl/en-gb/help/articles/28310650165907-Security-for-AI-features-in-Slack"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-11-08T18:06:01.777Z"
+    "last_checked_at": "2026-11-09T08:53:00.000Z"
   },
   {
     "name": "Sourcegraph Cody",

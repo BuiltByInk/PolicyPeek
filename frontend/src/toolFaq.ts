@@ -3,6 +3,8 @@
 // catalog row in data/tools.json and the catalog as a whole -- no outside facts.
 import type { Tool } from "./types";
 import { VERDICTS } from "./verdicts";
+import { genericFaq } from "./toolAnswer";
+import { overrideFor } from "./toolOverrides";
 
 export interface Faq { q: string; a: string }
 
@@ -18,6 +20,9 @@ export function toolFaq(tool: Tool, all: Tool[]): Faq[] {
     shared_domain_unverified: `The only policy found covers the whole company, so PolicyPeek can't say whether ${n} itself offers an opt-out.`,
   };
   if (optOut[tool.compliance_status]) out.push({ q: `Can I stop ${n} training on my data?`, a: optOut[tool.compliance_status] });
+  // AEO (2026-11-09): generic answer-engine questions, only where the stored
+  // policy wording answers them (see genericFaq in toolAnswer.ts).
+  out.push(...genericFaq(tool));
 
   const ret = tool.data_retention?.trim().replace(/\s+/g, " ");
   out.push({
@@ -36,6 +41,12 @@ export function toolFaq(tool: Tool, all: Tool[]): Faq[] {
   const same = rated.filter((t) => t.compliance_status === tool.compliance_status).length;
   const v = VERDICTS.find((x) => x.status === tool.compliance_status);
   if (v) out.push({ q: `How does ${n} compare with other AI tools?`, a: `${same} of the ${rated.length} AI tools PolicyPeek lists share ${n}'s badge, "${v.label}". See the related tools below or browse all tools.` });
+  // Steward-approved per-tool answers (toolOverrides.ts) replace the generated
+  // answer to the same question, or are added after the opt-out question.
+  for (const o of overrideFor(tool.domain)?.faq ?? []) {
+    const i = out.findIndex((f) => f.q === o.q);
+    if (i >= 0) out[i] = { ...o }; else out.splice(1, 0, { ...o });
+  }
   return out;
 }
 

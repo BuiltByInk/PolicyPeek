@@ -8,3 +8,6 @@ dist/
 # Local database dumps can contain client IP addresses (anonymous_check_log). Keep them on disk, not in git.
 backend/backup.sql
 backups/*.sql
+
+# IndexNow: fingerprints of the last URLs sent (scripts/indexnow-ping.mjs). Local, per machine.
+scripts/.indexnow-state.json

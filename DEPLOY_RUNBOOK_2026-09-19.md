@@ -189,6 +189,51 @@ It sets the tool to Unrated, clears its stored training facts, and logs your rea
 
 Also new tonight: a favourable first result for a brand-new domain now waits in your queue instead of publishing itself, so expect to see those in `GET /v1/admin/pending` with the reason "brand-new domain with a favourable verdict".
 
+## 4d. Slack AI D1 update for the 9 Nov combined PR **(prod, at deploy time)**
+
+Added 2026-11-09. **Slack 4d approved by Elliot 9 Nov 09:04; 4e needs its own OK before running.**
+Elliot approved running this Slack update at deploy (9 Nov 2026, 09:04 UK:
+"Yes, run the Slack D1 update at deploy"). That OK named Slack only. Jump runs it,
+or Dev runs it on Jump's go. Run it when the combined PR is merged, **before** any
+`refresh-site.mjs` run: `tools.json` is regenerated from D1, so a refresh before
+this would drop the new Slack quotes and source.
+
+```bash
+cd ~/policypeek
+npx wrangler d1 execute policypeek-db --remote --file data-updates/2026-11-09-slack-wording/apply.sql
+```
+- One guarded `UPDATE` of the `slack.com` row only (badge and `compliance_status`
+  unchanged). It prints a `before_snapshot` first and an `after` row at the end.
+- If it prints `GUARD FAILED: slack.com has changed`, stop: the live row differs
+  from the 8 Nov text the guard expects, so review it before changing anything.
+- Check: the `after` row has six quotes in `summary`, the Security for AI URL in
+  `source_urls`, and `last_checked_at` 2026-11-09T08:53:00.000Z.
+- **Way back:** the `before_snapshot` row printed above holds the old values.
+
+## 4e. 9 Nov catalog daily D1 inserts (Monday.com AI + Intercom Fin) **(prod, at deploy time — needs its own OK)**
+
+Added 2026-11-09. **Slack 4d approved by Elliot 9 Nov 09:04; 4e needs its own OK before running.**
+Elliot's D1 approval that day named only the Slack wording update. Do **not** run
+this package until Jump relays a fresh Elliot OK that names this catalog apply.sql
+(or Monday.com / Intercom Fin). When approved, run it at deploy of the combined PR,
+**before** any `refresh-site.mjs` run, ideally right after step 4d:
+
+```bash
+cd ~/policypeek
+npx wrangler d1 execute policypeek-db --remote --file data-updates/2026-11-09-catalog-daily/apply.sql
+```
+- Two guarded `INSERT`s only (`monday.com` as `compliant`, `intercom.com` as
+  `compliant_with_caveats`). It prints a `before_snapshot` first and an `after`
+  row set at the end. Calendly is held and is not in the file.
+- If it prints `GUARD FAILED: monday.com has changed` or
+  `GUARD FAILED: intercom.com has changed`, stop: a live row already exists, so
+  review it before changing anything.
+- Check: the `after` rows have the three Monday quotes (admin opt-out clarified as
+  service-improvement, not training) and the four Intercom Fin quotes (workspace
+  Settings opt-out; up to 30 days), with `last_checked_at` 2026-11-09T09:09:24.000Z.
+- **Way back:** the `before_snapshot` (empty for new domains) plus deleting those
+  two rows by domain restores the prior state; keep the printed after-rows as proof.
+
 ## 5. Site **(prod)**
 
 ```bash
@@ -201,6 +246,28 @@ its own confirm. Then open the live site: `/tools/hancocyber.com/` shows
 "Not an AI tool", and try the submit form.
 **Way back:** Cloudflare dashboard -> Pages -> Deployments -> roll back to the
 previous one.
+
+## 5a. Tell Bing and other IndexNow engines what changed (by hand, after the deploy is live)
+
+Added 2026-11-09. Run this yourself once `wrangler pages deploy` (or
+`refresh-site.mjs --deploy`) has finished and the live site shows the change.
+Nothing runs it automatically.
+
+```bash
+cd ~/policypeek
+cd frontend && npm run build && cd ..          # skip if dist/ is the build you just deployed
+node scripts/indexnow-ping.mjs --dry-run      # lists the URLs it would send; sends nothing
+node scripts/indexnow-ping.mjs                # sends new/changed URLs to https://api.indexnow.org/indexnow
+```
+- First run (no `scripts/.indexnow-state.json` yet) sends every sitemap URL.
+  After that it sends only URLs whose built page changed since the last
+  accepted send. `--all` sends everything again.
+- Expect `HTTP 200` or `HTTP 202`. A `403` means the key file isn't live yet:
+  check `https://getpolicypeek.com/0ef0c0018c782942987f6e6bc3ab2af0.txt` returns
+  the key. The state file is only saved after a 200/202, so a failed run can
+  simply be repeated.
+- The key file in `frontend/public/` is public by design (IndexNow reads it to
+  check we own the domain). It is not a secret; no environment variable needed.
 
 ## 6. Extension
 
