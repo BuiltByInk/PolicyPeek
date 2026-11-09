@@ -33,6 +33,13 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       return Response.json({ ok: true, service: "policypeek-backend" });
     }
 
+    if (url.pathname === "/robots.txt" && request.method === "GET") {
+      return new Response("User-agent: *\nDisallow: /\n", {
+        status: 200,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
     if ((url.pathname === "/v1/lookup" || url.pathname === "/v1/check") && request.method === "OPTIONS") {
       return corsPreflightResponse();
     }

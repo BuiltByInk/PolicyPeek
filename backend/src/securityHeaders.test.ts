@@ -33,4 +33,14 @@ describe("API security headers", () => {
     expect(res.status).toBe(401);
     expectSecurityHeaders(res);
   });
+  it("serves robots.txt disallow-all and still has security headers", async () => {
+    const res = await call("/robots.txt");
+    expect(res.status).toBe(200);
+    expectSecurityHeaders(res);
+    expect(await res.text()).toBe("User-agent: *\nDisallow: /\n");
+  });
+  it("includes X-Robots-Tag: noindex on every response", async () => {
+    const res = await call("/health");
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
+  });
 });
