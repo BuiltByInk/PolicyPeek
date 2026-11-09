@@ -198,7 +198,7 @@ const jsonLd = [
 
   {opt && (
     <section class="aeo" aria-labelledby="opt-h">
-      <h2 id="opt-h">How to opt out of {/\bAI$/.test(tool.name) ? `${tool.name} training` : `${tool.name} AI training`}</h2>
+      <h2 id="opt-h">Can I opt out of {/\bAI$/.test(tool.name) ? `${tool.name} training` : `${tool.name} AI training`}?</h2>
       {opt.quotes.length > 0 ? (
         <>
           <p>What {tool.name}'s policy says about opting out:</p>
@@ -213,9 +213,9 @@ const jsonLd = [
 
   {!isNotAi && (
     <section class="aeo" aria-labelledby="gdpr-h">
-      <h2 id="gdpr-h">{tool.name} GDPR and AI training</h2>
+      <h2 id="gdpr-h">Is {tool.name} safe for UK GDPR?</h2>
       <p>{gdprText} PolicyPeek doesn't assess whether a tool meets GDPR; the badge only reports what the policy says about training.</p>
-      <p class="uk"><strong>In the UK:</strong> if personal data is involved, the UK GDPR applies to how it's used, including for AI. The Information Commissioner's Office has <a href={ICO_AI_GUIDANCE} rel="noopener noreferrer">guidance on AI and data protection</a>.</p>
+      <p class="uk"><strong>In the UK:</strong> if personal data is involved, the UK GDPR applies to how it's used, including for AI. This page only reports what the vendor's published policy says about training — it is not a finding that {tool.name} meets UK GDPR, and it is not legal advice. The Information Commissioner's Office publishes <a href={ICO_AI_GUIDANCE} rel="noopener noreferrer">guidance on AI and data protection</a>.</p>
     </section>
   )}
 
