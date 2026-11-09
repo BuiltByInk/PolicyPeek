@@ -74,13 +74,13 @@ test("question-style H2s, train-vs-provide section, GDPR section with the ICO li
     const h2s = [...h.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]));
     if (t.compliance_status === "not_ai_tool") { assert.ok(!h2s.includes(`Does ${t.name} train on my data?`), t.domain); continue; }
     assert.ok(h2s.includes(`Does ${t.name} train on my data?`), `${t.domain}: ${h2s}`);
-    assert.ok(h2s.includes(`${t.name} GDPR and AI training`), t.domain);
+    assert.ok(h2s.includes(`Is ${t.name} safe for UK GDPR?`), t.domain);
     assert.match(h, /Used to train models/, t.domain);
     assert.match(h, /Used to provide the feature/, t.domain);
     assert.ok(h.includes(`href="${ICO}"`), `${t.domain}: ICO AI guidance link`);
     assert.match(text(h), /UK GDPR/, t.domain);
-    // "How to opt out" only for opt-out verdicts.
-    const opt = h2s.some((x) => x.startsWith("How to opt out of"));
+    // "Can I opt out …?" only for opt-out verdicts.
+    const opt = h2s.some((x) => x.startsWith("Can I opt out of") && x.endsWith("?"));
     assert.equal(opt, t.compliance_status === "compliant_with_caveats", `${t.domain}: opt-out section`);
   }
 });
