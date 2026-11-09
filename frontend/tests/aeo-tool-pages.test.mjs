@@ -162,3 +162,48 @@ test("indexnow-ping --dry-run: payload shape, first run = all sitemap URLs, chan
     assert.equal(JSON.parse(out3.slice(out3.indexOf("{"))).urlList.length, locs.length);
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 });
+
+// Slack AI wording (9 Nov 2026, steward-approved; see toolOverrides.ts and
+// data-updates/2026-11-09-slack-wording/).
+const SLACK_ANSWER = "Yes, by default, for recommendation features only. Slack says it analyses your messages, content and files to train its non-generative recommendation models (like emoji and channel suggestions) unless a workspace owner opts out. It says it doesn't train generative AI or LLMs on your data unless you opt in.";
+const SLACK_Q = "Can I stop Slack AI training on my data?";
+const SLACK_A = "Yes, but only a workspace owner can. They email feedback@slack.com to opt the workspace out of Slack's global recommendation models. Generative AI training only happens if your organisation opts in.";
+const SLACK_NEW_QUOTES = [
+  ["slack-privacy-principles.txt", "Slack aggregates and disassociates Customer Data such that Slack's use of Customer Data to update the Services will never identify any of our customers or individuals as the source of any of these improvements to any third party, other than to Slack's affiliates or sub-processors."],
+  ["slack-security-for-ai-features.txt", "Customer data never leaves Slack-controlled infrastructure and is never used to train large language models (LLMs)."],
+];
+
+test("Slack AI: badge unchanged, approved answer and FAQ on the page and in the one FAQPage", () => {
+  const t = tools.find((x) => x.domain === "slack.com");
+  assert.equal(t.compliance_status, "compliant_with_caveats");
+  const h = read("tools/slack.com/index.html");
+  assert.ok(text(h.match(/<p class="answer"[^>]*>([\s\S]*?)<\/p>/)[1]).startsWith(SLACK_ANSWER));
+  const faqs = ldBlocks(h).filter((b) => b["@type"] === "FAQPage");
+  assert.equal(faqs.length, 1);
+  const qs = new Map(faqs[0].mainEntity.map((q) => [q.name, q.acceptedAnswer.text]));
+  assert.ok(qs.get("Does Slack AI train on your data?").startsWith(SLACK_ANSWER));
+  assert.equal(qs.get(SLACK_Q), SLACK_A);
+  const sec = h.match(/<section class="tool-faq"[\s\S]*?<\/section>/)[0];
+  const pairs = new Map([...sec.matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>\s*<p[^>]*>([\s\S]*?)<\/p>/g)].map((m) => [decode(m[1]), decode(m[2])]));
+  assert.equal(pairs.get(SLACK_Q), SLACK_A);
+  assert.equal([...pairs.keys()].filter((q) => q === SLACK_Q).length, 1);
+  assert.ok(h.includes(`badge`) && /Trains by default, you can opt out/.test(h));
+});
+
+test("Slack AI: the four existing quotes are kept, the two new ones match the saved live pages word for word", () => {
+  const t = tools.find((x) => x.domain === "slack.com");
+  const norm = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, " ").trim();
+  for (const q of [
+    "We do not develop generative AI models using Customer Data.",
+    "If you want to exclude your Customer Data from helping to train Slack global models, you can opt out.",
+    "contact our Customer Experience team at feedback@slack.com",
+    "Slack will not use Customer Data to train generative AI models unless Customer provides affirmative opt-in consent.",
+  ]) assert.ok(t.summary.includes(q), q);
+  const snap = join(REPO, "research/qa-sources/2026-11-09-slack");
+  for (const [f, q] of SLACK_NEW_QUOTES) {
+    assert.ok(t.summary.includes(`"${q}"`), q.slice(0, 40));
+    assert.ok(norm(readFileSync(join(snap, f), "utf8")).includes(norm(q)), `${f}: ${q.slice(0, 40)}`);
+  }
+  assert.ok(t.source_urls.includes("https://slack.com/intl/en-gb/help/articles/28310650165907-Security-for-AI-features-in-Slack"));
+  assert.ok(t.source_urls.includes("https://slack.com/intl/en-gb/trust/data-management/privacy-principles"));
+});

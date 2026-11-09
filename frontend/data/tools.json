@@ -816,17 +816,18 @@
     "name": "Slack AI",
     "domain": "slack.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "\"We do not develop generative AI models using Customer Data. To develop predictive models for features such as emoji and channel recommendations, our systems analyse Customer Data (e.g. messages, content and files) submitted to Slack as well as Other Information (including usage information)\" \"If you want to exclude your Customer Data from helping to train Slack global models, you can opt out.\" \"To opt out, please have your org, workspace owners or primary owner contact our Customer Experience team at feedback@slack.com with your workspace/org URL and the subject line 'Slack global model opt-out request'.\" \"Slack will not use Customer Data to train generative AI models unless Customer provides affirmative opt-in consent.\" Global predictive-model training is on by default; the workspace-level opt-out must be requested by an owner. Slack does not distinguish free vs paid here. Source has no page date; fetched 8 November 2026.",
+    "summary": "\"We do not develop generative AI models using Customer Data. To develop predictive models for features such as emoji and channel recommendations, our systems analyse Customer Data (e.g. messages, content and files) submitted to Slack as well as Other Information (including usage information)\" \"If you want to exclude your Customer Data from helping to train Slack global models, you can opt out.\" \"To opt out, please have your org, workspace owners or primary owner contact our Customer Experience team at feedback@slack.com with your workspace/org URL and the subject line 'Slack global model opt-out request'.\" \"Slack will not use Customer Data to train generative AI models unless Customer provides affirmative opt-in consent.\" \"Slack aggregates and disassociates Customer Data such that Slack's use of Customer Data to update the Services will never identify any of our customers or individuals as the source of any of these improvements to any third party, other than to Slack's affiliates or sub-processors.\" Security for AI features in Slack: \"Customer data never leaves Slack-controlled infrastructure and is never used to train large language models (LLMs).\" Global predictive-model training is on by default; the workspace-level opt-out must be requested by an owner. Slack does not distinguish free vs paid here. Sources have no page date; privacy principles fetched 8 November 2026 and re-checked 9 November 2026; Security for AI features fetched 9 November 2026.",
     "data_retention": null,
     "trains_on_user_data": true,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://slack.com/intl/en-gb/trust/data-management/privacy-principles"
+      "https://slack.com/intl/en-gb/trust/data-management/privacy-principles",
+      "https://slack.com/intl/en-gb/help/articles/28310650165907-Security-for-AI-features-in-Slack"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-11-08T18:06:01.777Z"
+    "last_checked_at": "2026-11-09T08:53:00.000Z"
   },
   {
     "name": "Sourcegraph Cody",

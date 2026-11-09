@@ -9,14 +9,21 @@
 // paraphrased -- and a section or FAQ is skipped when the data can't support it.
 import type { Tool } from "./types";
 import { VERDICTS } from "./verdicts";
+import { overrideFor } from "./toolOverrides";
 
 export const ICO_AI_GUIDANCE = "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/";
 
 const hasQuote = (t: Tool) => Boolean(t.summary && t.summary.trim());
 const label = (t: Tool) => VERDICTS.find((v) => v.status === t.compliance_status)?.label ?? t.compliance_status;
 
-/** The direct answer under the H1. Deterministic: status -> fixed wording. */
+/** The direct answer under the H1: a steward-approved per-tool override
+ *  (toolOverrides.ts) when one exists, else the fixed wording per status. */
 export function answerLine(tool: Tool): string {
+  return overrideFor(tool.domain)?.answer ?? fixedAnswerLine(tool);
+}
+
+/** Deterministic: status -> fixed wording. */
+export function fixedAnswerLine(tool: Tool): string {
   const n = tool.name;
   if (hasQuote(tool)) {
     switch (tool.compliance_status) {
