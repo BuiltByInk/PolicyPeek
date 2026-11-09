@@ -25,6 +25,14 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Slack AI training on my data?", a: "Yes, but only a workspace owner can. They email feedback@slack.com to opt the workspace out of Slack's global recommendation models. Generative AI training only happens if your organisation opts in." },
     ],
   },
+  // Steward note, 9 Nov 2026 factcheck: workspace-level opt-out; up to 30 days.
+  // Backed by the help-article quotes in the catalog row (not the privacy-policy
+  // public-web-data training sentence).
+  "intercom.com": {
+    faq: [
+      { q: "Can I stop Intercom Fin training on my data?", a: "Yes. An admin can request an opt-out in Settings > Workspace > Security > AI model training and fine-tuning. Intercom says it processes opt-out requests within 30 days. Until then, Fin CX models train by default on de-identified Fin conversation logs (with listed exclusions such as EU/AU regional hosting and trial accounts)." },
+    ],
+  },
 };
 
 export const overrideFor = (domain: string): ToolOverride | undefined => TOOL_OVERRIDES[domain];

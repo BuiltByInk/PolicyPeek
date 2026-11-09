@@ -191,11 +191,12 @@ Also new tonight: a favourable first result for a brand-new domain now waits in 
 
 ## 4d. Slack AI D1 update for the 9 Nov combined PR **(prod, at deploy time)**
 
-Added 2026-11-09. Elliot approved running this at deploy (9 Nov 2026, 09:04 UK:
-"Yes, run the Slack D1 update at deploy"). Jump runs it, or Dev runs it on Jump's go.
-Run it when the combined PR is merged, **before** any `refresh-site.mjs` run:
-`tools.json` is regenerated from D1, so a refresh before this would drop the new
-Slack quotes and source.
+Added 2026-11-09. **Slack 4d approved by Elliot 9 Nov 09:04; 4e needs its own OK before running.**
+Elliot approved running this Slack update at deploy (9 Nov 2026, 09:04 UK:
+"Yes, run the Slack D1 update at deploy"). That OK named Slack only. Jump runs it,
+or Dev runs it on Jump's go. Run it when the combined PR is merged, **before** any
+`refresh-site.mjs` run: `tools.json` is regenerated from D1, so a refresh before
+this would drop the new Slack quotes and source.
 
 ```bash
 cd ~/policypeek
@@ -208,6 +209,30 @@ npx wrangler d1 execute policypeek-db --remote --file data-updates/2026-11-09-sl
 - Check: the `after` row has six quotes in `summary`, the Security for AI URL in
   `source_urls`, and `last_checked_at` 2026-11-09T08:53:00.000Z.
 - **Way back:** the `before_snapshot` row printed above holds the old values.
+
+## 4e. 9 Nov catalog daily D1 inserts (Monday.com AI + Intercom Fin) **(prod, at deploy time — needs its own OK)**
+
+Added 2026-11-09. **Slack 4d approved by Elliot 9 Nov 09:04; 4e needs its own OK before running.**
+Elliot's D1 approval that day named only the Slack wording update. Do **not** run
+this package until Jump relays a fresh Elliot OK that names this catalog apply.sql
+(or Monday.com / Intercom Fin). When approved, run it at deploy of the combined PR,
+**before** any `refresh-site.mjs` run, ideally right after step 4d:
+
+```bash
+cd ~/policypeek
+npx wrangler d1 execute policypeek-db --remote --file data-updates/2026-11-09-catalog-daily/apply.sql
+```
+- Two guarded `INSERT`s only (`monday.com` as `compliant`, `intercom.com` as
+  `compliant_with_caveats`). It prints a `before_snapshot` first and an `after`
+  row set at the end. Calendly is held and is not in the file.
+- If it prints `GUARD FAILED: monday.com has changed` or
+  `GUARD FAILED: intercom.com has changed`, stop: a live row already exists, so
+  review it before changing anything.
+- Check: the `after` rows have the three Monday quotes (admin opt-out clarified as
+  service-improvement, not training) and the four Intercom Fin quotes (workspace
+  Settings opt-out; up to 30 days), with `last_checked_at` 2026-11-09T09:09:24.000Z.
+- **Way back:** the `before_snapshot` (empty for new domains) plus deleting those
+  two rows by domain restores the prior state; keep the printed after-rows as proof.
 
 ## 5. Site **(prod)**
 
