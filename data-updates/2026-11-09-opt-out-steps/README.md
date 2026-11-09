@@ -1,11 +1,8 @@
-# 9 Nov 2026 — opt-out steps for five caveats tools (HELD)
+# 9 Nov 2026 — opt-out steps for five caveats tools
 
-**Status:** draft awaiting PolicyPeek steward fact-check, then Elliot D1 OK.
-**Do not** run any apply.sql against live D1 from this package yet.
+Steward fact-check approved (factcheck.md). Elliot OK 9 Nov 2026 11:53 UK to apply D1 and deploy.
 
-Tools: `cursor.com`, `grammarly.com`, `kimi.com`, `otter.ai`, `perplexity.ai`.
-Badge / `compliance_status` stay `compliant_with_caveats`. Goal: store
-verbatim opt-out steps so the AEO “Can I opt out…?” section stops saying
-“see the source”.
+`apply.sql` updates `summary` + `source_urls` only for:
+cursor.com, grammarly.com, kimi.com, otter.ai, perplexity.ai.
 
-Full draft + sources/dates: `DRAFT-FOR-STEWARD.md`.
+Badge / compliance_status stay `compliant_with_caveats`. Fail-closed guards bind to the pre-update summaries.
