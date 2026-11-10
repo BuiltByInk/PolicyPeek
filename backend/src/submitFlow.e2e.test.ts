@@ -96,6 +96,9 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
   if (url.hostname === "archive.org") {
     return Promise.resolve(Response.json({ archived_snapshots: {} }));
   }
+  if (url.hostname === "api.telegram.org") {
+    return Promise.resolve(new Response("{}", { status: 200 }));
+  }
   const page = pages[url.href];
   if (!page) return Promise.reject(new TypeError("fetch failed: connection refused"));
   return Promise.resolve(page());
@@ -515,5 +518,36 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(row.extraction_error).toContain("no facts registered");
     expect((await w.approve(row.id)).body.error).toBe("not_yet_extracted");
     expect((await w.lookup("acme-ai.com")).status).toBe(404);
+  });
+
+  it("a held check sends one review alert; an auto-publish does not; extraction failure does not", async () => {
+    const w = makeWorld();
+    w.env.ALERT_BOT_TOKEN = "SECRET-TOKEN";
+    w.env.ALERT_CHAT_ID = "99";
+
+    sitePolicy("held-tool.com", "https://held-tool.com/privacy", COMPLIANT);
+    expect((await w.submit({ domain: "held-tool.com", source_url: "https://held-tool.com/privacy" }, "203.0.113.20")).status).toBe(202);
+    expect(w.pendingRows()[0].status).toBe("extracted");
+
+    const telegram = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => String(url).includes("api.telegram.org"));
+    expect(telegram).toHaveLength(1);
+    const heldBody = JSON.parse((telegram[0][1] as RequestInit).body as string);
+    expect(heldBody.text).toContain("#1 held-tool.com");
+    expect(heldBody.text).toContain("https://held-tool.com/privacy");
+    expect(heldBody.text).not.toContain("203.0.113.20");
+    expect(heldBody.parse_mode).toBeUndefined();
+
+    sitePolicy("auto-tool.com", "https://auto-tool.com/privacy", NOT_COMPLIANT);
+    expect((await w.submit({ domain: "auto-tool.com", source_url: "https://auto-tool.com/privacy" }, "203.0.113.21")).status).toBe(202);
+    expect(w.pendingRows()[1].status).toBe("approved");
+    const afterPublish = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => String(url).includes("api.telegram.org"));
+    expect(afterPublish).toHaveLength(1); // still only the held alert
+
+    dns["fail-tool.com"] = ["93.184.216.34"];
+    pages["https://fail-tool.com/privacy"] = () => new Response(policyHtml("[unregistered] policy text"), { status: 200 });
+    expect((await w.submit({ domain: "fail-tool.com", source_url: "https://fail-tool.com/privacy" }, "203.0.113.22")).status).toBe(202);
+    expect(w.pendingRows()[2].status).toBe("pending");
+    const afterFail = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => String(url).includes("api.telegram.org"));
+    expect(afterFail).toHaveLength(1);
   });
 });

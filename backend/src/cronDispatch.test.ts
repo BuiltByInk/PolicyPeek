@@ -11,5 +11,7 @@ describe("cronJobFor", () => {
   it("returns null for anything else, so a typo can't silently run another job", () => {
     expect(cronJobFor("31 3 * * *")).toBeNull();
     expect(cronJobFor("")).toBeNull();
+    // The held-review digest reuses 0 4 * * *; do not add a 17:00 trigger.
+    expect(cronJobFor("0 17 * * *")).toBeNull();
   });
 });
