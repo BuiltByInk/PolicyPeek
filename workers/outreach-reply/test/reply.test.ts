@@ -168,3 +168,25 @@ describe("MF6: quoted text is stripped before objection matching", () => {
     expect((await handleEmail(m, env())).classification).toBe("objection");
   });
 });
+
+describe("SF1: forward first, D1 work can never block the forward", () => {
+  it("forward happens before the first D1 call", async () => {
+    const order: string[] = [];
+    const orig = db.d1.prepare;
+    (db.d1 as any).prepare = (s: string) => { order.push("db"); return orig(s); };
+    const m = msg({ headers: { "in-reply-to": "<s1@mail.getpolicypeek.com>" } });
+    m.forward = vi.fn(async () => { order.push("forward"); });
+    await handleEmail(m, env());
+    expect(order[0]).toBe("forward");
+    expect(m.forward.mock.calls[0][1].get("X-PolicyPeek-Class")).toBe("reply");
+  });
+  it("D1 missing tables / outage: reply and objection are still forwarded and nothing throws", async () => {
+    const broken = { prepare: () => { throw new Error("D1_ERROR: no such table: outreach_sends"); }, batch: async () => { throw new Error("D1 down"); } } as unknown as D1Database;
+    for (const body of ["Thanks, answer below.", "Please stop emailing us."]) {
+      const m = msg({ body });
+      const r = await handleEmail(m, { DB: broken });
+      expect(m.forward).toHaveBeenCalledTimes(1);
+      expect(r).toMatchObject({ forwarded: true, dbError: true });
+    }
+  });
+});

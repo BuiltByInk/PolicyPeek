@@ -127,7 +127,9 @@ export async function matchReply(db: D1Database, h: Headers, fromDomain: string)
   return r ? { contactId: r.contact_id, toolSlug: r.tool_slug, method: "sender_domain" } : { contactId: null, toolSlug: null, method: null };
 }
 
-export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEnv, now = new Date()): Promise<{ classification: Classification; forwarded: boolean; match: Match }> {
+export interface HandleResult { classification: Classification; forwarded: boolean; match: Match; dbError?: boolean }
+
+export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEnv, now = new Date()): Promise<HandleResult> {
   const from = message.from ?? "";
   const fromDomain = domainOf(from);
   // Parse a capped copy in memory only (objection check); never stored.
@@ -144,28 +146,40 @@ export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEn
   const none: Match = { contactId: null, toolSlug: null, method: null };
   if (classification === "dmarc_report" || classification === "loop") return { classification, forwarded: false, match: none };
 
-  const match = await matchReply(env.DB, message.headers, fromDomain);
-  const auth = authResults(message.headers);
+  // SF1 (Security re-review 10 Nov): forward BEFORE any D1 work, so a D1 error
+  // (tables missing, outage) can never stop a reply reaching Elliot. The
+  // forwarded header therefore carries only the in-memory classification;
+  // the tool match is recorded in D1 afterwards.
   let forwarded = false;
   if (classification === "reply" || classification === "objection") {
-    await message.forward(FORWARD_TO, new Headers({ "X-PolicyPeek-Match": match.toolSlug ? `${match.toolSlug} (${match.method})` : "unmatched" }));
+    await message.forward(FORWARD_TO, new Headers({ "X-PolicyPeek-Class": classification }));
     forwarded = true;
   }
-  const stmts = [
-    env.DB.prepare("INSERT INTO outreach_replies (tool_slug, matched_contact_id, match_method, from_domain, message_id, received_at, classification, auth_spf, auth_dkim, auth_dmarc, raw_size, forwarded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(match.toolSlug, match.contactId, match.method, fromDomain, message.headers.get("message-id")?.slice(0, 300) ?? null, now.toISOString(), classification, auth.spf, auth.dkim, auth.dmarc, message.rawSize, forwarded ? 1 : 0),
-  ];
-  // Gate 5: an objection suppresses the address AND its domain; a bounce
-  // suppresses the matched contact's address. Minimal rows, kept indefinitely.
-  if (classification === "objection") {
-    const addr = from.toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] ?? "";
-    if (addr) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'objection')").bind(addr));
-    if (fromDomain) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(registrable(fromDomain)));
+  let match = none;
+  try {
+    match = await matchReply(env.DB, message.headers, fromDomain);
+    const auth = authResults(message.headers);
+    const stmts = [
+      env.DB.prepare("INSERT INTO outreach_replies (tool_slug, matched_contact_id, match_method, from_domain, message_id, received_at, classification, auth_spf, auth_dkim, auth_dmarc, raw_size, forwarded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(match.toolSlug, match.contactId, match.method, fromDomain, message.headers.get("message-id")?.slice(0, 300) ?? null, now.toISOString(), classification, auth.spf, auth.dkim, auth.dmarc, message.rawSize, forwarded ? 1 : 0),
+    ];
+    // Gate 5: an objection suppresses the address AND its domain; a bounce
+    // suppresses the matched contact's address. Minimal rows, kept indefinitely.
+    if (classification === "objection") {
+      const addr = from.toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] ?? "";
+      if (addr) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'objection')").bind(addr));
+      if (fromDomain) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(registrable(fromDomain)));
+    }
+    if (classification === "bounce" && match.contactId !== null) {
+      stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'bounce' FROM outreach_contacts WHERE id = ?").bind(match.contactId));
+    }
+    await env.DB.batch(stmts);
+  } catch {
+    // Never rethrow: the reply has already been forwarded. Counts-only log; Elliot
+    // still has the message in Proton and can suppress by hand.
+    console.log(JSON.stringify({ event: "inbound_db_error", classification, sender_domain: fromDomain, forwarded }));
+    return { classification, forwarded, match, dbError: true };
   }
-  if (classification === "bounce" && match.contactId !== null) {
-    stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'bounce' FROM outreach_contacts WHERE id = ?").bind(match.contactId));
-  }
-  await env.DB.batch(stmts);
   console.log(JSON.stringify({ event: "inbound", classification, tool_slug: match.toolSlug, sender_domain: fromDomain, forwarded }));
   return { classification, forwarded, match };
 }
