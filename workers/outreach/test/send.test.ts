@@ -3,6 +3,7 @@ import { makeDb } from "../../test-utils/d1shim";
 import { handleAdmin } from "../src/admin";
 import { cardGate, claimSend, checkContact, FROM, HARD_DAILY_MAX, planDay, REPLY_TO, runDaily } from "../src/send";
 import { readFileSync } from "node:fs";
+import { buildLoad, INITIAL_LOAD_PAUSE_REASON, parseCsv, parseRecheck, parseSteward, toSql, verdictRefreshSql } from "../src/loader";
 
 const MIG = new URL("../migrations/0001_outreach.sql", import.meta.url).pathname;
 const NOW = new Date("2026-12-01T09:00:00Z");
@@ -411,5 +412,63 @@ describe("MF10: sender blocks any on-tracker tool until the hand-sent list arriv
     const contact = db.raw.prepare("SELECT * FROM outreach_contacts WHERE id = ?").get(id);
     expect(await claimSend(db.d1, { contact, kind: "initial", recipientDomain: "intuit.com" }, NOW)).toBe(false);
     expect(env.EMAIL.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("Jump 12:07: Mailchimp stays out of the first live run (MF9 + MF10)", () => {
+  const tracker = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nMailchimp,form only: https://mailchimp.com/privacy-rights/,https://mailchimp.com/privacy-rights/,2026-11-10,drafted,2026-11-24,\n");
+  const flags = parseCsv("tool,contact,contact_source_url\nMailchimp,privacy@intuit.com,https://mailchimp.com/about/privacy-rights/\nBuffer,privacy@buffer.com,https://buffer.com/legal#privacy-policy\n");
+  const rc = parseRecheck("| 1 | Mailchimp (mailchimp.com) | x | y | Yes |\n| 2 | Buffer (buffer.com) | x | y | Yes |\n### 1. Mailchimp (mailchimp.com)\n> We may use your Inputs and Outputs for machine learning purposes.\nSource: https://mailchimp.com/about/privacy-rights/ — x\n### 2. Buffer (buffer.com)\n> We may use data to improve features.\nSource: https://buffer.com/legal#privacy-policy — x\n");
+  const st = parseSteward("1. **Mailchimp** — not_compliant → held — **APPROVE.** a\n2. **Buffer** — held (unchanged) — **APPROVE.** b\n");
+  function loadFirstRun(mailchimpVerdict: string, asOf: string) {
+    const liveTools = [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: mailchimpVerdict }, { domain: "buffer.com", name: "Buffer", source_urls: "[]", compliance_status: "unrated" }];
+    const r = buildLoad({ tracker, heldPack: new Map(), liveTools, flagCsv: flags, recheck: rc, steward: st, vettedBy: "t", verdictAsOf: asOf });
+    db.raw.exec(toSql(r, "t", asOf));
+    // Elliot-approved unpause for the first live run: only the initial-load pauses.
+    db.raw.prepare("UPDATE outreach_contacts SET status = 'eligible', paused_reason = NULL WHERE paused_reason = ?").run(INITIAL_LOAD_PAUSE_REASON);
+    return r;
+  }
+  it("before the hand-sent list: Buffer goes, Mailchimp does not (stale not_compliant export AND fresh unrated export)", async () => {
+    for (const v of ["not_compliant", "unrated"]) {
+      db = makeDb(MIG);
+      loadFirstRun(v, new Date(NOW.getTime() - 3600_000).toISOString());
+      const env = live(db, {});
+      db.raw.prepare("UPDATE outreach_settings SET value = '0' WHERE key = 'held_hand_list_received'").run();
+      const r = await runDaily(env, NOW);
+      expect(r.sent.map((s) => s.tool_slug)).toEqual(["buffer.com"]);
+      expect(env.EMAIL.send.mock.calls.map((c: any) => c[0].to)).not.toContain("privacy@intuit.com");
+    }
+  });
+  it("even if the hand-sent list arrives and someone unpauses Mailchimp, a not_compliant stored verdict still blocks it (MF9)", async () => {
+    loadFirstRun("not_compliant", new Date(NOW.getTime() - 3600_000).toISOString());
+    db.raw.prepare("UPDATE outreach_contacts SET status = 'eligible', paused_reason = NULL").run();
+    const env = live(db); // held_hand_list_received = '1'
+    const r = await runDaily(env, NOW);
+    expect(r.sent.map((s) => s.tool_slug)).not.toContain("mailchimp.com");
+    expect(r.skipped.find((s) => s.tool_slug === "mailchimp.com")?.reason).toMatch(/card_gate blocked: owner ruling unclear/);
+  });
+  it("a verdict refresh alone cannot flip a stale steward 'held' into a send: the old load's gate stays closed", async () => {
+    loadFirstRun("not_compliant", new Date(NOW.getTime() - 3600_000).toISOString());
+    db.raw.exec(verdictRefreshSql(["mailchimp.com", "buffer.com"], [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "buffer.com", name: "Buffer", source_urls: "[]", compliance_status: "unrated" }], NOW.toISOString()));
+    db.raw.prepare("UPDATE outreach_contacts SET status = 'eligible', paused_reason = NULL").run();
+    const r = await runDaily(live(db), NOW);
+    expect(r.sent.map((s) => s.tool_slug)).not.toContain("mailchimp.com");
+  });
+});
+
+describe("step (c) verify SQL", () => {
+  const VERIFY = readFileSync(new URL("../sql/verify-step-c.sql", import.meta.url), "utf8");
+  it("passes on the schema-only migration", () => {
+    expect(() => db.raw.exec(VERIFY)).not.toThrow();
+  });
+  it("fails if paused != '1', the hand-sent flag is set, the cap is > 5, or any contact is eligible", () => {
+    for (const bad of ["UPDATE outreach_settings SET value = '0' WHERE key = 'paused'", "UPDATE outreach_settings SET value = '1' WHERE key = 'held_hand_list_received'", "UPDATE outreach_settings SET value = '6' WHERE key = 'daily_cap'"]) {
+      db = makeDb(MIG);
+      db.raw.exec(bad);
+      expect(() => db.raw.exec(VERIFY)).toThrow();
+    }
+    db = makeDb(MIG);
+    addContact(db.raw);
+    expect(() => db.raw.exec(VERIFY)).toThrow();
   });
 });
