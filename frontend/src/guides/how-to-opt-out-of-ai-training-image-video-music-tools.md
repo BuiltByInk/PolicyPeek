@@ -1,8 +1,8 @@
 # How to Opt Out of AI Training: Image, Video, Voice and Music Tools (2026)
 
-Of 14 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't train on your content. ElevenLabs, Photoroom and HeyGen train by default but offer an opt-out. Suno, Pika, Kling, InVideo, Remove.bg, Meshy, Ideogram, Luma and Midjourney train with no opt-out found. Checked 5 November 2026.
+Of 14 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't train on your content. ElevenLabs, Photoroom, HeyGen, Kling AI and Meshy train by default but offer an opt-out. Suno, Pika, InVideo, Remove.bg, Ideogram, Luma and Midjourney train with no opt-out found. Checked 10 November 2026.
 
-*Last checked: 5 November 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 10 November 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## Which creative AI tools train on your uploads?
 
@@ -13,12 +13,12 @@ Of 14 creative AI tools PolicyPeek rates, only Moises and Pictory say they don't
 | [ElevenLabs](https://getpolicypeek.com/tools/elevenlabs.io/) | **Trains by default, you can opt out** | "We use your personal information to research, build, train and improve our AI models." "You can opt out ... by navigating to the 'Data use' menu in the 'Terms and Privacy' section of your ElevenLabs account." | [policy](https://elevenlabs.io/privacy-policy) | 2026-10-15 |
 | [HeyGen](https://getpolicypeek.com/tools/heygen.com/) | **Trains by default, you can opt out** | HeyGen says it "may use the input that you provide us to improve our services, for example, to train and enhance the models". "You may request to opt-out of this training and enhancement by contacting us". | [policy](https://www.heygen.com/privacy) | 2026-10-28 |
 | [Photoroom](https://getpolicypeek.com/tools/photoroom.com/) | **Trains by default, you can opt out** | "By using the Services, you acknowledge and expressly authorize Photoroom to use User Content to improve, train and develop Photoroom's products and services." "You can opt-out of this at any time by changing the settings on your account in the app under… | [policy](https://www.photoroom.com/legal/terms-and-conditions) | 2026-10-24 |
+| [Kling AI](https://getpolicypeek.com/tools/kling.ai/) | **Trains by default, you can opt out** | Training is on by default under the content licence. "If you do not wish us to continue using all or part of the Content, you may notify us to revoke the authorization by sending an email to support@kling.ai." That revocation may not reach usage or aggregated data. | [policy](https://kling.ai/docs/user-policy) | 2026-11-10 |
+| [Meshy](https://getpolicypeek.com/tools/meshy.ai/) | **Trains by default, you can opt out** | "Meshy may use Customer Inputs and Customer Outputs … from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order. You may opt out of such use by contacting support@meshy.ai." Training is on for Free/Pro unless you email support. Enterprise is not trained on under this clause. | [policy](https://www.meshy.ai/terms-of-use) | 2026-11-10 |
 | [Suno](https://getpolicypeek.com/tools/suno.com/) | **Trains on your data, no opt-out** | Uses Submissions and other Content "to train and enhance the models that power our Services". No training opt-out is stated. | [policy](https://suno.com/privacy) | 2026-10-24 |
 | [Pika](https://getpolicypeek.com/tools/pika.art/) | **Trains on your data, no opt-out** | "Pika may use anonymized or aggregated Content, including Inputs, Outputs, and your interactions with the Service, and Usage Data to train, improve, and develop its machine learning models"; no training opt-out found. | [policy](https://pika.art/terms-of-service) | 2026-10-24 |
-| [Kling AI](https://getpolicypeek.com/tools/kling.ai/) | **Trains on your data, no opt-out** | "Kling AI may process usage data, aggregated data, or Input for its lawful business purposes" including to "(f) create, test, improve, train, or otherwise develop the artificial intelligence or machine learning models ... used by Kling AI"; no training… | [policy](https://kling.ai/docs/user-policy) | 2026-10-24 |
 | [InVideo](https://getpolicypeek.com/tools/invideo.io/) | **Trains on your data, no opt-out** | "We may use your User Data to train, fine-tune or otherwise adjust the parameters of our artificial intelligence and machine-learning models. You can stop this use by deleting the relevant User Data or closing your account". There's no setting to opt out. | [policy](https://invideo.io/privacy-policy/) | 2026-10-24 |
 | [Remove.bg](https://getpolicypeek.com/tools/remove.bg/) | **Trains on your data, no opt-out** | "We may also analyze your activity, content, media uploads and related data in your account ... to train our algorithms, models and AI products and services using machine learning to develop, improve and provide our Service." The only opt-outs offered are… | [policy](https://www.remove.bg/privacy) | 2026-10-24 |
-| [Meshy](https://getpolicypeek.com/tools/meshy.ai/) | **Trains on your data, no opt-out** | Terms (Sep 19, 2026): "Meshy may use Customer Inputs and Customer Outputs ... from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order." No opt-out for Free/Pro. | [policy](https://www.meshy.ai/terms-of-use) | 2026-10-24 |
 | [Ideogram](https://getpolicypeek.com/tools/ideogram.ai/) | **Trains on your data, no opt-out** | User information is used "as a matter of our legitimate interests, including ... training the models that power our Services"; the policy lists opt-outs only for marketing and analytics, not training. | [policy](https://ideogram.ai/legal/privacy) | 2026-10-15 |
 | [Luma AI (Dream Machine)](https://getpolicypeek.com/tools/lumalabs.ai/) | **Trains on your data, no opt-out** | Train, develop, and improve the artificial intelligence, machine learning, and models that we use to support our Services | [policy](https://lumalabs.ai/legal/privacy-policy) | 2026-09-18 |
 | [Midjourney](https://getpolicypeek.com/tools/midjourney.com/) | **Trains on your data, no opt-out** | Public Summary of Training Content: "Was data from user interactions with the AI model (e.g. user input and prompts) used to train the model? ☒ Yes" (Text and Image). AB2013 also lists data users provide through the service. No training opt-out found (only robots.txt/crawler controls and CCPA sale/sharing). | [Public Summary](https://docs.midjourney.com/hc/en-us/articles/48067080311309-Public-Summary-of-Training-Content) | 2026-11-05 |
@@ -35,6 +35,14 @@ Photoroom's terms say you can opt out at any time by changing your account setti
 
 By emailing HeyGen's privacy team; PolicyPeek notes there isn't an account setting. ([HeyGen](https://getpolicypeek.com/tools/heygen.com/))
 
+## How do I opt out in Kling AI?
+
+By emailing support@kling.ai to revoke the authorization. That is a support-only revocation and may not reach usage or aggregated data. ([Kling AI](https://getpolicypeek.com/tools/kling.ai/))
+
+## How do I opt out in Meshy?
+
+By emailing support@meshy.ai. Training is on for Free/Pro unless you email support. Enterprise is not trained on under this clause. The opt-out is by email, not an in-product setting. ([Meshy](https://getpolicypeek.com/tools/meshy.ai/))
+
 ## What if the tool has no opt-out?
 
 For the tools rated **Trains on your data, no opt-out**, the policy gives you no way to stop training. InVideo says you can stop it only by deleting the data or closing your account. If you're uploading client work, music stems or photos of people, consider Moises or Pictory, whose terms say they won't train on your content without your written agreement.
@@ -45,6 +53,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 10 November 2026: Kling AI and Meshy moved to **Trains by default, you can opt out** (opt out by emailing support@kling.ai or support@meshy.ai).
 - 5 November 2026: Midjourney moved from **Policy unclear** to **Trains on your data, no opt-out** (Public Summary of Training Content + AB2013).
 - 4 November 2026: Midjourney kept on the site as **Policy unclear** while PolicyPeek re-checks it.
 - 28 October 2026: HeyGen source updated to its current privacy page.
