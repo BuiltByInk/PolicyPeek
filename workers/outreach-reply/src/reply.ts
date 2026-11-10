@@ -129,9 +129,35 @@ export async function matchReply(db: D1Database, h: Headers, fromDomain: string)
 
 export interface HandleResult { classification: Classification; forwarded: boolean; match: Match; dbError?: boolean }
 
+// Header From address (RFC 5322 From:), lower-cased; "" if none or unparseable.
+export function headerFromAddress(h: Headers): string {
+  const v = h.get("from") ?? "";
+  const angle = v.match(/<\s*([^<>\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\s*>/);
+  const bare = v.match(/([^<>\s@",;:]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/);
+  return (angle?.[1] ?? bare?.[1] ?? "").toLowerCase();
+}
+
+// MF3 (Security re-review 10 Nov): what an objection suppresses. Ticketing
+// systems send with bounce-style envelopes (bounces+x@em.zendesk.com), so the
+// envelope alone would suppress the wrong address/domain. We suppress:
+//  - the matched contact's own address and its recipient_domain (from D1),
+//  - the header From address and its registrable domain,
+//  - the envelope address as an extra (address only; its domain only when
+//    there is no usable header From).
+export function objectionSuppressions(envelopeFrom: string, headerFrom: string): { addresses: string[]; domains: string[] } {
+  const env = envelopeFrom.toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] ?? "";
+  const addresses = [...new Set([headerFrom, env].filter(Boolean))];
+  const domains: string[] = [];
+  if (headerFrom) domains.push(registrable(domainOf(headerFrom)));
+  else if (env) domains.push(registrable(domainOf(env)));
+  return { addresses, domains: [...new Set(domains.filter((d) => d && !OWN_DOMAINS.includes(d)))] };
+}
+
 export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEnv, now = new Date()): Promise<HandleResult> {
   const from = message.from ?? "";
-  const fromDomain = domainOf(from);
+  const hdrFrom = headerFromAddress(message.headers);
+  // Sender's company domain: header From when present (the real sender), else envelope.
+  const fromDomain = domainOf(hdrFrom || from);
   // Parse a capped copy in memory only (objection check); never stored.
   let textHead = "";
   try {
@@ -166,9 +192,13 @@ export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEn
     // Gate 5: an objection suppresses the address AND its domain; a bounce
     // suppresses the matched contact's address. Minimal rows, kept indefinitely.
     if (classification === "objection") {
-      const addr = from.toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] ?? "";
-      if (addr) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'objection')").bind(addr));
-      if (fromDomain) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(registrable(fromDomain)));
+      const sup = objectionSuppressions(from, hdrFrom);
+      for (const a of sup.addresses) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'objection')").bind(a));
+      for (const d of sup.domains) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(d));
+      if (match.contactId !== null) {
+        stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'objection' FROM outreach_contacts WHERE id = ?").bind(match.contactId));
+        stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT DISTINCT 'domain', lower(recipient_domain), 'objection' FROM outreach_sends WHERE contact_id = ?").bind(match.contactId));
+      }
     }
     if (classification === "bounce" && match.contactId !== null) {
       stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'bounce' FROM outreach_contacts WHERE id = ?").bind(match.contactId));

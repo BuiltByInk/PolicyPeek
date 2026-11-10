@@ -113,7 +113,7 @@ describe("gate 4/5: drop logic and suppression", () => {
     const m = msg({ from: "Legal Team <legal@example.com>", body: "Please do not contact us again." });
     expect((await handleEmail(m, env())).classification).toBe("objection");
     expect(m.forward).toHaveBeenCalledWith("elliotink@pm.me", expect.anything());
-    expect(db.raw.prepare("SELECT kind, value, reason FROM suppressions ORDER BY kind").all()).toEqual([{ kind: "address", value: "legal@example.com", reason: "objection" }, { kind: "domain", value: "example.com", reason: "objection" }]);
+    expect(db.raw.prepare("SELECT kind, value, reason FROM suppressions ORDER BY kind, value").all()).toEqual([{ kind: "address", value: "legal@example.com", reason: "objection" }, { kind: "address", value: "privacy@example.com", reason: "objection" }, { kind: "domain", value: "example.com", reason: "objection" }]);
   });
   it("mail from our own domain is dropped (loop guard)", async () => {
     const m = msg({ from: "privacy@getpolicypeek.com" });
@@ -188,5 +188,32 @@ describe("SF1: forward first, D1 work can never block the forward", () => {
       expect(m.forward).toHaveBeenCalledTimes(1);
       expect(r).toMatchObject({ forwarded: true, dbError: true });
     }
+  });
+});
+
+describe("MF3: an objection suppresses the matched contact, the header From and the envelope", () => {
+  it("ticketing-system envelope: real contact address + domain and header From are suppressed; the ESP's domain is not", async () => {
+    const m = msg({ from: "bounces+123-abc=getpolicypeek.com@em.zendesk.com", headers: { from: "Example Privacy Team <privacy-team@help.example.com>", "in-reply-to": "<s1@mail.getpolicypeek.com>" }, body: "Please do not contact us again." });
+    const r = await handleEmail(m, env());
+    expect(r.classification).toBe("objection");
+    const rows = db.raw.prepare("SELECT kind, value FROM suppressions ORDER BY kind, value").all();
+    expect(rows).toEqual(expect.arrayContaining([
+      { kind: "address", value: "privacy@example.com" }, // matched contact
+      { kind: "address", value: "privacy-team@help.example.com" }, // header From
+      { kind: "address", value: "bounces+123-abc=getpolicypeek.com@em.zendesk.com" }, // envelope, extra
+      { kind: "domain", value: "example.com" },
+    ]));
+    expect(rows.filter((x: any) => x.kind === "domain").map((x: any) => x.value)).not.toContain("zendesk.com");
+  });
+  it("matched via In-Reply-To from a different domain still suppresses the contacted domain", async () => {
+    await handleEmail(msg({ from: "dpo@outsourced-dpo.example.net", headers: { from: "dpo@outsourced-dpo.example.net", "in-reply-to": "<s1@mail.getpolicypeek.com>" }, body: "Unsubscribe." }), env());
+    const doms = db.raw.prepare("SELECT value FROM suppressions WHERE kind = 'domain'").all().map((r: any) => r.value);
+    expect(doms).toEqual(expect.arrayContaining(["example.com", "example.net"]));
+  });
+  it("the sender honours those rows: no further email to the contact or its domain", async () => {
+    await handleEmail(msg({ from: "x@em.zendesk.com", headers: { from: "Support <support@example.com>", "in-reply-to": "<s1@mail.getpolicypeek.com>" }, body: "Stop." }), env());
+    const { isSuppressed } = await import("../../outreach/src/send");
+    expect(await isSuppressed(db.d1, "privacy@example.com", "example.com")).toBe(true);
+    expect(await isSuppressed(db.d1, "legal@example.com", "example.com")).toBe(true);
   });
 });
