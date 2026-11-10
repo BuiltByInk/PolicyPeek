@@ -1,0 +1,23 @@
+// privacy@ Email Routing Worker. NOT DEPLOYED, and the routing rule is NOT
+// created (Security re-review first). Deliberately has NO send_email binding,
+// NO queue, NO R2, NO service bindings: it can only forward to the hard-coded
+// address in src/reply.ts and write metadata rows.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "policypeek-outreach-reply-dev",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "policypeek-outreach-dev", "database_id": "REPLACE_WITH_DEV_DB_ID", "migrations_dir": "../outreach/migrations" }
+  ],
+  "env": {
+    "production": {
+      "name": "policypeek-outreach-reply",
+      "d1_databases": [
+        { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "REPLACE_WITH_PROD_DB_ID", "migrations_dir": "../outreach/migrations" }
+      ]
+    }
+  }
+}

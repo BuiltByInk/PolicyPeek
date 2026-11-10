@@ -10,5 +10,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["outreach/src", "outreach/test", "policy-watcher/src", "policy-watcher/test", "test-utils"]
+  "include": ["outreach/src", "outreach/test", "outreach-reply/src", "outreach-reply/test", "policy-watcher/src", "policy-watcher/test", "test-utils"]
 }
