@@ -202,7 +202,7 @@ async function assertResolvedAddressesSafe(hostname: string): Promise<void> {
   }
 }
 
-async function assertSafeUrl(rawUrl: string): Promise<URL> {
+async function assertSafeUrl(rawUrl: string, httpsOnly = false): Promise<URL> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -211,6 +211,11 @@ async function assertSafeUrl(rawUrl: string): Promise<URL> {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new SsrfBlockedError("blocked_protocol");
+  }
+  // Opt-in for jobs that must never use plain http (the policy watcher,
+  // Security review 2026-11-10 F3). Checked on the first URL and every hop.
+  if (httpsOnly && url.protocol !== "https:") {
+    throw new SsrfBlockedError("blocked_protocol_http");
   }
   // A policy page is always on the default web ports. Refusing anything else
   // stops a submitted URL from being used to probe other services on a host.
@@ -250,18 +255,53 @@ export async function safeFetchText(rawUrl: string): Promise<string> {
 // was submitted or from somewhere a redirect sent us (see check.ts's
 // fetchPolicyText).
 export async function safeFetchTextWithFinalUrl(rawUrl: string): Promise<{ text: string; finalUrl: string }> {
-  let currentUrl = await assertSafeUrl(rawUrl);
+  const res = await safeFetch(rawUrl);
+  if (!(res.status >= 200 && res.status < 300)) {
+    throw new Error(`fetch_failed_${res.status}`);
+  }
+  return { text: new TextDecoder().decode(res.bytes), finalUrl: res.finalUrl };
+}
+
+// Options for callers other than /v1/check. Defaults reproduce the original
+// safeFetchTextWithFinalUrl behaviour exactly (http allowed, 20 s per hop,
+// "PolicyPeek-Checker/1.0", 500 KB cap), so existing callers are unchanged.
+export interface SafeFetchOptions {
+  httpsOnly?: boolean;
+  userAgent?: string;
+  timeoutMs?: number;
+  maxBodyBytes?: number;
+}
+
+export interface SafeFetchResult {
+  status: number;
+  // Empty for non-2xx responses (the body is not read).
+  bytes: Uint8Array;
+  finalUrl: string;
+  contentType: string;
+  truncated: boolean;
+}
+
+// The same per-hop-revalidated fetch, returning raw bytes, the status and the
+// content type instead of throwing on non-2xx, so a caller like the policy
+// watcher can treat a 404 robots.txt differently from a 404 policy page and
+// can refuse unsupported content types.
+export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Promise<SafeFetchResult> {
+  const httpsOnly = opts.httpsOnly ?? false;
+  const userAgent = opts.userAgent ?? "PolicyPeek-Checker/1.0";
+  const timeoutMs = opts.timeoutMs ?? FETCH_TIMEOUT_MS;
+  const maxBodyBytes = opts.maxBodyBytes ?? MAX_BODY_BYTES;
+  let currentUrl = await assertSafeUrl(rawUrl, httpsOnly);
 
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     let response: Response;
     try {
       response = await fetch(currentUrl.toString(), {
         redirect: "manual",
         signal: controller.signal,
-        headers: { "user-agent": "PolicyPeek-Checker/1.0" },
+        headers: { "user-agent": userAgent },
       });
     } finally {
       clearTimeout(timeout);
@@ -270,19 +310,22 @@ export async function safeFetchTextWithFinalUrl(rawUrl: string): Promise<{ text:
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) throw new SsrfBlockedError("redirect_without_location");
-      currentUrl = await assertSafeUrl(new URL(location, currentUrl).toString());
+      currentUrl = await assertSafeUrl(new URL(location, currentUrl).toString(), httpsOnly);
       continue;
     }
 
+    const contentType = response.headers.get("content-type") ?? "";
     if (!response.ok) {
-      throw new Error(`fetch_failed_${response.status}`);
+      await response.body?.cancel().catch(() => {});
+      return { status: response.status, bytes: new Uint8Array(0), finalUrl: currentUrl.toString(), contentType, truncated: false };
     }
 
     const reader = response.body?.getReader();
-    if (!reader) return { text: "", finalUrl: currentUrl.toString() };
+    if (!reader) return { status: response.status, bytes: new Uint8Array(0), finalUrl: currentUrl.toString(), contentType, truncated: false };
     const chunks: Uint8Array[] = [];
     let total = 0;
-    while (total < MAX_BODY_BYTES) {
+    let truncated = false;
+    while (total < maxBodyBytes) {
       const { done, value } = await reader.read();
       if (done) break;
       if (value) {
@@ -290,6 +333,7 @@ export async function safeFetchTextWithFinalUrl(rawUrl: string): Promise<{ text:
         total += value.byteLength;
       }
     }
+    if (total >= maxBodyBytes) truncated = true;
     await reader.cancel().catch(() => {});
     const buf = new Uint8Array(total);
     let offset = 0;
@@ -297,7 +341,7 @@ export async function safeFetchTextWithFinalUrl(rawUrl: string): Promise<{ text:
       buf.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    return { text: new TextDecoder().decode(buf), finalUrl: currentUrl.toString() };
+    return { status: response.status, bytes: buf, finalUrl: currentUrl.toString(), contentType, truncated };
   }
 
   throw new SsrfBlockedError("too_many_redirects");
