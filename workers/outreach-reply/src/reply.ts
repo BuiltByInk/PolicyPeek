@@ -13,6 +13,12 @@ import { getDomain } from "tldts";
 
 export const FORWARD_TO = "elliotink@pm.me";
 export const MAX_PARSE_BYTES = 256 * 1024;
+// SF5 (inbound flood, e.g. Show HN): at most this many outreach_replies rows per
+// UTC day. Beyond it the row is skipped and an "inbound_flood" alert is logged
+// (Workers observability). Forwarding is NOT capped: a dropped objection is worse
+// than a busy Proton inbox, and the forward happens before any D1 read (SF1).
+// Suppression rows from objections/bounces are always written.
+export const MAX_REPLY_ROWS_PER_DAY = 200;
 const OWN_DOMAINS = ["getpolicypeek.com", "mail.getpolicypeek.com"];
 // MF5 (Jump 12:07 UK): we send From privacy@mail.getpolicypeek.com with
 // Reply-To privacy@getpolicypeek.com. Replies may come to either, so both
@@ -208,7 +214,11 @@ export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEn
   try {
     match = await matchReply(env.DB, message.headers, fromDomain);
     const auth = authResults(message.headers);
-    const stmts = [
+    const dayStart = `${now.toISOString().slice(0, 10)}T00:00:00.000Z`;
+    const today = (await env.DB.prepare("SELECT COUNT(*) AS n FROM outreach_replies WHERE received_at >= ?").bind(dayStart).first<number>("n")) ?? 0;
+    const flood = today >= MAX_REPLY_ROWS_PER_DAY;
+    if (flood) console.log(JSON.stringify({ event: "inbound_flood", alert: true, rows_today: today, cap: MAX_REPLY_ROWS_PER_DAY }));
+    const stmts: D1PreparedStatement[] = flood ? [] : [
       env.DB.prepare("INSERT INTO outreach_replies (tool_slug, matched_contact_id, match_method, from_domain, message_id, received_at, classification, auth_spf, auth_dkim, auth_dmarc, raw_size, forwarded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(match.toolSlug, match.contactId, match.method, fromDomain, message.headers.get("message-id")?.slice(0, 300) ?? null, now.toISOString(), classification, auth.spf, auth.dkim, auth.dmarc, message.rawSize, forwarded ? 1 : 0),
     ];
@@ -226,7 +236,7 @@ export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEn
     if (classification === "bounce" && match.contactId !== null) {
       stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'bounce' FROM outreach_contacts WHERE id = ?").bind(match.contactId));
     }
-    await env.DB.batch(stmts);
+    if (stmts.length) await env.DB.batch(stmts);
   } catch {
     // Never rethrow: the reply has already been forwarded. Counts-only log; Elliot
     // still has the message in Proton and can suppress by hand.

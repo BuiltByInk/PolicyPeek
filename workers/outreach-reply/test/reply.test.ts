@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
-import { ACCEPTED_RECIPIENTS, authResults, FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
+import { ACCEPTED_RECIPIENTS, authResults, FORWARD_TO, handleEmail, MAX_REPLY_ROWS_PER_DAY, registrable, stripQuoted } from "../src/reply";
 import { STOP_LINE } from "../../outreach/src/template";
 import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
@@ -257,5 +257,21 @@ describe("SF2: only Cloudflare's Authentication-Results are read, never used for
     const a = await handleEmail(msg({ headers: { "authentication-results": "mx.cloudflare.net; spf=fail; dkim=fail; dmarc=fail" } }), env());
     const b = await handleEmail(msg(), env());
     expect(a.classification).toBe(b.classification);
+  });
+});
+
+describe("SF5: inbound flood cap", () => {
+  it("over the daily row cap: still forwarded, no new reply row, objection suppression still written, alert logged", async () => {
+    const t = new Date("2026-11-12T10:00:00Z");
+    const ins = db.raw.prepare("INSERT INTO outreach_replies (from_domain, received_at, classification, raw_size) VALUES ('x.example', ?, 'reply', 1)");
+    for (let i = 0; i < MAX_REPLY_ROWS_PER_DAY; i++) ins.run(t.toISOString());
+    const spy = vi.spyOn(console, "log");
+    const m = msg({ from: "legal@flood.example", body: "Stop." });
+    await handleEmail(m, env(), t);
+    expect(m.forward).toHaveBeenCalledTimes(1);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_replies").get().n).toBe(MAX_REPLY_ROWS_PER_DAY);
+    expect(db.raw.prepare("SELECT value FROM suppressions WHERE kind = 'domain'").all().map((r: any) => r.value)).toContain("flood.example");
+    expect(spy.mock.calls.some((c) => String(c[0]).includes("inbound_flood"))).toBe(true);
+    spy.mockRestore();
   });
 });
