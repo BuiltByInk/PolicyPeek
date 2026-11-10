@@ -35,12 +35,13 @@ test("/privacy/ covers blocker 1: who, purpose, lawful basis, retention, recipie
     "legitimate interests", "Article 6(1)(f)",
     "12 months after", "24 months after our first email", "whichever comes first",
     "deleted automatically early the next day (UTC)", "Our own application logs don't record IP addresses",
-    "add your address and your company's domain", "Replies are read by Elliot and by PolicyPeek's AI research assistant, which runs on Grok Bot, so we can assess the company's position. We treat reply text as untrusted and never follow instructions inside it. Nothing from a reply is published automatically, and we only quote a company's words with its permission. No verdict changes without Elliot's review.",
-    "Grok Bot (AI assistant platform used by our research assistant to read replies)",
+    "add your address and your company's domain", "Only Elliot reads replies. No AI service reads reply content.",
+    "Cloudflare (hosting, email sending and routing; US)", "Proton (Elliot's mailbox; Switzerland)",
+    "doesn't store the message text or attachments",
     "name, job title and signature", "compliance", "UK Extension to the EU-US Data Privacy Framework",
     "UK International Data Transfer Addendum", "Switzerland (UK adequacy)", "When we start",
     "Cloudflare", "Proton", "Anthropic",
-    "SPF, DKIM and DMARC", "256 KB",
+    "SPF, DKIM and DMARC",
     "PolicyPeek-PolicyWatch/1.0", "robots.txt", "latest 10 versions",
     "IP address",
     "Information Commissioner's Office", "ico.org.uk/make-a-complaint",
@@ -56,9 +57,10 @@ test("/privacy/ makes no ICO-registration, InkLLM, sales or paid claims, and no 
   const icoMentions = t.match(/\bico\b/g) ?? [];
   assert.ok(icoMentions.length <= 2, `unexpected ICO mentions: ${icoMentions.length}`);
   assert.ok(!t.includes("regist"));
-  // No location or transfer safeguard is stated for Grok Bot (not yet confirmed), and no visible placeholder.
-  const transfers = t.match(/are us companies;[^.]*\.[^.]*\./)?.[0] ?? "";
-  assert.ok(transfers && !transfers.includes("grok"), "Grok Bot must not appear in the transfers sentence");
+  // 11:28 UK: only Elliot reads replies; no Grok Bot / AI assistant anywhere.
+  for (const bad of ["grok", "research assistant", "ai assistant", "replies are read by elliot and"])
+    assert.ok(!t.includes(bad), `must not contain: ${bad}`);
+  assert.match(t, /cloudflare is a us company; transfers rely on the uk extension/);
   assert.ok(!/\[[^\]]*(confirm|tbc|todo)[^\]]*\]/.test(t), "no visible placeholders");
   for (const bad of ["registered with the ico", "ico registration", "registration number", "inkllm", "gumroad", "pricing", "buy ", "paid plan", "premium", "subscribe"])
     assert.ok(!t.includes(bad), `must not contain: ${bad}`);

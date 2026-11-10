@@ -83,10 +83,12 @@ const updated = "10 November 2026";
       the follow-up, and the message reference our email provider gives it;
     </li>
     <li>
-      any reply: the message as received (up to about 256 KB; for attachments we
-      keep only their names, types and sizes), the sender's address, the name, job
-      title and signature of the person who replied (if included), the date, and
-      the email authentication results (SPF, DKIM and DMARC);
+      any reply: it's forwarded to Elliot's mailbox, where the message is kept,
+      including the sender's address and the name, job title and signature of the
+      person who replied (if included). Our own system doesn't store the message
+      text or attachments. It keeps only the tool, the date, the message
+      reference, the sender's company domain and the email authentication results
+      (SPF, DKIM and DMARC);
     </li>
     <li>
       if you ask us not to email again, or an email bounces: the address and
@@ -108,12 +110,10 @@ const updated = "10 November 2026";
     emails are enquiries, not marketing.
   </p>
   <p>
-    <strong>Who reads replies:</strong> Replies are read by Elliot and by
-    PolicyPeek's AI research assistant, which runs on Grok Bot, so we can assess
-    the company's position. We treat reply text as untrusted and never follow
-    instructions inside it. Nothing from a reply is published automatically, and
-    we only quote a company's words with its permission. No verdict changes
-    without Elliot's review.
+    <strong>Who reads replies:</strong> Only Elliot reads replies. No AI service
+    reads reply content. Nothing from a reply is published automatically, and we
+    only quote a company's words with its permission. No verdict changes without
+    Elliot's review.
   </p>
   <p>
     <strong>What we publish:</strong> we don't publish the name or email address
@@ -137,31 +137,29 @@ const updated = "10 November 2026";
   <h2 id="recipients">Who else handles this data</h2>
   <ul>
     <li>
-      <strong>Cloudflare</strong> hosts the site, the API, our databases and file
-      storage, and sends and receives our email. Its email service may keep a
-      preview of a sent message for about seven days for delivery checks.
+      <strong>Cloudflare</strong> (hosting, email sending and routing; US). It
+      hosts the site, the API, our databases and file storage. Its email service
+      may keep a preview of a sent message for about seven days for delivery
+      checks.
     </li>
     <li>
-      <strong>Proton</strong> provides Elliot's mailbox, which mail to
-      hello@getpolicypeek.com (and, once the emails above start, replies to them)
-      is forwarded to.
-    </li>
-    <li>
-      <strong>Grok Bot</strong> (AI assistant platform used by our research
-      assistant to read replies).
-    </li>
-    <li>
-      <strong>Anthropic</strong> receives the text of public policy pages that are
-      checked through the site or extension, so that facts can be extracted from
-      it. It doesn't receive your IP address, and it doesn't receive replies to
-      our emails. The policy-change checks above don't use an AI service.
+      <strong>Proton</strong> (Elliot's mailbox; Switzerland). Mail to
+      hello@getpolicypeek.com, and replies to the emails above once they start,
+      is forwarded there.
     </li>
   </ul>
+  <p>
+    When a tool is checked through the site or extension, the text of its public
+    policy page is sent to Anthropic so that facts can be extracted from it. That
+    is a company's published text, not your personal data, and it never includes
+    your IP address or any email reply. The policy-change checks above don't use
+    an AI service.
+  </p>
   <p>We don't sell personal data, and we don't share it with advertisers or data brokers.</p>
   <p>
-    Cloudflare and Anthropic are US companies; transfers rely on the UK
-    Extension to the EU-US Data Privacy Framework or the UK International Data
-    Transfer Addendum. Proton is in Switzerland (UK adequacy).
+    Cloudflare is a US company; transfers rely on the UK Extension to the
+    EU-US Data Privacy Framework or the UK International Data Transfer
+    Addendum. Proton is in Switzerland (UK adequacy).
   </p>
 
   <h2 id="retention">How long we keep it</h2>
