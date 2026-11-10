@@ -9,6 +9,7 @@
 // - Has no send binding and touches only outreach_replies and suppressions:
 //   a reply can never trigger a send, a publish or a verdict change.
 import PostalMime from "postal-mime";
+import { getDomain } from "tldts";
 
 export const FORWARD_TO = "elliotink@pm.me";
 export const MAX_PARSE_BYTES = 256 * 1024;
@@ -24,11 +25,13 @@ export function domainOf(addr: string): string {
   const m = addr.toLowerCase().match(/@([a-z0-9.-]+)>?\s*$/);
   return m ? m[1] : "";
 }
-function registrableish(host: string): string {
-  const p = host.split(".").filter(Boolean);
-  if (p.length <= 2) return host;
-  const two = p.slice(-2).join(".");
-  return /^(co|com|org|net|ac|gov)\.[a-z]{2}$/.test(two) ? p.slice(-3).join(".") : two;
+// MF4 (Security re-review 10 Nov): same Public Suffix List parse as the sender
+// (outreach/src/contacts.ts registrable), so a domain suppression written here
+// always matches the recipient_domain the sender checks. Unparseable => the
+// lower-cased host itself (never an empty string, never a public suffix).
+export function registrable(host: string): string {
+  const h = host.toLowerCase().replace(/\.$/, "");
+  return getDomain(h, { allowPrivateDomains: true }) ?? h;
 }
 
 // Objection wording (unsure => objection, per Security gate 5).
@@ -89,7 +92,7 @@ export async function matchReply(db: D1Database, h: Headers, fromDomain: string)
       if (r) return { contactId: r.contact_id, toolSlug: r.tool_slug, method };
     }
   }
-  const reg = registrableish(fromDomain);
+  const reg = registrable(fromDomain);
   const r = await db.prepare("SELECT contact_id, tool_slug FROM outreach_sends WHERE recipient_domain = ? ORDER BY claimed_at DESC LIMIT 1").bind(reg).first<{ contact_id: number; tool_slug: string }>();
   return r ? { contactId: r.contact_id, toolSlug: r.tool_slug, method: "sender_domain" } : { contactId: null, toolSlug: null, method: null };
 }
@@ -127,7 +130,7 @@ export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEn
   if (classification === "objection") {
     const addr = from.toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] ?? "";
     if (addr) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'objection')").bind(addr));
-    if (fromDomain) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(registrableish(fromDomain)));
+    if (fromDomain) stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ?, 'objection')").bind(registrable(fromDomain)));
   }
   if (classification === "bounce" && match.contactId !== null) {
     stmts.push(env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) SELECT 'address', lower(contact_email), 'bounce' FROM outreach_contacts WHERE id = ?").bind(match.contactId));

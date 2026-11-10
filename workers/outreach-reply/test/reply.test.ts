@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
-import { FORWARD_TO, handleEmail } from "../src/reply";
+import { FORWARD_TO, handleEmail, registrable } from "../src/reply";
+import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
 const MIG = new URL("../../outreach/migrations/0001_outreach.sql", import.meta.url).pathname;
 const SRC = readFileSync(new URL("../src/reply.ts", import.meta.url), "utf8") + readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
@@ -124,5 +125,19 @@ describe("gate 4/5: drop logic and suppression", () => {
     expect(r.classification).toBe("reply"); // 'stop' beyond the cap was not read
     expect(m.forward).toHaveBeenCalledTimes(1);
     expect(db.raw.prepare("SELECT raw_size FROM outreach_replies").get().raw_size).toBe(400 * 1024 + 500);
+  });
+});
+
+describe("MF4: reply Worker uses the same tldts parse as the sender", () => {
+  it("agrees with the sender on suffixes the old hand-rolled parser got wrong", () => {
+    for (const h of ["foo.gouv.fr", "x.ne.jp", "a.b.example.co.uk", "mail.example.com", "team.github.io", "example.com.au", "sub.example.ac.uk"]) expect(registrable(h)).toBe(senderRegistrable(h));
+    expect(registrable("foo.gouv.fr")).toBe("foo.gouv.fr");
+    expect(registrable("x.ne.jp")).toBe("x.ne.jp");
+  });
+  it("an objection from a gouv.fr sender suppresses the right domain, not the public suffix", async () => {
+    await handleEmail(msg({ from: "dpo@cnil.gouv.fr", body: "Please stop." }), env());
+    const doms = db.raw.prepare("SELECT value FROM suppressions WHERE kind = 'domain'").all().map((r: any) => r.value);
+    expect(doms).toContain("cnil.gouv.fr");
+    expect(doms).not.toContain("gouv.fr");
   });
 });
