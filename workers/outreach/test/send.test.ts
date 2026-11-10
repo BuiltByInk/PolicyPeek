@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
 import { handleAdmin } from "../src/admin";
-import { cardGate, FROM, HARD_DAILY_MAX, planDay, REPLY_TO, runDaily } from "../src/send";
+import { cardGate, claimSend, checkContact, FROM, HARD_DAILY_MAX, planDay, REPLY_TO, runDaily } from "../src/send";
 import { readFileSync } from "node:fs";
 
 const MIG = new URL("../migrations/0001_outreach.sql", import.meta.url).pathname;
@@ -277,5 +277,63 @@ describe("MF2: lifetime max 2 per contact address, across all tools", () => {
     let total = 0;
     for (let d = 0; d < 120; d += 15) total += (await runDaily(env, new Date(NOW.getTime() + d * 86400000))).sent.length;
     expect(total).toBe(2);
+  });
+});
+
+describe("MF1: daily cap and 14-day domain claim are one atomic conditional INSERT", () => {
+  async function candidates(n: number, now = NOW) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const slug = `c${i}.example`;
+      const id = addContact(db.raw, { tool_slug: slug, tool_name: `C${i}` }); gate(db.raw, slug, 1);
+      const contact = db.raw.prepare("SELECT * FROM outreach_contacts WHERE id = ?").get(id);
+      const r = await checkContact(db.d1, contact, "initial", now);
+      if (!r.ok) throw new Error(r.reason);
+      out.push({ contact, kind: "initial" as const, recipientDomain: r.recipientDomain });
+    }
+    return out;
+  }
+  it("stale plans: 10 concurrent claims for 10 different domains => exactly 5 succeed", async () => {
+    live(db);
+    const qs = await candidates(10); // all planned while 0 had been sent today
+    const results = await Promise.all(qs.map((q) => claimSend(db.d1, q, NOW)));
+    expect(results.filter(Boolean)).toHaveLength(5);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_sends").get().n).toBe(5);
+  });
+  it("two contacts on one domain claimed concurrently => only one wins", async () => {
+    live(db);
+    const a = addContact(db.raw, { tool_slug: "a.shared.example", tool_name: "A", contact_email: "privacy@shared.example", contact_source_url: "https://shared.example/p" }); gate(db.raw, "a.shared.example", 1);
+    const b = addContact(db.raw, { tool_slug: "b.shared.example", tool_name: "B", contact_email: "legal@shared.example", contact_source_url: "https://shared.example/p" }); gate(db.raw, "b.shared.example", 1);
+    const q = (id: number) => ({ contact: db.raw.prepare("SELECT * FROM outreach_contacts WHERE id = ?").get(id), kind: "initial" as const, recipientDomain: "shared.example" });
+    const r = await Promise.all([claimSend(db.d1, q(a), NOW), claimSend(db.d1, q(b), NOW)]);
+    expect(r.filter(Boolean)).toHaveLength(1);
+  });
+  it("two overlapping runDaily calls (cron retry + manual trigger) never exceed 5/day or 1/domain", async () => {
+    for (let i = 0; i < 9; i++) { const s = `r${i}.example`; addContact(db.raw, { tool_slug: s, tool_name: `R${i}` }); gate(db.raw, s, 1); }
+    addContact(db.raw, { tool_slug: "x.r0.example", tool_name: "X", contact_email: "legal@r0.example", contact_source_url: "https://r0.example/p" }); gate(db.raw, "x.r0.example", 1);
+    const env = live(db);
+    env.EMAIL.send = vi.fn(async () => { await new Promise((r) => setTimeout(r, 1)); return { messageId: `<m${Math.random()}@mail.getpolicypeek.com>` }; });
+    const [r1, r2] = await Promise.all([runDaily(env, NOW), runDaily(env, NOW)]);
+    expect(r1.sent.length + r2.sent.length).toBe(5);
+    expect(env.EMAIL.send).toHaveBeenCalledTimes(5);
+    const doms = db.raw.prepare("SELECT recipient_domain d FROM outreach_sends").all().map((x: any) => x.d);
+    expect(new Set(doms).size).toBe(doms.length);
+  });
+  it("the claim itself re-checks the kill switch, suppression, cap value and card gate", async () => {
+    const [q] = await candidates(1);
+    expect(await claimSend(db.d1, q, NOW)).toBe(false); // paused='1' by default
+    live(db);
+    db.raw.prepare("INSERT INTO suppressions (kind, value, reason) VALUES ('domain', 'c0.example', 'objection')").run();
+    expect(await claimSend(db.d1, q, NOW)).toBe(false);
+    db.raw.prepare("DELETE FROM suppressions").run();
+    db.raw.prepare("UPDATE outreach_settings SET value = '0' WHERE key = 'daily_cap'").run();
+    expect(await claimSend(db.d1, q, NOW)).toBe(false);
+    db.raw.prepare("UPDATE outreach_settings SET value = 'abc' WHERE key = 'daily_cap'").run();
+    expect(await claimSend(db.d1, q, NOW)).toBe(false);
+    db.raw.prepare("UPDATE outreach_settings SET value = '5' WHERE key = 'daily_cap'").run();
+    db.raw.prepare("UPDATE card_gate SET passes = 0").run();
+    expect(await claimSend(db.d1, q, NOW)).toBe(false);
+    db.raw.prepare("UPDATE card_gate SET passes = 1").run();
+    expect(await claimSend(db.d1, q, NOW)).toBe(true);
   });
 });

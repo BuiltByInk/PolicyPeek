@@ -142,6 +142,40 @@ export async function planDay(db: D1Database, now: Date): Promise<{ cap: number;
   return { cap, alreadyToday, queue, skipped };
 }
 
+const dayStartIso = (now: Date) => iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())));
+
+// MF1 (Security re-review 10 Nov): the claim is ONE conditional INSERT. D1 runs
+// each statement on its own, serially, so two overlapping runs (cron retry,
+// manual trigger, overlapping deploys) cannot both pass a count and then both
+// insert. Every rule that a race could break is re-checked inside it:
+//  - kill switch: D1 paused = '0'
+//  - daily cap: claims today < min(daily_cap, HARD_DAILY_MAX) (clamped in SQL too)
+//  - <= 1 per recipient domain per 14 days
+//  - <= 2 per contact address for life, all tools (MF2)
+//  - no address or domain suppression
+//  - contact still 'eligible', not hand-sent; held rows need the hand-sent list
+//  - card gate still open (CARD_GATE_OPEN_SQL)
+// The email is sent only if this statement inserted exactly one row.
+export const CLAIM_SQL = `INSERT OR IGNORE INTO outreach_sends (contact_id, tool_slug, contact_email, recipient_domain, kind, status, claimed_at)
+SELECT c.id, c.tool_slug, lower(c.contact_email), ?1, ?2, 'claimed', ?3
+FROM outreach_contacts c
+WHERE c.id = ?4
+  AND c.status = 'eligible' AND c.hand_sent_at IS NULL
+  AND (c.kind <> 'held' OR (SELECT value FROM outreach_settings WHERE key = 'held_hand_list_received') = '1')
+  AND (SELECT value FROM outreach_settings WHERE key = 'paused') = '0'
+  AND (SELECT COUNT(*) FROM outreach_sends WHERE claimed_at >= ?5 AND status IN ('claimed','sent'))
+      < MIN(${HARD_DAILY_MAX}, MAX(0, CAST(COALESCE((SELECT value FROM outreach_settings WHERE key = 'daily_cap'), '0') AS INTEGER)))
+  AND NOT EXISTS (SELECT 1 FROM outreach_sends WHERE recipient_domain = ?1 AND claimed_at >= ?6 AND status IN ('claimed','sent'))
+  AND (SELECT COUNT(*) FROM outreach_sends WHERE contact_email = lower(c.contact_email)) < ${LIFETIME_MAX_PER_CONTACT}
+  AND NOT EXISTS (SELECT 1 FROM suppressions WHERE (kind = 'address' AND value = lower(c.contact_email)) OR (kind = 'domain' AND value = ?1))
+  AND EXISTS (SELECT 1 FROM card_gate g WHERE g.tool_slug = c.tool_slug AND (g.card_confirmed = 1 OR g.passes = 1))`;
+
+export async function claimSend(db: D1Database, c: { contact: ContactRow; kind: "initial" | "followup"; recipientDomain: string }, now: Date): Promise<boolean> {
+  const since = iso(new Date(now.getTime() - DOMAIN_GAP_DAYS * DAY));
+  const r = await db.prepare(CLAIM_SQL).bind(c.recipientDomain.toLowerCase(), c.kind, iso(now), c.contact.id, dayStartIso(now), since).run();
+  return r.meta.changes === 1;
+}
+
 export function render(c: Candidate): RenderedEmail {
   const input = { toolName: c.contact.tool_name, policyUrl: c.contact.policy_url, storedPolicyUrl: c.contact.policy_url, contextParagraph: c.contact.question_text, initialSentAt: c.initialSentAt };
   const e = c.kind === "initial" ? renderInitial(input) : renderFollowup(input);
@@ -186,9 +220,8 @@ export async function runDaily(env: SendEnv, now = new Date()): Promise<RunResul
       continue;
     }
     if (!env.EMAIL) { out.reason = "no_send_binding"; break; }
-    // Idempotency: claim first; send only if the UNIQUE insert succeeded.
-    const claim = await env.DB.prepare("INSERT OR IGNORE INTO outreach_sends (contact_id, tool_slug, contact_email, recipient_domain, kind, status, claimed_at) VALUES (?, ?, ?, ?, ?, 'claimed', ?)").bind(c.contact.id, c.contact.tool_slug, c.contact.contact_email.toLowerCase(), c.recipientDomain, c.kind, iso(now)).run();
-    if (claim.meta.changes !== 1) { out.skipped.push({ tool_slug: c.contact.tool_slug, reason: "claim_conflict" }); continue; }
+    // Idempotency + MF1: one atomic conditional claim; send only if it inserted.
+    if (!(await claimSend(env.DB, c, now))) { out.skipped.push({ tool_slug: c.contact.tool_slug, reason: "claim_refused" }); continue; }
     try {
       const r = await env.EMAIL.send({ from: FROM, to: c.contact.contact_email, replyTo: REPLY_TO, subject: e.subject, text: e.text });
       await env.DB.prepare("UPDATE outreach_sends SET status = 'sent', message_id = ?, sent_at = ? WHERE tool_slug = ? AND contact_email = ? AND kind = ?").bind(r.messageId ?? null, iso(new Date()), c.contact.tool_slug, c.contact.contact_email.toLowerCase(), c.kind).run();
