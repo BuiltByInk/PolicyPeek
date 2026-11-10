@@ -12,10 +12,9 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "policypeek-outreach-dev", "database_id": "REPLACE_WITH_DEV_DB_ID", "migrations_dir": "migrations" }
   ],
+  // Security step (f) + SF4: NO live EMAIL binding in dev. Only the test binding,
+  // pinned to Elliot's verified destination, so dev can never reach anyone else.
   "send_email": [
-    // Real recipients (live mode only). Sending domain onboarded: mail.getpolicypeek.com.
-    { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] },
-    // Test copies: pinned to Elliot's verified destination; cannot reach anyone else.
     { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
   ],
   // Secrets (wrangler secret put, never in this file): OUTREACH_ADMIN_TOKEN (>= 32 chars).
@@ -27,8 +26,10 @@
       "d1_databases": [
         { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "REPLACE_WITH_PROD_DB_ID", "migrations_dir": "migrations" }
       ],
+      // SF4: the live EMAIL binding is left out until Elliot approves live sends
+      // and Security clears MF1-MF10. Re-adding it is a reviewed config change:
+      //   { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       "send_email": [
-        { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] },
         { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       ]
       // Crons, enable only after Security sign-off:

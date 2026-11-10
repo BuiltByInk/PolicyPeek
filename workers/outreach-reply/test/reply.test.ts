@@ -275,3 +275,13 @@ describe("SF5: inbound flood cap", () => {
     spy.mockRestore();
   });
 });
+
+describe("step (b): reply Worker config", () => {
+  const cfg = WRANGLER.replace(/^\s*\/\/.*$/gm, "");
+  it("only a D1 binding to policypeek-outreach(-dev), never policypeek-db; workers_dev false everywhere; no routes", () => {
+    expect([...cfg.matchAll(/"database_name":\s*"([^"]+)"/g)].map((m) => m[1])).toEqual(["policypeek-outreach-dev", "policypeek-outreach"]);
+    expect(cfg).not.toMatch(/"policypeek-db"/);
+    expect([...cfg.matchAll(/"workers_dev":\s*(\w+)/g)].map((m) => m[1])).toEqual(["false", "false"]);
+    expect(cfg).not.toMatch(/"routes?"|"vars"|kv_namespaces|durable_objects|send_email|services|queues|r2_buckets|triggers/);
+  });
+});

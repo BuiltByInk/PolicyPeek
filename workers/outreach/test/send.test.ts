@@ -472,3 +472,34 @@ describe("step (c) verify SQL", () => {
     expect(() => db.raw.exec(VERIFY)).toThrow();
   });
 });
+
+describe("SF4 + step (f): bindings", () => {
+  const cfg = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8").replace(/^\s*\/\/.*$/gm, "");
+  it("no live EMAIL binding in dev or production; only EMAIL_TEST pinned to elliotink@pm.me", () => {
+    expect(cfg).not.toMatch(/"name":\s*"EMAIL"/);
+    const tests = [...cfg.matchAll(/\{[^{}]*"name":\s*"EMAIL_TEST"[^{}]*\}/g)].map((m) => m[0]);
+    expect(tests).toHaveLength(2);
+    for (const t of tests) expect(t).toMatch(/"destination_address":\s*"elliotink@pm\.me"/);
+    expect([...cfg.matchAll(/"name":\s*"(EMAIL\w*)"/g)].map((m) => m[1])).toEqual(["EMAIL_TEST", "EMAIL_TEST"]);
+  });
+  it("defaults stay dry_run, no OUTREACH_ENABLED, no crons; prod has workers_dev false", () => {
+    expect([...cfg.matchAll(/"OUTREACH_MODE":\s*"(\w+)"/g)].map((m) => m[1])).toEqual(["dry_run", "dry_run"]);
+    expect(cfg).not.toMatch(/OUTREACH_ENABLED|"triggers"|"routes"|"route"/);
+    expect(cfg).toMatch(/"production":\s*\{\s*"name":\s*"policypeek-outreach",\s*"workers_dev":\s*false/);
+  });
+  it("live mode with no EMAIL binding sends nothing (fails closed)", async () => {
+    addContact(db.raw); gate(db.raw, "alpha.example.com", 1);
+    const env = live(db); delete env.EMAIL;
+    const r = await runDaily(env, NOW);
+    expect(r.reason).toBe("no_send_binding");
+    expect(env.EMAIL_TEST.send).not.toHaveBeenCalled();
+  });
+  it("test mode: at most one [TEST] copy per day, even if the run is triggered again", async () => {
+    addContact(db.raw); gate(db.raw, "alpha.example.com", 1);
+    const env = live(db, { OUTREACH_MODE: "test" });
+    await runDaily(env, NOW);
+    const r2 = await runDaily(env, new Date(NOW.getTime() + 600_000));
+    expect(env.EMAIL_TEST.send).toHaveBeenCalledTimes(1);
+    expect(r2.reason).toBe("test_send_already_today");
+  });
+});

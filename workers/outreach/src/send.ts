@@ -7,6 +7,7 @@ export const HARD_DAILY_MAX = 5; // LIA (Elliot, 10 Nov): never more than 5/day,
 export const DOMAIN_GAP_DAYS = 14; // <= 1 email per recipient domain per 14 days
 export const LIFETIME_MAX_PER_CONTACT = 2; // initial + one follow-up
 export const FOLLOWUP_AFTER_DAYS = 14;
+export const TEST_SENDS_PER_DAY = 1;
 export const FROM = { email: "privacy@mail.getpolicypeek.com", name: "PolicyPeek" };
 export const REPLY_TO = "privacy@getpolicypeek.com";
 
@@ -239,6 +240,9 @@ export async function runDaily(env: SendEnv, now = new Date()): Promise<RunResul
     if (mode === "test") {
       // Test copies go only to the pinned test binding and never count as real sends.
       if (!env.EMAIL_TEST) { out.reason = "no_test_binding"; break; }
+      // Step (f): at most ONE test copy per UTC day, whatever triggers the run.
+      const testsToday = (await env.DB.prepare("SELECT COUNT(*) AS n FROM outreach_test_sends WHERE sent_at >= ?").bind(dayStartIso(now)).first<number>("n")) ?? 0;
+      if (testsToday >= TEST_SENDS_PER_DAY) { out.reason = "test_send_already_today"; break; }
       const r = await env.EMAIL_TEST.send({ from: FROM, to: "elliotink@pm.me", replyTo: REPLY_TO, subject: `[TEST] ${e.subject}`, text: e.text });
       await env.DB.prepare("INSERT INTO outreach_test_sends (contact_id, kind, message_id, sent_at) VALUES (?, ?, ?, ?)").bind(c.contact.id, c.kind, r.messageId ?? null, iso(now)).run();
       out.sent.push({ tool_slug: c.contact.tool_slug, kind: c.kind, message_id: r.messageId ?? null, recipient_domain: "pm.me" });
