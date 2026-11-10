@@ -2,6 +2,7 @@ import { handleLookup } from "./lookup";
 import { resolveTier, requireAdminToken } from "./auth";
 import { handleCheck } from "./check";
 import { handleListPending, handleApprove, handleReject, handleDemote } from "./admin";
+import { handleAlertTest, alertHeldReviewQueue } from "./heldAlert";
 import { checkStuckPending, runDueRechecks } from "./cron";
 import { purgeOldAnonymousChecks } from "./rateLimit";
 import { withCors, corsPreflightResponse } from "./cors";
@@ -21,7 +22,7 @@ export interface Env {
   DB: D1Database;
   ANTHROPIC_API_KEY?: string;
   ADMIN_TOKEN?: string;
-  // Optional: enable stuck-pending push alerts (see alert.ts).
+  // Optional: enable Telegram push alerts (stuck pending, overdue rechecks, held-for-review). See alert.ts.
   ALERT_BOT_TOKEN?: string;
   ALERT_CHAT_ID?: string;
 }
@@ -61,6 +62,14 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       return handleDemote(request, env, Number(demoteMatch[1]));
     }
 
+    // Fixed test message only: the body is ignored, and D1 is not touched.
+    if (url.pathname === "/v1/admin/alerts/test" && request.method === "POST") {
+      if (!(await requireAdminToken(request, env))) {
+        return Response.json({ error: "unauthorized" }, { status: 401 });
+      }
+      return handleAlertTest(env);
+    }
+
     const adminMatch = url.pathname.match(/^\/v1\/admin\/pending(?:\/(\d+)(?:\/(approve|reject))?)?$/);
     if (adminMatch) {
       if (!(await requireAdminToken(request, env))) {
@@ -89,7 +98,10 @@ export default {
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     switch (cronJobFor(controller.cron)) {
       case "due-rechecks":
+        // Reuses the existing 04:00 UTC daily trigger (outside 07:00–09:30).
+        // The digest is a separate waitUntil so a recheck hang cannot block it.
         ctx.waitUntil(runDueRechecks(env));
+        ctx.waitUntil(alertHeldReviewQueue(env));
         return;
       case "purge-ips":
         ctx.waitUntil(purgeOldAnonymousChecks(env));

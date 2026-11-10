@@ -13,6 +13,7 @@ import { evaluateAutoPublish } from "./autoPublish";
 import { tryAutoPublishAtomic } from "./admin";
 import { tryWaybackFallback } from "./waybackFallback";
 import { markToolAttempt } from "./toolCheckState";
+import { maybeAlertHeldCheck } from "./heldAlert";
 
 const MAX_BODY_BYTES = 16_384;
 const MAX_SOURCE_URL_CHARS = 2_048;
@@ -288,6 +289,11 @@ export async function runExtraction(
     return;
   }
 
+  // Status is now 'extracted'. If the check stays in the review queue (is
+  // not auto-published), notify once via sendAlert. The finally runs on
+  // every early return below; maybeAlertHeldCheck no-ops if status became
+  // 'approved', and never throws, so an alert failure cannot fail extraction.
+  try {
   // Policy on the parent site of a submitted subdomain: always a person's call.
   // Checked before the redirect rule because fetchPolicyText reports the
   // parent host itself as "off the domain"; a redirect that went somewhere
@@ -440,6 +446,9 @@ export async function runExtraction(
     const reason = String(err instanceof Error ? err.message : err);
     await recordExtractionError(env, pendingId, `auto_publish_failed: ${reason}`);
     await noteAttempt(`recheck failed: ${reason}`).catch(() => {});
+  }
+  } finally {
+    await maybeAlertHeldCheck(env, { id: pendingId, domain, source_url: sourceUrl });
   }
 }
 

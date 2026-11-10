@@ -22,6 +22,7 @@ database_id = "95eb15f7-cce3-4d50-bba4-ffa2f3163f8c"
 [triggers]
 # */15 * * * * -- stuck-pending observability check (checkStuckPending)
 # 0 4 * * *    -- daily re-check of the most overdue published tools, a few per run (runDueRechecks)
+#                plus the held-for-review digest (alertHeldReviewQueue); no new cron
 # 30 3 * * *   -- daily purge of old client IPs from anonymous_check_log (purgeOldAnonymousChecks)
 crons = ["*/15 * * * *", "0 4 * * *", "30 3 * * *"]
 
