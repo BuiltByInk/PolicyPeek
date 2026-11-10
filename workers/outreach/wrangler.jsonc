@@ -26,10 +26,12 @@
       "d1_databases": [
         { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "1c15b227-8642-4642-9301-b1e8598a966a", "migrations_dir": "migrations" }
       ],
-      // SF4: the live EMAIL binding is left out until Elliot approves live sends
-      // and Security clears MF1-MF10. Re-adding it is a reviewed config change:
-      //   { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
+      // SF4: live EMAIL binding re-added for go-live (Elliot 14:02 UK, 10 Nov),
+      // reviewed config change. Sender is pinned to privacy@mail.getpolicypeek.com.
+      // Sending still needs OUTREACH_MODE=live + OUTREACH_ENABLED=true + D1
+      // paused='0' + eligible contacts that pass the card gate and caps.
       "send_email": [
+        { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] },
         { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       ],
       // Steps (d)+(e): crons on, still DRY RUN. 30 3 = purge (03:30 UTC);

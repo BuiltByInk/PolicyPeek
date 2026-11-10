@@ -475,12 +475,15 @@ describe("step (c) verify SQL", () => {
 
 describe("SF4 + step (f): bindings", () => {
   const cfg = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8").replace(/^\s*\/\/.*$/gm, "");
-  it("no live EMAIL binding in dev or production; only EMAIL_TEST pinned to elliotink@pm.me", () => {
-    expect(cfg).not.toMatch(/"name":\s*"EMAIL"/);
+  it("go-live: exactly one live EMAIL binding (prod only, sender pinned); EMAIL_TEST pinned to elliotink@pm.me in dev and prod", () => {
+    const lives = [...cfg.matchAll(/\{[^{}]*"name":\s*"EMAIL"[^{}]*\}/g)].map((m) => m[0]);
+    expect(lives).toHaveLength(1);
+    expect(lives[0]).toMatch(/"allowed_sender_addresses":\s*\["privacy@mail\.getpolicypeek\.com"\]/);
+    expect(cfg.indexOf(lives[0])).toBeGreaterThan(cfg.indexOf('"production"')); // not in the dev block
     const tests = [...cfg.matchAll(/\{[^{}]*"name":\s*"EMAIL_TEST"[^{}]*\}/g)].map((m) => m[0]);
     expect(tests).toHaveLength(2);
     for (const t of tests) expect(t).toMatch(/"destination_address":\s*"elliotink@pm\.me"/);
-    expect([...cfg.matchAll(/"name":\s*"(EMAIL\w*)"/g)].map((m) => m[1])).toEqual(["EMAIL_TEST", "EMAIL_TEST"]);
+    expect([...cfg.matchAll(/"name":\s*"(EMAIL\w*)"/g)].map((m) => m[1])).toEqual(["EMAIL_TEST", "EMAIL", "EMAIL_TEST"]);
   });
   it("defaults stay dry_run, no OUTREACH_ENABLED; crons only in production (steps d+e); prod has workers_dev false", () => {
     expect([...cfg.matchAll(/"OUTREACH_MODE":\s*"(\w+)"/g)].map((m) => m[1])).toEqual(["dry_run", "dry_run"]);
@@ -492,7 +495,13 @@ describe("SF4 + step (f): bindings", () => {
     expect(prod.triggers).toEqual({ crons: ["0 9 * * *", "30 3 * * *"] });
     expect(prod.vars).toEqual({ OUTREACH_MODE: "dry_run" });
     expect(prod.d1_databases.map((d: any) => [d.binding, d.database_name])).toEqual([["DB", "policypeek-outreach"]]);
-    expect(prod.send_email).toEqual([{ name: "EMAIL_TEST", destination_address: "elliotink@pm.me", allowed_sender_addresses: ["privacy@mail.getpolicypeek.com"] }]); // no live EMAIL
+    // go-live: live EMAIL in PROD only, sender pinned; EMAIL_TEST kept. Dev has no live EMAIL.
+    expect(prod.send_email).toEqual([
+      { name: "EMAIL", allowed_sender_addresses: ["privacy@mail.getpolicypeek.com"] },
+      { name: "EMAIL_TEST", destination_address: "elliotink@pm.me", allowed_sender_addresses: ["privacy@mail.getpolicypeek.com"] },
+    ]);
+    expect(j.send_email).toEqual([{ name: "EMAIL_TEST", destination_address: "elliotink@pm.me", allowed_sender_addresses: ["privacy@mail.getpolicypeek.com"] }]);
+    expect(prod.vars).not.toHaveProperty("OUTREACH_ENABLED");
     expect(Object.keys(prod).sort()).toEqual(["d1_databases", "name", "send_email", "triggers", "vars", "workers_dev"]);
   });
   it("the purge cron string in the config is the one scheduled() routes to runPurge", () => {
