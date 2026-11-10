@@ -10,14 +10,14 @@
   "workers_dev": false,
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "d1_databases": [
-    { "binding": "DB", "database_name": "policypeek-outreach-dev", "database_id": "REPLACE_WITH_DEV_DB_ID", "migrations_dir": "../outreach/migrations" }
+    { "binding": "DB", "database_name": "policypeek-outreach-dev", "database_id": "e3325d9c-01c1-41a5-8b43-ea497644ee81", "migrations_dir": "../outreach/migrations" }
   ],
   "env": {
     "production": {
       "name": "policypeek-outreach-reply",
       "workers_dev": false,
       "d1_databases": [
-        { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "REPLACE_WITH_PROD_DB_ID", "migrations_dir": "../outreach/migrations" }
+        { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "1c15b227-8642-4642-9301-b1e8598a966a", "migrations_dir": "../outreach/migrations" }
       ]
     }
   }
