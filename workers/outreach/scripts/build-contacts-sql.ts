@@ -1,11 +1,12 @@
 // Usage (box only): node --experimental-strip-types outreach/scripts/build-contacts-sql.ts <out-dir>
 // Writes contacts.sql + load-report.md. Does NOT apply anything to any database.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { buildLoad, parseCsv, parseHeldPack, parseRecheck, toSql } from "../src/loader.ts";
+import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader.ts";
 
 const HELD = "/workspace/deliverables/policypeek/held-outreach";
 const FLAGS = "/workspace/deliverables/research/ambiguous-cards-2026-11-10.csv";
 const RECHECK = "/workspace/deliverables/research/recheck-2026-11-10.md";
+const STEWARD = "/workspace/deliverables/research/catalog-daily/factcheck-recheck-2026-11-10.md";
 const out = process.argv[2] ?? "out";
 mkdirSync(out, { recursive: true });
 const toolsDump = JSON.parse(readFileSync(process.env.PROD_TOOLS_JSON ?? "/tmp/prod-tools.json", "utf8"));
@@ -16,6 +17,7 @@ const r = buildLoad({
   liveTools,
   flagCsv: existsSync(FLAGS) ? parseCsv(readFileSync(FLAGS, "utf8")) : null,
   recheck: existsSync(RECHECK) ? parseRecheck(readFileSync(RECHECK, "utf8")) : null,
+  steward: existsSync(STEWARD) ? parseSteward(readFileSync(STEWARD, "utf8")) : null,
   vettedBy: "dev-loader (Security gate 2 rules)",
 });
 const vettedAt = new Date().toISOString();

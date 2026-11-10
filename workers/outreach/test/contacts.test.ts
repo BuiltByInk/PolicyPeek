@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { roleOf, vetContact } from "../src/contacts";
-import { buildLoad, parseCsv, parseHeldPack, parseRecheck, toSql } from "../src/loader";
+import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader";
 
 const ok = (contactEmail: string, toolDomain = "example.com", contactSourceUrl = "https://example.com/privacy") => vetContact({ contactEmail, toolDomain, contactSourceUrl });
 
@@ -34,19 +34,21 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
   const flags = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nLive One,privacy@live1.example,https://live1.example/privacy,2026-11-10,research,,\n");
   const recheckMd = "## Summary\n\n| # | Tool (slug) | Live verdict | Proposed | Email still needed? |\n|---|---|---|---|---|\n| 1 | Live One (live1.example) | Trains | **held** (may use) | Yes |\n\n### 1. Live One (live1.example)\n\n> we may use Content to train our models.\n\nSource: https://live1.example/terms — Updated 2026.\n";
   const recheck = parseRecheck(recheckMd);
+  const stewardMd = "## Rulings\n1. **Live One** — not_compliant → held — **APPROVE.** x\n";
+  const steward = parseSteward(stewardMd);
   it("counts and skips", () => {
-    const r = buildLoad({ tracker, heldPack: parseHeldPack(md), liveTools: live, flagCsv: flags, recheck, vettedBy: "t" });
+    const r = buildLoad({ tracker, heldPack: parseHeldPack(md), liveTools: live, flagCsv: flags, recheck, steward, vettedBy: "t" });
     expect(r.counts.totalHeld).toBe(5);
     expect(r.counts.alreadySentByHand).toBe(0); // Beta has no context paragraph => skipped before counting
     expect(r.counts.unclear).toBe(1);
     expect(r.counts.missingContact).toBe(1);
-    expect(r.skipped.map((s) => s.reason)).toEqual(expect.arrayContaining(["tracker_status_unclear", "not_a_role_address", "form_only (hand route, never parsed)"]));
+    expect(r.skipped.map((s) => s.reason)).toEqual(expect.arrayContaining(["tracker_status_unclear", "not_a_role_address", "form_only (hand route, never parsed; vet by hand)"]));
     const alpha = r.contacts.find((c) => c.tool_name === "Alpha")!;
     expect(alpha).toMatchObject({ status: "paused", paused_reason: "awaiting hand-sent list", question_text: "We reviewed your Privacy Policy v1. It is silent." });
     const lo = r.contacts.find((c) => c.tool_name === "Live One")!;
     expect(lo).toMatchObject({ kind: "ambiguous_live", status: "paused", policy_url: "https://live1.example/terms" });
     expect(lo.question_text).toBe(`We reviewed https://live1.example/terms. It says: "we may use Content to train our models." We'd like to make sure we read this correctly.`);
-    expect(r.cardGate.find((g) => g.tool_slug === "live1.example")).toMatchObject({ flagged: 1, passes: 1, gate_reason: "pass: recheck-2026-11-10 proposes held" });
+    expect(r.cardGate.find((g) => g.tool_slug === "live1.example")).toMatchObject({ flagged: 1, passes: 1, gate_reason: "pass: steward ruling held (APPROVE)" });
     expect(r.cardGate.find((g) => g.tool_slug === "live2.example")).toMatchObject({ flagged: 0, passes: 1 });
     expect(r.cardGate.find((g) => g.tool_slug === alpha.tool_slug)).toMatchObject({ passes: 1, gate_reason: "pass: held tool (held-outreach tracker)" });
     const sql = toSql(r, "t", "2026-11-10T00:00:00Z");
@@ -56,28 +58,38 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
   it("hand-sent list (11:37 UK): zerodeposit.com and .co.uk become sent_by_hand and domain-suppressed", () => {
     const t = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nZero Deposit,compliance@zerodeposit.com,https://www.zerodeposit.com/p.pdf,2026-11-10,drafted,,\nZD UK,privacy@zerodeposit.co.uk,https://zerodeposit.co.uk/p,2026-11-10,drafted,,\n");
     const pack = new Map([["zero deposit", { toolName: "Zero Deposit", to: "", policyLabel: "v10.3", contactSource: "", context: "We reviewed it." }], ["zd uk", { toolName: "ZD UK", to: "", policyLabel: "x", contactSource: "", context: "We reviewed it." }]]);
-    const r = buildLoad({ tracker: t, heldPack: pack, liveTools: [], flagCsv: null, recheck: null, vettedBy: "t" });
+    const r = buildLoad({ tracker: t, heldPack: pack, liveTools: [], flagCsv: null, recheck: null, steward: null, vettedBy: "t" });
     expect(r.contacts.map((c) => [c.status, c.hand_sent_at, c.hand_sent_source])).toEqual([["sent_by_hand", "2026-11-10", "Elliot, by hand"], ["sent_by_hand", "2026-11-10", "Elliot, by hand"]]);
     expect(r.counts.alreadySentByHand).toBe(2);
     const sql = toSql(r, "t", "now");
     expect(sql).toContain("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', 'zerodeposit.com', 'manual');");
     expect(sql).toContain("'zerodeposit.co.uk', 'manual'");
   });
-  it("card gate rule (11:39 UK): no-email-needed and definite non-held changes block; flagged without proposal blocks", () => {
-    const live3 = [...live, { domain: "live3.example", name: "Live Three", source_urls: '["https://live3.example/p"]' }, { domain: "live4.example", name: "Live Four", source_urls: '["https://live4.example/p"]' }, { domain: "live5.example", name: "Live Five", source_urls: '["https://live5.example/p"]' }];
-    const f = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nLive One,a,b,c,d,,\nLive Three,a,b,c,d,,\nLive Four,a,b,c,d,,\nLive Five,a,b,c,d,,\n");
-    const rc = parseRecheck(recheckMd + "| 2 | Live Three (live3.example) | x | **compliant_with_caveats** (ok) | No — terms are sufficient |\n| 3 | Live Four (live4.example) | x | **compliant** for UK | Yes |\n");
-    const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: live3, flagCsv: f, recheck: rc, vettedBy: "t" });
-    const g = (s: string) => r.cardGate.find((x) => x.tool_slug === s)!;
-    expect(g("live3.example")).toMatchObject({ passes: 0 });
-    expect(g("live3.example").gate_reason).toMatch(/no email needed/);
-    expect(g("live4.example")).toMatchObject({ passes: 0 });
-    expect(g("live4.example").gate_reason).toMatch(/definite change/);
-    expect(g("live5.example")).toMatchObject({ passes: 0, gate_reason: "blocked: flagged in ambiguous-cards audit, no re-check proposal yet" });
+  it("card gate authority is the steward ruling (11:44 UK)", () => {
+    const md = [
+      "1. **Mailchimp** — not_compliant → held — **APPROVE.** a",
+      "2. **Meshy** — not_compliant → compliant_with_caveats — **APPROVE.** b",
+      "3. **Stability AI** — held (unchanged), source /ds-pp → /privacypolicy — **APPROVE.** c",
+      "4. **Ahrefs** — not_compliant → held — **REJECT (keep not_compliant).** d",
+      "5. **Microsoft Copilot** — company-wide → consumer held / M365 compliant — **APPROVE-WITH-EDIT.** e",
+      "6. **v0** — company-wide (unchanged) — **APPROVE.** f",
+    ].join("\n");
+    const st = parseSteward(md);
+    expect(Object.fromEntries([...st].map(([k, v]) => [k, v.held]))).toEqual({ mailchimp: true, meshy: false, "stability ai": true, ahrefs: false, "microsoft copilot": true, v0: false });
+    const lt = [["mailchimp.com", "Mailchimp"], ["meshy.ai", "Meshy"], ["stability.ai", "Stability AI (DreamStudio)"], ["ahrefs.com", "Ahrefs"], ["vercel.com", "v0"], ["live5.example", "Live Five"]].map(([domain, name]) => ({ domain, name, source_urls: "[]" }));
+    const f = parseCsv("tool\n" + lt.map((t) => t.name).join("\n") + "\n");
+    const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: lt, flagCsv: f, recheck: null, steward: st, vettedBy: "t" });
+    const g = (x: string) => r.cardGate.find((y) => y.tool_slug === x)!;
+    expect(g("mailchimp.com").passes).toBe(1);
+    expect(g("stability.ai").passes).toBe(1);
+    expect(g("meshy.ai")).toMatchObject({ passes: 0, gate_reason: "blocked: steward APPROVE compliant_with_caveats" });
+    expect(g("ahrefs.com").gate_reason).toMatch(/^blocked: steward REJECT/);
+    expect(g("vercel.com").passes).toBe(0);
+    expect(g("live5.example")).toMatchObject({ passes: 0, gate_reason: "blocked: flagged in ambiguous-cards audit, no steward ruling" });
   });
-  it("fail closed: missing recheck file or missing CSV => every tool blocked, held included", () => {
-    for (const [flagCsv, rc] of [[null, recheck], [flags, null]] as const) {
-      const r = buildLoad({ tracker, heldPack: parseHeldPack(md), liveTools: live, flagCsv, recheck: rc, vettedBy: "t" });
+  it("fail closed: missing steward file or missing CSV => every tool blocked, held included", () => {
+    for (const [flagCsv, sw] of [[null, steward], [flags, null]] as const) {
+      const r = buildLoad({ tracker, heldPack: parseHeldPack(md), liveTools: live, flagCsv, recheck, steward: sw, vettedBy: "t" });
       expect(r.cardGate.length).toBeGreaterThan(0);
       expect(r.cardGate.every((x) => x.passes === 0 && /fail closed/.test(x.gate_reason))).toBe(true);
     }

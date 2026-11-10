@@ -69,11 +69,30 @@ export function parseRecheck(md: string): Map<string, RecheckEntry> {
   return out;
 }
 
+/** @deprecated card gate now uses the steward ruling */
 export function proposesHeld(e: RecheckEntry): boolean {
   return /^\*\*held\*\*/i.test(e.proposed);
 }
 export function researchSaysNoEmail(e: RecheckEntry): boolean {
   return /^no\b/i.test(e.emailNeeded);
+}
+
+// Steward ruling (research/catalog-daily/factcheck-recheck-2026-11-10.md),
+// which SUPERSEDES recheck-2026-11-10.md for the card gate (Jump 11:44 UK).
+// "N. **Name** — from → to — **APPROVE|APPROVE-WITH-EDIT|REJECT ...**".
+export interface StewardRuling { name: string; decision: "APPROVE" | "APPROVE-WITH-EDIT" | "REJECT"; outcome: string; held: boolean }
+export function parseSteward(md: string): Map<string, StewardRuling> {
+  const out = new Map<string, StewardRuling>();
+  for (const line of md.split("\n")) {
+    const m = line.match(/^\d+\.\s+\*\*(.+?)\*\*\s+—\s+(.+?)\s+—\s+\*\*(APPROVE-WITH-EDIT|APPROVE|REJECT)\b/);
+    if (!m) continue;
+    const [, name, change, decision] = m;
+    // "held (unchanged), source /a → /b" is a held ruling with a source swap.
+    const proposed = (/^held\b/i.test(change.trim()) || !change.includes("→") ? change : change.split("→").pop()!).trim();
+    const held = decision !== "REJECT" && /^(held\b|consumer held\b)/i.test(proposed);
+    out.set(name.trim().toLowerCase(), { name: name.trim(), decision: decision as StewardRuling["decision"], outcome: decision === "REJECT" ? `REJECT of ${proposed} (live verdict stands)` : `${decision} ${proposed}`, held });
+  }
+  return out;
 }
 
 export interface LiveTool { domain: string; name: string; source_urls: string }
@@ -116,7 +135,8 @@ export function buildLoad(input: {
   heldPack: Map<string, HeldDraft>;
   liveTools: LiveTool[];
   flagCsv: Record<string, string>[] | null; // null = flag file missing => everything fails closed
-  recheck: Map<string, RecheckEntry> | null; // null = recheck file missing => everything fails closed
+  recheck: Map<string, RecheckEntry> | null; // vendor quotes for ambiguous_live context only
+  steward: Map<string, StewardRuling> | null; // null = steward file missing => everything fails closed
   vettedBy: string;
   handSent?: typeof HAND_SENT;
 }): LoadResult {
@@ -129,7 +149,7 @@ export function buildLoad(input: {
   const consider = (kind: "held" | "ambiguous_live", toolName: string, contact: string, sourceUrl: string, slugHint: string | null, policyUrl: string, label: string, context: string, hand: "sent" | "not_sent" | "unclear") => {
     if (!contact || /^(form only|none found)/i.test(contact)) {
       counts.missingContact += kind === "held" ? 1 : 0;
-      skipped.push({ tool: toolName, contact, kind, reason: /^form only/i.test(contact) ? "form_only (hand route, never parsed)" : "no_role_contact" });
+      skipped.push({ tool: toolName, contact, kind, reason: /^form only/i.test(contact) ? "form_only (hand route, never parsed; vet by hand)" : "no role address" });
       return;
     }
     const toolDomain = slugHint ?? registrable(new URL(sourceUrl).hostname) ?? "";
@@ -186,30 +206,38 @@ export function buildLoad(input: {
     consider("ambiguous_live", r.tool, r.contact, r.contact_source_url, live?.domain ?? null, policyUrl, "Page cited in our re-check", context, "not_sent");
   }
 
-  // Card gate (11:39 UK). PASS: the tool is held (held tracker), or the
-  // re-check proposes held (and doesn't say no email is needed), or it is a
-  // live tool the audit did not flag. BLOCK: re-check says no email needed;
-  // flagged with a definite non-held proposal; flagged with no proposal;
-  // unknown. Either research file missing => everything blocked.
+  // Card gate. Authority: the steward ruling (Jump 11:44 UK), superseding the
+  // Research re-check. PASS: steward rules held (APPROVE / APPROVE-WITH-EDIT to
+  // held), or the tool is on the held tracker and not ruled on, or it is a live
+  // card the audit did not flag. BLOCK: steward REJECT (live verdict stands),
+  // steward approves a definite non-held change, flagged without a ruling,
+  // unknown. Steward file or audit CSV missing => everything blocked.
   const cardGate: CardGateOut[] = [];
-  const failClosed = !input.flagCsv || !input.recheck;
+  const failClosed = !input.flagCsv || !input.steward;
   const flaggedNames = new Set((input.flagCsv ?? []).map((r) => r.tool.toLowerCase()));
-  const heldSlugs = new Set(contacts.filter((c) => c.kind === "held").map((c) => c.tool_slug));
+  const heldSlugs = new Set([...contacts, ...input.tracker.map((r) => ({ kind: "held", tool_slug: input.liveTools.find((t) => t.name.toLowerCase() === r.tool.toLowerCase())?.domain ?? (() => { try { return registrable(new URL(r.contact_source_url).hostname) ?? ""; } catch { return ""; } })() }))].filter((c) => c.kind === "held").map((c) => c.tool_slug));
+  // steward names -> slugs via the recheck summary ("Name (slug)") or live names
+  const stewardBySlug = new Map<string, StewardRuling>();
+  for (const [name, ruling] of input.steward ?? []) {
+    const viaRecheck = [...(input.recheck?.values() ?? [])].find((e) => e.name.toLowerCase() === name)?.slug;
+    const viaLive = input.liveTools.find((t) => t.name.toLowerCase() === name || t.name.toLowerCase().startsWith(name))?.domain;
+    const slug = viaRecheck ?? viaLive;
+    if (slug) stewardBySlug.set(slug, ruling);
+  }
   const slugs = new Set<string>([...input.liveTools.map((t) => t.domain), ...contacts.map((c) => c.tool_slug)]);
   for (const slug of slugs) {
     const live = input.liveTools.find((t) => t.domain === slug);
     const flagged: 0 | 1 = live && input.flagCsv && !flaggedNames.has(live.name.toLowerCase()) ? 0 : 1;
-    const rc = input.recheck?.get(slug);
+    const st = stewardBySlug.get(slug);
     let passes: 0 | 1 = 0, reason: string;
-    if (failClosed) reason = !input.flagCsv ? "blocked: ambiguous-cards CSV missing (fail closed)" : "blocked: recheck file missing (fail closed)";
-    else if (rc && researchSaysNoEmail(rc)) reason = `blocked: Research says no email needed (${rc.emailNeeded.slice(0, 60)})`;
-    else if (rc && proposesHeld(rc)) { passes = 1; reason = "pass: recheck-2026-11-10 proposes held"; }
-    else if (heldSlugs.has(slug) && !rc) { passes = 1; reason = "pass: held tool (held-outreach tracker)"; }
-    else if (rc) reason = `blocked: recheck proposes a definite change (${rc.proposed.replace(/\*/g, "").slice(0, 60)})`;
+    if (failClosed) reason = !input.flagCsv ? "blocked: ambiguous-cards CSV missing (fail closed)" : "blocked: steward ruling file missing (fail closed)";
+    else if (st && st.held) { passes = 1; reason = `pass: steward ruling held (${st.decision})`; }
+    else if (st) reason = `blocked: steward ${st.outcome.slice(0, 70)}`;
+    else if (heldSlugs.has(slug)) { passes = 1; reason = "pass: held tool (held-outreach tracker)"; }
     else if (flagged === 0) { passes = 1; reason = "pass: live card not flagged by the audit"; }
-    else if (live) reason = "blocked: flagged in ambiguous-cards audit, no re-check proposal yet";
+    else if (live) reason = "blocked: flagged in ambiguous-cards audit, no steward ruling";
     else reason = "blocked: unknown tool (fail closed)";
-    cardGate.push({ tool_slug: slug, flagged, passes, gate_reason: reason, flag_source: "tracker.csv + recheck-2026-11-10.md + ambiguous-cards-2026-11-10.csv" });
+    cardGate.push({ tool_slug: slug, flagged, passes, gate_reason: reason, flag_source: "factcheck-recheck-2026-11-10.md (steward) + tracker.csv + ambiguous-cards-2026-11-10.csv" });
   }
   return { contacts, skipped, cardGate, counts };
 }
