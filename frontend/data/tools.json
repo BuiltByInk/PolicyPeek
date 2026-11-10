@@ -540,10 +540,10 @@
   {
     "name": "Mailchimp",
     "domain": "mailchimp.com",
-    "compliance_status": "not_compliant",
-    "summary": "\"We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model, the Services, and similar products and features, and you instruct us to process Customer Data for such purposes. You may select preferences about your data by visiting your account settings.\" The only documented setting (Data analytics) never mentions AI, models or training, so it is not confirmed as a training opt-out. \"Our data analytics projects use data from Mailchimp accounts to improve some of our most powerful features. We track things like your sending habits and subscriber details, so we can make more informed predictions, decisions, and products for our users. If you prefer not to share your data, you can opt out of data analytics.\" \"To opt out, scroll to the Data analytics setting heading and uncheck the box next to Include my data in Mailchimp's data analytics projects.\" Sources: Mailchimp Terms, updated 10 October 2025; Mailchimp help page Set account security options, no page date, fetched 10 November 2026.",
+    "compliance_status": "unrated",
+    "summary": "\"We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model, the Services, and similar products and features, and you instruct us to process Customer Data for such purposes. You may select preferences about your data by visiting your account settings.\" The only documented setting (Data analytics) never mentions AI, models or training. The published pages do not clearly say whether this use is on by default, or whether that setting would stop it. Sources: Mailchimp Terms, updated 10 October 2025; Mailchimp help page Set account security options, no page date, fetched 10 November 2026.",
     "data_retention": null,
-    "trains_on_user_data": true,
+    "trains_on_user_data": null,
     "gdpr_mentioned": null,
     "source_urls": [
       "https://mailchimp.com/legal/terms/",
@@ -552,7 +552,7 @@
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-11-10T11:39:00.000Z"
+    "last_checked_at": "2026-11-10T11:45:00.000Z"
   },
   {
     "name": "Meshy",

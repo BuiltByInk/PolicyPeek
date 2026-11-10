@@ -42,16 +42,6 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Zendesk AI training on my data?", a: "Yes, but only the Zendesk account holder (the business) can, per subdomain, by contacting Zendesk customer support. People who email a company's Zendesk helpdesk can't opt out themselves. Training is on Zendesk's own non-generative models by default; Zendesk says third-party generative LLMs don't train on the data." },
     ],
   },
-  // Steward ruling 10 Nov 2026: Mailchimp is held and keeps its live
-  // not_compliant badge. The "PolicyPeek found no opt-out" FAQ line is
-  // inaccurate — terms point to account settings, but the documented
-  // Data analytics setting never mentions AI, models or training.
-  "mailchimp.com": {
-    answer: "Yes: Mailchimp's terms allow use of your Inputs, Outputs and Customer Data for machine learning to develop and improve the AI Model. They say you may select preferences in account settings, but the only documented setting (Data analytics) never mentions AI, models or training, so it is not confirmed as a training opt-out.",
-    faq: [
-      { q: "Can I stop Mailchimp training on my data?", a: "Mailchimp's terms say you may select preferences about your data in account settings. The only documented setting, Data analytics, never mentions AI, models or training, so it is not confirmed as a training opt-out." },
-    ],
-  },
   // Steward-approved Research card wording, 10 Nov 2026: support-only
   // opt-out for Free/Pro; Enterprise is carved out.
   "meshy.ai": {

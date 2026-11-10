@@ -1,6 +1,6 @@
 # Does Mailchimp Use Your Data for AI Training? Plus HubSpot, Ahrefs and Other Marketing Tools
 
-Yes. Mailchimp's terms say "We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model, the Services, and similar products and features, and you instruct us to process Customer Data for such purposes. You may select preferences about your data by visiting your account settings." The only documented setting (Data analytics) never mentions AI, models or training, so it is not confirmed as a training opt-out. HubSpot and Zapier train by default but let you opt out; Semrush, n8n, Frase and Writesonic say they don't train. ([Mailchimp on PolicyPeek](https://getpolicypeek.com/tools/mailchimp.com/))
+PolicyPeek rates Mailchimp **Policy unclear**. Its terms say "You may select preferences about your data by visiting your account settings." The only documented setting (Data analytics) never mentions AI, models or training, so the published pages do not clearly say whether Mailchimp uses your data for training or whether that setting would stop it. HubSpot and Zapier train by default but let you opt out; Semrush, n8n, Frase and Writesonic say they don't train. ([Mailchimp on PolicyPeek](https://getpolicypeek.com/tools/mailchimp.com/))
 
 *Last checked: 10 November 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -16,7 +16,7 @@ Mailchimp's [account settings help page](https://mailchimp.com/help/set-account-
 
 > "To opt out, scroll to the Data analytics setting heading and uncheck the box next to Include my data in Mailchimp's data analytics projects."
 
-That help page doesn't say the setting covers AI or machine learning, so PolicyPeek doesn't count it as a training opt-out. ([Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/))
+That help page doesn't say the setting covers AI or machine learning, so the published pages do not clearly say whether it would stop training use. ([Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/))
 
 ## Can I stop HubSpot training on my data?
 
@@ -26,7 +26,7 @@ Yes. HubSpot's own help article says the AI training setting is on by default an
 
 | Tool | PolicyPeek verdict | What the policy says (PolicyPeek summary) | Source | Last checked |
 |---|---|---|---|---|
-| [Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/) | **Trains on your data, no opt-out** | Terms allow machine-learning use of Inputs, Outputs and Customer Data, and say you may select preferences in account settings. The only documented setting (Data analytics) never mentions AI, models or training, so it is not confirmed as a training opt-out. | [terms](https://mailchimp.com/legal/terms/) | 2026-11-10 |
+| [Mailchimp](https://getpolicypeek.com/tools/mailchimp.com/) | **Policy unclear** | The terms point to account settings. The only documented setting (Data analytics) never mentions AI, models or training, so the published pages do not clearly say whether this use is on by default or whether that setting would stop it. | [terms](https://mailchimp.com/legal/terms/) | 2026-11-10 |
 | [HubSpot](https://getpolicypeek.com/tools/hubspot.com/) | **Trains by default, you can opt out** | HubSpot "may use customer data ... to train and improve HubSpot's own AI models." "By default, the setting will be turned on." "Super Admins can opt out of AI model training at any time". Same terms on the free CRM. | [policy](https://knowledge.hubspot.com/account-management/hubspot-ai-mode-training) | 2026-10-24 |
 | [Ahrefs](https://getpolicypeek.com/tools/ahrefs.com/) | **Trains on your data, no opt-out** | Terms say "we may use User Content, including any content you provide to us in connection with your use of AI Tools, to train our machine learning models"; no opt-out found. | [policy](https://ahrefs.com/legal/terms) | 2026-10-24 |
 | [Semrush](https://getpolicypeek.com/tools/semrush.com/) | **Doesn't train on your data** | "Semrush does not train or develop its models, and does not allow its third-party providers to train or develop its models on User Input." | [policy](https://www.semrush.com/company/legal/semrush-artificial-intelligence-services-terms/) | 2026-10-24 |
@@ -48,7 +48,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 10 November 2026: Mailchimp re-checked and held, keeping its live badge. The "no opt-out found" line is removed: the terms point to account settings, and the Data analytics setting is not confirmed as a training opt-out.
+- 10 November 2026: Mailchimp moved to **Policy unclear**. The published pages do not clearly say whether data is used for training or whether the Data analytics setting would stop it.
 - 4 November 2026: Mailchimp, Copy.ai and Jasper kept on the site with their existing verdicts while PolicyPeek re-checks them.
 - 28 October 2026: Mailchimp terms and help-page text quoted word for word.
 
@@ -56,7 +56,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ### Does Mailchimp use my data for AI training?
 
-Its terms say: "We may use your Inputs and Outputs, including Customer Data, for machine learning purposes in order to develop and improve the AI Model, the Services, and similar products and features, and you instruct us to process Customer Data for such purposes. You may select preferences about your data by visiting your account settings." The only documented setting (Data analytics) never mentions AI, models or training, so it is not confirmed as a training opt-out.
+Its terms say: "You may select preferences about your data by visiting your account settings." The only documented setting (Data analytics) never mentions AI, models or training. The published pages do not clearly say whether Mailchimp uses your data for training or whether that setting would stop it.
 
 ### Can I opt out of Mailchimp AI training?
 
