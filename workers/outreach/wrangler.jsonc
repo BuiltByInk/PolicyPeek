@@ -1,4 +1,4 @@
-// Outreach SENDER Worker. NOT DEPLOYED (Security sign-off pending; 11:16 UK brief).
+// Outreach SENDER Worker. Production crons enabled for steps (d)+(e) in DRY RUN (not yet deployed; Security review first).
 // Safe defaults even if deployed: OUTREACH_MODE=dry_run, OUTREACH_ENABLED unset,
 // D1 outreach_settings.paused='1', and no cron in the top-level config.
 {
@@ -31,9 +31,12 @@
       //   { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       "send_email": [
         { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
-      ]
-      // Crons, enable only after Security sign-off:
-      // "triggers": { "crons": ["0 9 * * *", "30 3 * * *"] }   // 09:00 UTC daily send (= 09:00 UK in winter), 03:30 UTC purge
+      ],
+      // Steps (d)+(e): crons on, still DRY RUN. 30 3 = purge (03:30 UTC);
+      // 0 9 = daily sender run (09:00 UTC), which logs mode=dry_run and sends
+      // nothing while OUTREACH_MODE=dry_run, OUTREACH_ENABLED is unset, there is
+      // no live EMAIL binding and D1 paused='1'.
+      "triggers": { "crons": ["0 9 * * *", "30 3 * * *"] }
     }
   }
 }

@@ -482,10 +482,21 @@ describe("SF4 + step (f): bindings", () => {
     for (const t of tests) expect(t).toMatch(/"destination_address":\s*"elliotink@pm\.me"/);
     expect([...cfg.matchAll(/"name":\s*"(EMAIL\w*)"/g)].map((m) => m[1])).toEqual(["EMAIL_TEST", "EMAIL_TEST"]);
   });
-  it("defaults stay dry_run, no OUTREACH_ENABLED, no crons; prod has workers_dev false", () => {
+  it("defaults stay dry_run, no OUTREACH_ENABLED; crons only in production (steps d+e); prod has workers_dev false", () => {
     expect([...cfg.matchAll(/"OUTREACH_MODE":\s*"(\w+)"/g)].map((m) => m[1])).toEqual(["dry_run", "dry_run"]);
-    expect(cfg).not.toMatch(/OUTREACH_ENABLED|"triggers"|"routes"|"route"/);
+    expect(cfg).not.toMatch(/OUTREACH_ENABLED|"routes"|"route"/);
     expect(cfg).toMatch(/"production":\s*\{\s*"name":\s*"policypeek-outreach",\s*"workers_dev":\s*false/);
+    const j = JSON.parse(cfg.split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n"));
+    const prod = j.env.production;
+    expect(j.triggers).toBeUndefined(); // dev has no cron
+    expect(prod.triggers).toEqual({ crons: ["0 9 * * *", "30 3 * * *"] });
+    expect(prod.vars).toEqual({ OUTREACH_MODE: "dry_run" });
+    expect(prod.d1_databases.map((d: any) => [d.binding, d.database_name])).toEqual([["DB", "policypeek-outreach"]]);
+    expect(prod.send_email).toEqual([{ name: "EMAIL_TEST", destination_address: "elliotink@pm.me", allowed_sender_addresses: ["privacy@mail.getpolicypeek.com"] }]); // no live EMAIL
+    expect(Object.keys(prod).sort()).toEqual(["d1_databases", "name", "send_email", "triggers", "vars", "workers_dev"]);
+  });
+  it("the purge cron string in the config is the one scheduled() routes to runPurge", () => {
+    expect(readFileSync(new URL("../src/index.ts", import.meta.url), "utf8")).toMatch(/controller\.cron === "30 3 \* \* \*"/);
   });
   it("live mode with no EMAIL binding sends nothing (fails closed)", async () => {
     addContact(db.raw); gate(db.raw, "alpha.example.com", 1);
