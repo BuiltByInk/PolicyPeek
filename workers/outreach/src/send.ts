@@ -120,6 +120,13 @@ export async function planDay(db: D1Database, now: Date): Promise<{ cap: number;
         if (kind === "initial" && !skipped.some((s) => s.tool_slug === c.tool_slug)) skipped.push({ tool_slug: c.tool_slug, reason: r.reason });
         continue;
       }
+      // A row whose wording fails the locked-template checks is skipped, never sent.
+      try {
+        render({ contact: c, kind, recipientDomain: r.recipientDomain, initialSentAt: r.initialSentAt, gateReason: r.gateReason });
+      } catch (err) {
+        skipped.push({ tool_slug: c.tool_slug, reason: `template_${(err as Error).message}` });
+        continue;
+      }
       if (domainsToday.has(r.recipientDomain)) { skipped.push({ tool_slug: c.tool_slug, reason: "domain_gap_14d" }); continue; }
       if (alreadyToday + queue.length >= cap) { skipped.push({ tool_slug: c.tool_slug, reason: "daily_cap" }); continue; }
       domainsToday.add(r.recipientDomain);

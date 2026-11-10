@@ -190,6 +190,19 @@ describe("card gate (11:32 / 11:39 UK)", () => {
   });
 });
 
+describe("template checks at queue time", () => {
+  it("a contact whose stored wording fails the template checks is skipped, and the run carries on", async () => {
+    addContact(db.raw, { tool_slug: "a.example" }); gate(db.raw, "a.example", 1);
+    db.raw.prepare("UPDATE outreach_contacts SET question_text = 'Since you train on customer data, which plans are affected?' WHERE tool_slug = 'a.example'").run();
+    addContact(db.raw, { tool_slug: "b.example", tool_name: "B" }); gate(db.raw, "b.example", 1);
+    const env = live(db);
+    const r = await runDaily(env, NOW);
+    expect(r.skipped[0]).toMatchObject({ tool_slug: "a.example" });
+    expect(r.skipped[0].reason).toMatch(/^template_implies_training/);
+    expect(r.sent.map((s) => s.tool_slug)).toEqual(["b.example"]);
+  });
+});
+
 describe("gate 5: suppression by address and domain", () => {
   it("address suppression and domain suppression both block", async () => {
     addContact(db.raw, { tool_slug: "a.example.com" }); gate(db.raw, "a.example.com", 1);
