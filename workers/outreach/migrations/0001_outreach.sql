@@ -21,10 +21,15 @@ CREATE TABLE IF NOT EXISTS outreach_contacts (
   question_text TEXT NOT NULL,
   vetted_by TEXT NOT NULL,
   vetted_at TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'eligible' CHECK (status IN ('eligible', 'already_contacted', 'paused', 'resolved')),
+  -- sent_by_hand: Elliot emailed them himself; that email isn't in our system,
+  -- so neither an initial nor a follow-up is ever sent automatically.
+  status TEXT NOT NULL DEFAULT 'paused' CHECK (status IN ('eligible', 'sent_by_hand', 'paused', 'resolved')),
+  paused_reason TEXT,
   hand_sent_at TEXT,
+  hand_sent_source TEXT,
   resolved_at TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  CHECK (status <> 'sent_by_hand' OR (hand_sent_at IS NOT NULL AND hand_sent_source IS NOT NULL)),
   UNIQUE (tool_slug, contact_email)
 );
 
@@ -80,13 +85,17 @@ CREATE TABLE IF NOT EXISTS outreach_replies (
 );
 CREATE INDEX IF NOT EXISTS idx_replies_contact ON outreach_replies (matched_contact_id);
 
--- Card gate (Elliot 11:32 UK): a tool flagged in ambiguous-cards-2026-11-10.csv
--- is never queued or sent until Elliot approves its re-checked verdict. A tool
--- with NO row here is treated as flagged (fail closed). The loader writes only
--- flagged=0/1 and never card_confirmed; only POST /admin/card-confirm sets it.
+-- Card gate (Elliot 11:32 UK, rule replaced 11:39 UK). A contact is queued
+-- or sent only if its tool has a row here with passes=1 or card_confirmed=1.
+-- No row => blocked (fail closed). passes/gate_reason are written only by the
+-- offline loader from tracker.csv + research/recheck-2026-11-10.md +
+-- research/ambiguous-cards-2026-11-10.csv; if either research file is missing
+-- every tool is blocked. card_confirmed is set ONLY by POST /admin/card-confirm.
 CREATE TABLE IF NOT EXISTS card_gate (
   tool_slug TEXT PRIMARY KEY,
   flagged INTEGER NOT NULL DEFAULT 1 CHECK (flagged IN (0, 1)),
+  passes INTEGER NOT NULL DEFAULT 0 CHECK (passes IN (0, 1)),
+  gate_reason TEXT NOT NULL,
   card_confirmed INTEGER NOT NULL DEFAULT 0 CHECK (card_confirmed IN (0, 1)),
   confirmed_by TEXT,
   confirmed_at TEXT,
@@ -110,7 +119,9 @@ CREATE TABLE IF NOT EXISTS outreach_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO outreach_settings (key, value) VALUES ('paused', '1'), ('daily_cap', '3');
+-- held_hand_list_received: '0' until Jump/Elliot's list of held tools already
+-- emailed by hand is loaded (11:37 UK); while '0' no 'held' contact is queued.
+INSERT OR IGNORE INTO outreach_settings (key, value) VALUES ('paused', '1'), ('daily_cap', '3'), ('held_hand_list_received', '0');
 
 -- Gate 6: purge log (counts only).
 CREATE TABLE IF NOT EXISTS purge_log (

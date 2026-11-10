@@ -46,6 +46,13 @@ describe("gate 1: templates", () => {
     expect(() => renderInitial({ ...base, contextParagraph: "x".repeat(1501) })).toThrow(/too_long/);
     expect(() => renderInitial({ ...base, contextParagraph: "  " })).toThrow(/empty/);
   });
+  it("neutral: rejects wording that states or implies the company trains on data", () => {
+    for (const bad of ["Since you train on customer data, please explain.", "We know you use our data for models.", "You are training models on it.", "you use customer data to improve AI", "Why do you train on user content?", "Your AI training on uploads", "Example trains on your data."])
+      expect(() => assertNoBanned({ subject: "s", text: bad }), bad).toThrow(/implies_training/);
+    expect(() => renderInitial({ ...base, contextParagraph: "We reviewed your policy. Since you train on customer data, how do people opt out?" })).toThrow(/implies_training/);
+    // the fixed questions and a quoted vendor clause are neutral
+    expect(() => renderInitial({ ...base, contextParagraph: 'We reviewed your terms. It says: "we may use User Content to train our models" We\'d like to make sure we read this correctly.' })).not.toThrow();
+  });
   it("no InkLLM, sales or paid wording", () => {
     expect(() => assertNoBanned({ subject: "s", text: "Try InkLLM" })).toThrow();
     expect(() => assertNoBanned({ subject: "s", text: "our paid plan" })).toThrow();

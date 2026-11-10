@@ -1,0 +1,38 @@
+// Outreach SENDER Worker. NOT DEPLOYED (Security sign-off pending; 11:16 UK brief).
+// Safe defaults even if deployed: OUTREACH_MODE=dry_run, OUTREACH_ENABLED unset,
+// D1 outreach_settings.paused='1', and no cron in the top-level config.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "policypeek-outreach-dev",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "vars": { "OUTREACH_MODE": "dry_run" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "policypeek-outreach-dev", "database_id": "REPLACE_WITH_DEV_DB_ID", "migrations_dir": "migrations" }
+  ],
+  "send_email": [
+    // Real recipients (live mode only). Sending domain onboarded: mail.getpolicypeek.com.
+    { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] },
+    // Test copies: pinned to Elliot's verified destination; cannot reach anyone else.
+    { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
+  ],
+  // Secrets (wrangler secret put, never in this file): OUTREACH_ADMIN_TOKEN (>= 32 chars).
+  "env": {
+    "production": {
+      "name": "policypeek-outreach",
+      "workers_dev": false,
+      "vars": { "OUTREACH_MODE": "dry_run" },
+      "d1_databases": [
+        { "binding": "DB", "database_name": "policypeek-outreach", "database_id": "REPLACE_WITH_PROD_DB_ID", "migrations_dir": "migrations" }
+      ],
+      "send_email": [
+        { "name": "EMAIL", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] },
+        { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
+      ]
+      // Crons, enable only after Security sign-off:
+      // "triggers": { "crons": ["0 9 * * *", "30 3 * * *"] }   // 09:00 UTC daily send (= 09:00 UK in winter), 03:30 UTC purge
+    }
+  }
+}

@@ -100,7 +100,9 @@ export interface ContactRow {
   question_text: string;
   vetted_by: string;
   vetted_at: string;
-  status: "eligible" | "already_contacted" | "paused" | "resolved";
+  status: "eligible" | "sent_by_hand" | "paused" | "resolved";
+  paused_reason: string | null;
   hand_sent_at: string | null;
+  hand_sent_source: string | null;
   resolved_at: string | null;
 }

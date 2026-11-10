@@ -102,7 +102,9 @@ export function renderInitial(input: TemplateInput): RenderedEmail {
     "",
     footer(policyUrl),
   ].join("\n");
-  return { subject: initialSubject(input.toolName), text };
+  const e = { subject: initialSubject(input.toolName), text };
+  assertNoBanned(e);
+  return e;
 }
 
 export function renderFollowup(input: TemplateInput): RenderedEmail {
@@ -124,7 +126,9 @@ export function renderFollowup(input: TemplateInput): RenderedEmail {
     "",
     footer(policyUrl),
   ].join("\n");
-  return { subject: sanitiseHeaderText(`Re: ${initialSubject(input.toolName)}`), text };
+  const e = { subject: sanitiseHeaderText(`Re: ${initialSubject(input.toolName)}`), text };
+  assertNoBanned(e);
+  return e;
 }
 
 function formatDate(iso: string): string {
@@ -135,6 +139,19 @@ function formatDate(iso: string): string {
 
 // Banned wording (marketing drift): checked by tests and at render time.
 export const BANNED = [/inkllm/i, /\bpaid\b/i, /\bpric(e|ing)\b/i, /\bsubscri/i, /\bdiscount/i, /\boffer\b/i, /\bshop\b/i, /\bsponsor/i, /\bautomatic/i];
+// Neutral questions only (Elliot 11:39 UK): our own words must never state or
+// imply that the company trains on data. Quoted vendor wording ("we may use")
+// is the company's, not ours, so these patterns target second-person claims.
+export const IMPLIES_TRAINING = [
+  /\byou(?:'re| are)?\s+(?:currently\s+|already\s+|clearly\s+)?(?:train|training|trained)\b/i,
+  /\byou\s+(?:use|are using|have used|used)\s+(?:our|your customers'?|customers'?|customer|user|users'?|people's|personal)\s+(?:data|content)/i,
+  /\byou\s+use\s+(?:it|this data|that data)\s+(?:to|for)\s+train/i,
+  /\bsince\s+you\s+(?:train|use)/i,
+  /\byour\s+(?:ai\s+)?training\s+on\b/i,
+  /\bwhy\s+(?:do|does|are)\s+you\s+train/i,
+  /\b(?:trains|is training|trained)\s+on\s+(?:your|customer|user)\s+(?:data|content)/i,
+];
 export function assertNoBanned(e: RenderedEmail): void {
   for (const b of BANNED) if (b.test(e.subject) || b.test(e.text)) throw new TemplateError(`banned_wording ${b}`);
+  for (const b of IMPLIES_TRAINING) if (b.test(e.subject) || b.test(e.text)) throw new TemplateError(`implies_training ${b}`);
 }
