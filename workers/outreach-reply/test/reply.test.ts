@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
-import { ACCEPTED_RECIPIENTS, FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
+import { ACCEPTED_RECIPIENTS, authResults, FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
 import { STOP_LINE } from "../../outreach/src/template";
 import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
@@ -235,5 +235,27 @@ describe("MF5: replies to the From address (privacy@mail.*) and to Reply-To (pri
       expect(m.setReject).toHaveBeenCalled();
     }
     expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_replies").get().n).toBe(0);
+  });
+});
+
+describe("SF2: only Cloudflare's Authentication-Results are read, never used for decisions", () => {
+  it("reads the mx.cloudflare.net header and ignores a sender-injected one and ARC", () => {
+    const h = new Headers();
+    h.append("authentication-results", "evil.example; spf=pass; dkim=pass; dmarc=pass");
+    h.append("authentication-results", "mx.cloudflare.net; spf=fail smtp.mailfrom=x.example; dkim=none; dmarc=fail header.from=x.example");
+    h.append("arc-authentication-results", "i=1; mx.example; spf=pass; dkim=pass; dmarc=pass");
+    expect(authResults(h)).toEqual({ spf: "fail", dkim: "none", dmarc: "fail" });
+  });
+  it("no trusted header, or two claiming to be Cloudflare => unknown (null)", () => {
+    expect(authResults(new Headers({ "authentication-results": "evil.example; spf=pass; dkim=pass; dmarc=pass" }))).toEqual({ spf: null, dkim: null, dmarc: null });
+    const h = new Headers();
+    h.append("authentication-results", "mx.cloudflare.net; spf=pass; dkim=pass; dmarc=pass");
+    h.append("authentication-results", "mx.cloudflare.net; spf=fail; dkim=fail; dmarc=fail");
+    expect(authResults(h)).toEqual({ spf: null, dkim: null, dmarc: null });
+  });
+  it("classification never depends on auth results", async () => {
+    const a = await handleEmail(msg({ headers: { "authentication-results": "mx.cloudflare.net; spf=fail; dkim=fail; dmarc=fail" } }), env());
+    const b = await handleEmail(msg(), env());
+    expect(a.classification).toBe(b.classification);
   });
 });

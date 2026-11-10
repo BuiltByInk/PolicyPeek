@@ -89,9 +89,20 @@ export function classify(h: Headers, from: string, textHead: string): Classifica
   return "reply";
 }
 
+// SF2 (Security re-review 10 Nov): a sender can add its own
+// Authentication-Results header. Only the header stamped by Cloudflare Email
+// Routing (authserv-id mx.cloudflare.net) is read; ARC headers are ignored.
+// The values are stored for Elliot's information only and are NEVER used for
+// any decision (classification, matching or suppression).
+export const TRUSTED_AUTHSERV_ID = "mx.cloudflare.net";
 export function authResults(h: Headers): { spf: string | null; dkim: string | null; dmarc: string | null } {
-  const ar = lower(h.get("authentication-results")) + " " + lower(h.get("arc-authentication-results"));
-  const pick = (k: string) => ar.match(new RegExp(`\\b${k}=([a-z]+)`))?.[1] ?? null;
+  // Headers.get() joins repeated headers with ", "; split at each "<authserv-id>;".
+  const all = lower(h.get("authentication-results"));
+  const parts = all.split(/,\s*(?=[a-z0-9.-]+\.[a-z]{2,}\s*;)/);
+  const ours = parts.filter((p) => p.trim().startsWith(`${TRUSTED_AUTHSERV_ID};`));
+  // Exactly one trusted header expected; zero or several (spoof attempt) => unknown.
+  if (ours.length !== 1) return { spf: null, dkim: null, dmarc: null };
+  const pick = (k: string) => ours[0].match(new RegExp(`\\b${k}=([a-z]+)`))?.[1] ?? null;
   return { spf: pick("spf"), dkim: pick("dkim"), dmarc: pick("dmarc") };
 }
 
