@@ -564,3 +564,28 @@ describe("MF11: a missing or empty mirrored verdict blocks; refresh must be from
     expect((await runDaily(env, T)).sent).toHaveLength(1);
   });
 });
+
+describe("step (f) revert deletes the TEST reply rows (Jump 12:29)", () => {
+  const CLEAN = readFileSync(new URL("../sql/step-f-cleanup-prod-replies.sql", import.meta.url), "utf8");
+  const REVERT = readFileSync(new URL("../sql/step-f-revert-dev.sql", import.meta.url), "utf8");
+  const seed = () => {
+    db.raw.exec("INSERT INTO outreach_replies (from_domain, received_at, classification, raw_size, forwarded) VALUES ('pm.me', '2026-11-10T13:00:00Z', 'reply', 10, 1), ('pm.me', '2026-11-10T13:05:00Z', 'reply', 300000, 1), ('buffer.com', '2026-11-10T13:06:00Z', 'reply', 10, 1)");
+    db.raw.exec("INSERT INTO suppressions (kind, value, reason) VALUES ('address', 'elliotink@pm.me', 'objection'), ('domain', 'pm.me', 'objection'), ('domain', 'buffer.com', 'objection')");
+  };
+  it("prod cleanup removes only pm.me reply/suppression rows", () => {
+    seed();
+    db.raw.exec(CLEAN);
+    expect(db.raw.prepare("SELECT from_domain FROM outreach_replies").all().map((r: any) => r.from_domain)).toEqual(["buffer.com"]);
+    expect(db.raw.prepare("SELECT value FROM suppressions").all().map((r: any) => r.value)).toEqual(["buffer.com"]);
+  });
+  it("prod cleanup aborts if a pm.me row is matched to a real contact", () => {
+    const id = addContact(db.raw);
+    db.raw.prepare("INSERT INTO outreach_replies (from_domain, matched_contact_id, received_at, classification, raw_size) VALUES ('pm.me', ?, '2026-11-10T13:00:00Z', 'reply', 1)").run(id);
+    expect(() => db.raw.exec(CLEAN)).toThrow();
+  });
+  it("dev revert also clears TEST reply rows", () => {
+    seed();
+    db.raw.exec(REVERT);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_replies WHERE from_domain = 'pm.me'").get().n).toBe(0);
+  });
+});
