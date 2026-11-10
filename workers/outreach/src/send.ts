@@ -1,6 +1,6 @@
 // Gate 3 (+ gate 5 suppression check, card gate, hand-sent skip): plan and send.
 // Sending is cron-only; there is no HTTP route that sends.
-import { vetContact, type ContactRow } from "./contacts";
+import { isSharedDomain, KNOWN_SHARED_DOMAINS, vetContact, type ContactRow } from "./contacts";
 import { assertNoBanned, renderFollowup, renderInitial, type RenderedEmail } from "./template";
 
 export const HARD_DAILY_MAX = 5; // LIA (Elliot, 10 Nov): never more than 5/day, whatever D1 says
@@ -52,6 +52,8 @@ export async function sentTodayCount(db: D1Database, now: Date): Promise<number>
 
 // Card gate (Elliot 11:32, rule replaced 11:39 UK). No row => blocked (fail closed).
 export async function cardGate(db: D1Database, toolSlug: string): Promise<{ open: boolean; reason: string }> {
+  // MF8: a bare shared company domain can never carry a gate (it would cover every product there).
+  if (!toolSlug.includes("#") && isSharedDomain(toolSlug)) return { open: false, reason: "blocked: shared company domain needs a per-tool key (MF8)" };
   const g = await db.prepare("SELECT passes, gate_reason, card_confirmed, confirmed_by FROM card_gate WHERE tool_slug = ?").bind(toolSlug).first<{ passes: number; gate_reason: string; card_confirmed: number; confirmed_by: string | null }>();
   if (!g) return { open: false, reason: "blocked: no card_gate row (fail closed)" };
   if (g.card_confirmed === 1) return { open: true, reason: `pass: card confirmed by ${g.confirmed_by}` };
@@ -156,6 +158,7 @@ const dayStartIso = (now: Date) => iso(new Date(Date.UTC(now.getUTCFullYear(), n
 //  - contact still 'eligible', not hand-sent; held rows need the hand-sent list
 //  - card gate still open (CARD_GATE_OPEN_SQL)
 // The email is sent only if this statement inserted exactly one row.
+const KNOWN_SHARED_SQL = KNOWN_SHARED_DOMAINS.map((d) => `'${d}'`).join(", ");
 export const CLAIM_SQL = `INSERT OR IGNORE INTO outreach_sends (contact_id, tool_slug, contact_email, recipient_domain, kind, status, claimed_at)
 SELECT c.id, c.tool_slug, lower(c.contact_email), ?1, ?2, 'claimed', ?3
 FROM outreach_contacts c
@@ -168,6 +171,7 @@ WHERE c.id = ?4
   AND NOT EXISTS (SELECT 1 FROM outreach_sends WHERE recipient_domain = ?1 AND claimed_at >= ?6 AND status IN ('claimed','sent'))
   AND (SELECT COUNT(*) FROM outreach_sends WHERE contact_email = lower(c.contact_email)) < ${LIFETIME_MAX_PER_CONTACT}
   AND NOT EXISTS (SELECT 1 FROM suppressions WHERE (kind = 'address' AND value = lower(c.contact_email)) OR (kind = 'domain' AND value = ?1))
+  AND (instr(c.tool_slug, '#') > 0 OR c.tool_slug NOT IN (${KNOWN_SHARED_SQL}))
   AND EXISTS (SELECT 1 FROM card_gate g WHERE g.tool_slug = c.tool_slug AND (g.card_confirmed = 1 OR g.passes = 1))`;
 
 export async function claimSend(db: D1Database, c: { contact: ContactRow; kind: "initial" | "followup"; recipientDomain: string }, now: Date): Promise<boolean> {

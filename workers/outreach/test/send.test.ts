@@ -337,3 +337,20 @@ describe("MF1: daily cap and 14-day domain claim are one atomic conditional INSE
     expect(await claimSend(db.d1, q, NOW)).toBe(true);
   });
 });
+
+describe("MF8: sender refuses a gate keyed on a bare shared domain", () => {
+  it("a 'google.com' row is blocked even with passes=1; 'google.com#gemini' works", async () => {
+    addContact(db.raw, { tool_slug: "google.com", tool_name: "Gemini", contact_email: "privacy@google.com", contact_source_url: "https://policies.google.com/privacy" }); gate(db.raw, "google.com", 1);
+    expect((await cardGate(db.d1, "google.com")).open).toBe(false);
+    const env = live(db);
+    expect((await runDaily(env, NOW)).sent).toHaveLength(0);
+    db.raw.prepare("UPDATE outreach_contacts SET tool_slug = 'google.com#gemini'").run();
+    db.raw.prepare("UPDATE card_gate SET tool_slug = 'google.com#gemini'").run();
+    expect((await runDaily(env, NOW)).sent).toHaveLength(1);
+  });
+  it("admin card-confirm accepts per-tool keys", async () => {
+    gate(db.raw, "vercel.com#v0", 0);
+    const res = await handleAdmin(new Request("https://x/admin/card-confirm", { method: "POST", headers: { "X-Admin-Token": TOKEN }, body: JSON.stringify({ tool_slug: "vercel.com#v0", confirmed_by: "Elliot" }) }), { DB: db.d1, OUTREACH_ADMIN_TOKEN: TOKEN }, NOW);
+    expect(res.status).toBe(200);
+  });
+});

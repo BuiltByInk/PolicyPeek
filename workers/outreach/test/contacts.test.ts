@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DOMAIN_MATCH_EXCEPTIONS, roleOf, vetContact } from "../src/contacts";
+import { DOMAIN_MATCH_EXCEPTIONS, KNOWN_SHARED_DOMAINS, roleOf, toolKey, vetContact } from "../src/contacts";
+import { readFileSync } from "node:fs";
 import { applyContextEdit, buildLoad, CONTEXT_EDITS, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader";
 
 const ok = (contactEmail: string, toolDomain = "example.com", contactSourceUrl = "https://example.com/privacy") => vetContact({ contactEmail, toolDomain, contactSourceUrl });
@@ -124,7 +125,8 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
     expect(g("stability.ai").passes).toBe(1);
     expect(g("meshy.ai")).toMatchObject({ passes: 0, gate_reason: "blocked: steward APPROVE compliant_with_caveats" });
     expect(g("ahrefs.com").gate_reason).toMatch(/^blocked: steward REJECT/);
-    expect(g("vercel.com").passes).toBe(0);
+    expect(g("vercel.com#v0").passes).toBe(0);
+    expect(r.cardGate.find((y) => y.tool_slug === "vercel.com")).toBeUndefined();
     expect(g("live5.example")).toMatchObject({ passes: 0, gate_reason: "blocked: flagged in ambiguous-cards audit, no steward ruling" });
   });
   it("fail closed: missing steward file or missing CSV => every tool blocked, held included", () => {
@@ -133,5 +135,29 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
       expect(r.cardGate.length).toBeGreaterThan(0);
       expect(r.cardGate.every((x) => x.passes === 0 && /fail closed/.test(x.gate_reason))).toBe(true);
     }
+  });
+});
+
+describe("MF8: card gate keyed per tool, never per shared domain", () => {
+  it("shared list matches backend/src/sharedDomains.ts exactly", () => {
+    const be = readFileSync(new URL("../../../backend/src/sharedDomains.ts", import.meta.url), "utf8");
+    const list = [...be.slice(be.indexOf("KNOWN_SHARED_DOMAINS"), be.indexOf("]);")).matchAll(/"([a-z0-9.-]+)"/g)].map((m) => m[1]);
+    expect([...KNOWN_SHARED_DOMAINS].sort()).toEqual(list.sort());
+  });
+  it("google/microsoft/amazon/vercel tools each get their own key; single-tool domains keep the domain", () => {
+    expect(toolKey("google.com", "Gemini")).toBe("google.com#gemini");
+    expect(toolKey("microsoft.com", "Microsoft Copilot")).toBe("microsoft.com#microsoft-copilot");
+    expect(toolKey("amazon.com", "Amazon Q Developer")).toBe("amazon.com#amazon-q-developer");
+    expect(toolKey("vercel.com", "v0")).toBe("vercel.com#v0");
+    expect(toolKey("buffer.com", "Buffer")).toBe("buffer.com");
+    expect(toolKey("two.example", "A", ["two.example"])).toBe("two.example#a");
+  });
+  it("loader: a ruling for one product on a shared domain never covers another product there", () => {
+    const lt = [["google.com", "Gemini"], ["google.com", "NotebookLM"], ["amazon.com", "Amazon Q Developer"], ["two.example", "Tool A"], ["two.example", "Tool B"]].map(([domain, name]) => ({ domain, name, source_urls: "[]" }));
+    const st = parseSteward("1. **Gemini** — company-wide → consumer held — **APPROVE.** x\n2. **Tool A** — x → held — **APPROVE.** y\n");
+    const f = parseCsv("tool\n" + lt.map((t) => t.name).join("\n") + "\n");
+    const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: lt, flagCsv: f, recheck: null, steward: st, vettedBy: "t" });
+    const g = Object.fromEntries(r.cardGate.map((x) => [x.tool_slug, x.passes]));
+    expect(g).toEqual({ "google.com#gemini": 1, "google.com#notebooklm": 0, "amazon.com#amazon-q-developer": 0, "two.example#tool-a": 1, "two.example#tool-b": 0 });
   });
 });

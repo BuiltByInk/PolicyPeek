@@ -129,3 +129,23 @@ export interface ContactRow {
   hand_sent_source: string | null;
   resolved_at: string | null;
 }
+
+// MF8 (Security re-review 10 Nov): the card gate is keyed PER TOOL, never per
+// registrable domain. On a multi-product company domain (same curated list as
+// backend/src/sharedDomains.ts) or any domain carrying more than one listed
+// tool, the key is "<domain>#<tool-name-slug>", e.g. "google.com#gemini",
+// "vercel.com#v0". A bare shared domain is never a valid gate key.
+export const KNOWN_SHARED_DOMAINS: readonly string[] = ["google.com", "microsoft.com", "amazon.com", "apple.com", "meta.com", "adobe.com", "salesforce.com", "oracle.com", "ibm.com", "vercel.com"];
+export function isSharedDomain(domain: string, extra: Iterable<string> = []): boolean {
+  const d = domain.toLowerCase().replace(/\.$/, "");
+  const all = [...KNOWN_SHARED_DOMAINS, ...extra];
+  return all.some((x) => d === x || d.endsWith(`.${x}`));
+}
+export function nameSlug(name: string): string {
+  return name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "tool";
+}
+export function toolKey(domain: string, name: string, multiToolDomains: Iterable<string> = []): string {
+  const d = domain.toLowerCase();
+  return isSharedDomain(d, multiToolDomains) ? `${d}#${nameSlug(name)}` : d;
+}
+export const TOOL_KEY_RE = /^[a-z0-9.-]{3,80}(#[a-z0-9-]{1,60})?$/;

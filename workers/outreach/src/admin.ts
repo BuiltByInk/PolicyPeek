@@ -2,6 +2,7 @@
 // pattern as backend/src/auth.ts), using a Worker-only secret OUTREACH_ADMIN_TOKEN
 // (never the backend's ADMIN_TOKEN). There is NO send route. Unpausing is not
 // possible over HTTP: only `wrangler d1 execute` can set paused='0'.
+import { TOOL_KEY_RE } from "./contacts";
 import { planDay, render } from "./send";
 
 export interface AdminEnv { DB: D1Database; OUTREACH_ADMIN_TOKEN?: string }
@@ -41,7 +42,7 @@ export async function handleAdmin(req: Request, env: AdminEnv, now = new Date())
     const body = (await req.json().catch(() => null)) as { tool_slug?: string; confirmed_by?: string } | null;
     const slug = body?.tool_slug?.trim().toLowerCase();
     const by = body?.confirmed_by?.trim();
-    if (!slug || !by || !/^[a-z0-9.-]{3,80}$/.test(slug) || by.length > 80) return Response.json({ error: "tool_slug and confirmed_by required" }, { status: 400 });
+    if (!slug || !by || !TOOL_KEY_RE.test(slug) || by.length > 80) return Response.json({ error: "tool_slug and confirmed_by required" }, { status: 400 });
     const r = await env.DB.prepare("UPDATE card_gate SET card_confirmed = 1, confirmed_by = ?, confirmed_at = ? WHERE tool_slug = ?").bind(by, now.toISOString(), slug).run();
     if (r.meta.changes !== 1) return Response.json({ error: "unknown tool_slug" }, { status: 404 });
     return Response.json({ ok: true, tool_slug: slug });

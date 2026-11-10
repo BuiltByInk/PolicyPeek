@@ -1,7 +1,7 @@
 // Gate 2 loader (offline, run on the box): turns the tracker/research files
 // into a SQL file for the outreach D1 database. The Worker never reads these
 // files; D1 is the source of truth. Nothing here sets card_confirmed.
-import { registrable, vetContact, type Role } from "./contacts.ts";
+import { isSharedDomain, registrable, toolKey, vetContact, type Role } from "./contacts.ts";
 
 export function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
@@ -164,6 +164,12 @@ export function buildLoad(input: {
   const seen = new Set<string>();
   const counts = { totalHeld: input.tracker.length, alreadySentByHand: 0, heldLoadedPaused: 0, missingContact: 0, droppedVetting: 0, unclear: 0, ambiguousRows: input.flagCsv?.length ?? 0, ambiguousLoadedEligible: 0, domainMatchExceptions: 0 };
   const liveByName = new Map(input.liveTools.map((t) => [t.name.toLowerCase(), t]));
+  // MF8: per-tool keys. Domains with more than one listed tool, plus the curated
+  // shared-company list, get "<domain>#<name-slug>".
+  const perDomain = new Map<string, number>();
+  for (const t of input.liveTools) perDomain.set(t.domain, (perDomain.get(t.domain) ?? 0) + 1);
+  const multi = [...perDomain].filter(([, n]) => n > 1).map(([d]) => d);
+  const keyOf = (domain: string, name: string) => toolKey(domain, name, multi);
 
   const consider = (kind: "held" | "ambiguous_live", toolName: string, contact: string, sourceUrl: string, slugHint: string | null, policyUrl: string, label: string, context: string, hand: "sent" | "not_sent" | "unclear") => {
     if (!contact || /^(form only|none found)/i.test(contact)) {
@@ -183,7 +189,8 @@ export function buildLoad(input: {
       skipped.push({ tool: toolName, contact, kind, reason: "tracker_status_unclear" });
       return;
     }
-    const key = `${toolDomain}|${contact.toLowerCase()}`;
+    const slug = keyOf(toolDomain, liveByName.get(toolName.toLowerCase())?.name ?? toolName);
+    const key = `${slug}|${contact.toLowerCase()}`;
     if (seen.has(key)) {
       skipped.push({ tool: toolName, contact, kind, reason: "duplicate_of_earlier_row" });
       return;
@@ -206,7 +213,7 @@ export function buildLoad(input: {
     if (kind === "held") { if (status === "sent_by_hand") counts.alreadySentByHand++; else counts.heldLoadedPaused++; }
     else counts.ambiguousLoadedEligible++;
     if (v.domainMatchException) counts.domainMatchExceptions++;
-    contacts.push({ tool_slug: toolDomain, tool_name: toolName, tool_domain: toolDomain, kind, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, vetted_by: v.domainMatchException ? v.domainMatchException.vettedBy : null, vetted_at: v.domainMatchException ? v.domainMatchException.vettedAt : null, domain_match_exception: v.domainMatchException ? v.domainMatchException.reason : null, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
+    contacts.push({ tool_slug: slug, tool_name: toolName, tool_domain: toolDomain, kind, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, vetted_by: v.domainMatchException ? v.domainMatchException.vettedBy : null, vetted_at: v.domainMatchException ? v.domainMatchException.vettedAt : null, domain_match_exception: v.domainMatchException ? v.domainMatchException.reason : null, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
   };
 
   for (const r of input.tracker) {
@@ -238,18 +245,31 @@ export function buildLoad(input: {
   const cardGate: CardGateOut[] = [];
   const failClosed = !input.flagCsv || !input.steward;
   const flaggedNames = new Set((input.flagCsv ?? []).map((r) => r.tool.toLowerCase()));
-  const heldSlugs = new Set([...contacts, ...input.tracker.map((r) => ({ kind: "held", tool_slug: input.liveTools.find((t) => t.name.toLowerCase() === r.tool.toLowerCase())?.domain ?? (() => { try { return registrable(new URL(r.contact_source_url).hostname) ?? ""; } catch { return ""; } })() }))].filter((c) => c.kind === "held").map((c) => c.tool_slug));
+  const trackerKey = (r: Record<string, string>) => {
+    const lt = liveByName.get(r.tool.toLowerCase());
+    if (lt) return keyOf(lt.domain, lt.name);
+    try { return keyOf(registrable(new URL(r.contact_source_url).hostname) ?? "", r.tool); } catch { return ""; }
+  };
+  const heldSlugs = new Set([...contacts.filter((c) => c.kind === "held").map((c) => c.tool_slug), ...input.tracker.map(trackerKey)].filter(Boolean));
   // steward names -> slugs via the recheck summary ("Name (slug)") or live names
   const stewardBySlug = new Map<string, StewardRuling>();
   for (const [name, ruling] of input.steward ?? []) {
-    const viaRecheck = [...(input.recheck?.values() ?? [])].find((e) => e.name.toLowerCase() === name)?.slug;
-    const viaLive = input.liveTools.find((t) => t.name.toLowerCase() === name || t.name.toLowerCase().startsWith(name))?.domain;
-    const slug = viaRecheck ?? viaLive;
+    // Exact live name first, then the recheck "Name (domain)" for single-tool
+    // domains, then the old prefix fallback. Always resolved to a per-tool key.
+    const exact = input.liveTools.find((t) => t.name.toLowerCase() === name);
+    const rcDomain = [...(input.recheck?.values() ?? [])].find((e) => e.name.toLowerCase() === name)?.slug;
+    const rcTools = rcDomain ? input.liveTools.filter((t) => t.domain === rcDomain) : [];
+    const prefix = input.liveTools.find((t) => t.name.toLowerCase().startsWith(name));
+    const slug = exact ? keyOf(exact.domain, exact.name)
+      : rcDomain && rcTools.length === 1 ? keyOf(rcDomain, rcTools[0].name)
+      : rcDomain && rcTools.length === 0 && !isSharedDomain(rcDomain, multi) ? rcDomain
+      : prefix ? keyOf(prefix.domain, prefix.name) : undefined;
     if (slug) stewardBySlug.set(slug, ruling);
   }
-  const slugs = new Set<string>([...input.liveTools.map((t) => t.domain), ...contacts.map((c) => c.tool_slug)]);
+  const liveByKey = new Map(input.liveTools.map((t) => [keyOf(t.domain, t.name), t]));
+  const slugs = new Set<string>([...liveByKey.keys(), ...contacts.map((c) => c.tool_slug)]);
   for (const slug of slugs) {
-    const live = input.liveTools.find((t) => t.domain === slug);
+    const live = liveByKey.get(slug);
     const flagged: 0 | 1 = live && input.flagCsv && !flaggedNames.has(live.name.toLowerCase()) ? 0 : 1;
     const st = stewardBySlug.get(slug);
     let passes: 0 | 1 = 0, reason: string;
