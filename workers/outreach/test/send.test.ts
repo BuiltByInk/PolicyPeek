@@ -503,3 +503,38 @@ describe("SF4 + step (f): bindings", () => {
     expect(r2.reason).toBe("test_send_already_today");
   });
 });
+
+describe("SF3: a synchronous bounce/suppressed rejection suppresses the address", () => {
+  it("E_RECIPIENT_SUPPRESSED => address suppression; a rate-limit error does not", async () => {
+    addContact(db.raw, { tool_slug: "a.example" }); gate(db.raw, "a.example", 1);
+    addContact(db.raw, { tool_slug: "b.example", tool_name: "B" }); gate(db.raw, "b.example", 1);
+    const env = live(db);
+    env.EMAIL.send.mockRejectedValueOnce(Object.assign(new Error("recipient is on the suppression list"), { code: "E_RECIPIENT_SUPPRESSED" }));
+    env.EMAIL.send.mockRejectedValueOnce(Object.assign(new Error("slow down"), { code: "E_RATE_LIMIT" }));
+    await runDaily(env, NOW);
+    expect(db.raw.prepare("SELECT kind, value, reason FROM suppressions").all()).toEqual([{ kind: "address", value: "privacy@a.example", reason: "bounce" }]);
+  });
+});
+
+describe("step (f) dev SQL", () => {
+  const SETUP = readFileSync(new URL("../sql/step-f-setup-dev.sql", import.meta.url), "utf8");
+  const REVERT = readFileSync(new URL("../sql/step-f-revert-dev.sql", import.meta.url), "utf8");
+  it("one synthetic example.com contact, one [TEST] copy to elliotink@pm.me, then a clean revert", async () => {
+    db.raw.exec(SETUP);
+    const env = { DB: db.d1, EMAIL_TEST: sendMock(), OUTREACH_ENABLED: "true", OUTREACH_MODE: "test" } as any;
+    const r = await runDaily(env, new Date());
+    expect(env.EMAIL_TEST.send).toHaveBeenCalledTimes(1);
+    const m = env.EMAIL_TEST.send.mock.calls[0][0];
+    expect(m).toMatchObject({ to: "elliotink@pm.me", from: { email: "privacy@mail.getpolicypeek.com", name: "PolicyPeek" }, replyTo: "privacy@getpolicypeek.com" });
+    expect(m.subject.startsWith("[TEST] ")).toBe(true);
+    expect(m.text).toContain("https://getpolicypeek.com/privacy");
+    expect(m.text).toContain('reply "stop"');
+    expect(r.sent).toHaveLength(1);
+    db.raw.exec(REVERT);
+    expect(db.raw.prepare("SELECT value FROM outreach_settings WHERE key = 'paused'").get().value).toBe("1");
+  });
+  it("setup refuses a dev DB that already holds contacts", () => {
+    addContact(db.raw);
+    expect(() => db.raw.exec(SETUP)).toThrow();
+  });
+});
