@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
-import { FORWARD_TO, handleEmail, registrable } from "../src/reply";
+import { FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
+import { STOP_LINE } from "../../outreach/src/template";
 import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
 const MIG = new URL("../../outreach/migrations/0001_outreach.sql", import.meta.url).pathname;
@@ -139,5 +140,31 @@ describe("MF4: reply Worker uses the same tldts parse as the sender", () => {
     const doms = db.raw.prepare("SELECT value FROM suppressions WHERE kind = 'domain'").all().map((r: any) => r.value);
     expect(doms).toContain("cnil.gouv.fr");
     expect(doms).not.toContain("gouv.fr");
+  });
+});
+
+describe("MF6: quoted text is stripped before objection matching", () => {
+  const ours = `Hello,\n\nPlease could you confirm:\n1. ...\n\nThis is a one-off question about your published policy, not marketing. ${STOP_LINE}`;
+  const cases: [string, string][] = [
+    ["gmail", `Thanks, we do not use customer data for training. See section 4.\n\nOn Tue, 10 Nov 2026 at 09:00, PolicyPeek <privacy@mail.getpolicypeek.com>\nwrote:\n${ours}`],
+    ["> quoted", `Thanks for asking, answer below.\n${ours.split("\n").map((l) => "> " + l).join("\n")}`],
+    ["outlook", `Hi Elliot, no, it is off by default.\n\n-----Original Message-----\nFrom: PolicyPeek\n${ours}`],
+    ["outlook header block", `Hi, opt-in only.\n\nFrom: PolicyPeek <privacy@mail.getpolicypeek.com>\nSent: 10 November 2026 09:00\n${ours}`],
+    ["outlook rule", `Hello, answer attached.\n________________________________\n${ours}`],
+  ];
+  for (const [name, body] of cases)
+    it(`a normal reply that quotes our email (${name}) is a reply, not an objection`, async () => {
+      expect(stripQuoted(body)).not.toMatch(/stop/i);
+      const m = msg({ body, headers: { "in-reply-to": "<s1@mail.getpolicypeek.com>" } });
+      expect((await handleEmail(m, env())).classification).toBe("reply");
+      expect(db.raw.prepare("SELECT COUNT(*) n FROM suppressions").get().n).toBe(0);
+    });
+  it("an objection in the sender's own text above the quote is still an objection", async () => {
+    const m = msg({ body: `Please remove us from your list.\n\nOn Tue, 10 Nov 2026, PolicyPeek wrote:\n> ${STOP_LINE}` });
+    expect((await handleEmail(m, env())).classification).toBe("objection");
+  });
+  it("unsure (nothing but quoted text) still falls back to objection", async () => {
+    const m = msg({ body: ours.split("\n").map((l) => "> " + l).join("\n") });
+    expect((await handleEmail(m, env())).classification).toBe("objection");
   });
 });

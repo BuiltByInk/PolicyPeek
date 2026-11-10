@@ -37,6 +37,35 @@ export function registrable(host: string): string {
 // Objection wording (unsure => objection, per Security gate 5).
 const OBJECTION = [/\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i, /\bno (further|more) (contact|emails?)\b/i, /\bopt(?:-| )?out\b/i, /\bnot interested\b/i, /\bcease\b/i, /\btake (me|us) off\b/i, /\bobject\b/i, /\bharass/i, /\bspam\b/i];
 
+// MF6: objection matching runs only on the sender's OWN new text. Our email
+// says 'reply "stop"', so matching the quoted original would class almost
+// every reply as an objection. Cut at the first reply/forward marker and drop
+// ">"-quoted lines. If nothing is left (top-quoting only), the full text is
+// used again, so an unsure case still falls back to "objection" (fails safe).
+const QUOTE_MARKERS = [
+  /^\s*On\b[\s\S]{0,300}?\bwrote:\s*$/im, // Gmail/Apple ("On Tue, ... <x> wrote:"), may wrap over 2 lines
+  /^\s*Le\b[\s\S]{0,300}?\ba écrit\s*:\s*$/im,
+  /^\s*Am\b[\s\S]{0,300}?\bschrieb\b.*:\s*$/im,
+  /^\s*-{2,}\s*(Original Message|Forwarded message|Ursprüngliche Nachricht|Message d'origine)\s*-{2,}/im,
+  /^\s*_{8,}\s*$/m, // Outlook separator
+  /^\s*From:\s.+\n\s*(Sent|Date):\s/im, // Outlook header block
+  /^\s*De\s*:\s.+\n\s*(Envoyé|Date)\s*:\s/im,
+];
+export function stripQuoted(text: string): string {
+  let cut = text.length;
+  for (const r of QUOTE_MARKERS) {
+    const m = r.exec(text);
+    if (m && m.index < cut) cut = m.index;
+  }
+  const lines = text.slice(0, cut).split(/\r?\n/);
+  const kept = lines.filter((l) => !/^\s*>/.test(l));
+  const own = kept.join("\n");
+  const removedSomething = cut < text.length || kept.length < lines.length;
+  // Our own stop line, if pasted back unquoted, is never the sender's objection.
+  const cleaned = own.replace(/If you'd rather not hear from us, reply "stop" and we won't email again\./gi, " ").trim();
+  return cleaned || (removedSomething ? text : "");
+}
+
 export function classify(h: Headers, from: string, textHead: string): Classification {
   const subject = lower(h.get("subject"));
   const ctype = lower(h.get("content-type"));
@@ -47,7 +76,8 @@ export function classify(h: Headers, from: string, textHead: string): Classifica
   const autoSub = lower(h.get("auto-submitted"));
   const prec = lower(h.get("precedence"));
   if ((autoSub && autoSub !== "no") || ["bulk", "junk", "list", "auto_reply"].includes(prec) || h.has("x-autoreply") || h.has("x-autorespond") || lower(h.get("x-auto-response-suppress")).includes("all") || /^(out of (the )?office|automatic reply|auto(matic)?[- ]?reply|autoreply|auto:)/.test(subject)) return "auto_reply";
-  if (OBJECTION.some((r) => r.test(textHead) || r.test(subject))) return "objection";
+  const own = stripQuoted(textHead);
+  if (OBJECTION.some((r) => r.test(own) || r.test(subject))) return "objection";
   return "reply";
 }
 
