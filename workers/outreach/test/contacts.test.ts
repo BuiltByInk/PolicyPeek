@@ -287,3 +287,48 @@ describe("daily verdict refresh job (Jump: automatic, fail closed; not scheduled
     expect(src).toMatch(/process\.exit\(1\)/);
   });
 });
+
+describe("MF12: an absent 'unpublished' tool must not be published under another key", () => {
+  const T = new Date("2026-11-11T07:30:00Z");
+  const AS = "2026-11-11T07:00:00Z";
+  const cat = (n: number) => Array.from({ length: n }, (_, i) => ({ domain: `t${i}.example`, name: `T${i}`, source_urls: "[]", compliance_status: "compliant" as string | null }));
+  const row = (domain: string, name: string, v = "not_compliant") => ({ domain, name, source_urls: "[]", compliance_status: v as string | null });
+  let mod: typeof import("../src/loader");
+  it("loads", async () => { mod = await import("../src/loader"); });
+  it("Security's repro: gate x.com 'unpublished', export has x.com#xbot not_compliant => refused, not mirrored as unpublished", () => {
+    const gate = [{ tool_slug: "x.com", verdict_at_load: "unpublished" }];
+    const exp = [...cat(66), row("x.com", "Xbot"), row("x.com", "X Ads", "compliant")]; // x.com now multi-tool => keys x.com#xbot, x.com#x-ads
+    expect(mod.validateExport(exp).has("x.com#xbot")).toBe(true);
+    expect(() => mod.verdictRefreshSql(gate, exp, AS, { now: T })).toThrow(/unpublished tool x\.com may now be published as x\.com#/);
+  });
+  it("same registrable domain under a subdomain => refused", () => {
+    expect(() => mod.verdictRefreshSql([{ tool_slug: "foo.com", verdict_at_load: "unpublished" }], [...cat(66), row("app.foo.com", "Foo App")], AS, { now: T })).toThrow(/MF12/);
+  });
+  it("same name slug on another domain (from tool_name) => refused", () => {
+    const gate = [{ tool_slug: "heldtool.io", verdict_at_load: "unpublished", tool_name: "HeldTool" }];
+    expect(() => mod.verdictRefreshSql(gate, [...cat(66), row("heldtool.ai", "HeldTool")], AS, { now: T })).toThrow(/heldtool\.ai/);
+  });
+  it("same '#slug' on another domain => refused; a bare key on the same domain => refused", () => {
+    expect(() => mod.verdictRefreshSql([{ tool_slug: "bar.com#barbot", verdict_at_load: "unpublished" }], [...cat(66), row("barbot.ai", "BarBot")], AS, { now: T })).toThrow(/MF12/);
+    expect(() => mod.verdictRefreshSql([{ tool_slug: "bar.com#barbot", verdict_at_load: "unpublished" }], [...cat(66), row("bar.com", "Bar Other", "compliant")], AS, { now: T })).toThrow(/MF12/);
+  });
+  it("a truly absent unpublished tool (no domain or name overlap) still mirrors 'unpublished'", () => {
+    const gate = [{ tool_slug: "held.example", verdict_at_load: "unpublished", tool_name: "Held Thing" }, { tool_slug: "t0.example", verdict_at_load: "compliant" }];
+    const sql = mod.verdictRefreshSql(gate, cat(66), AS, { now: T });
+    expect(sql).toMatch(/live_verdict = 'unpublished', verdict_as_of = '2026-11-11T07:00:00.000Z' WHERE tool_slug = 'held\.example'/);
+  });
+  it("build-contacts-sql.ts runs the same MF12 refresh validation on the gate it writes", () => {
+    const src = readFileSync(new URL("../scripts/build-contacts-sql.ts", import.meta.url), "utf8");
+    expect(src.indexOf("verdictRefreshSql(r.cardGate")).toBeGreaterThan(0);
+    expect(src.indexOf("verdictRefreshSql(r.cardGate")).toBeLessThan(src.indexOf("writeFileSync(`${out}/contacts.sql`"));
+  });
+  it("the daily job reads tool_name with the gate rows, and GATE_SQL runs on the schema", async () => {
+    const src = readFileSync(new URL("../scripts/refresh-verdicts.ts", import.meta.url), "utf8");
+    const gateSql = /export const GATE_SQL = "([^"]+)"/.exec(src)![1];
+    expect(gateSql).toMatch(/tool_name/);
+    const { makeDb } = await import("../../test-utils/d1shim");
+    const db = makeDb(new URL("../migrations/0001_outreach.sql", import.meta.url).pathname);
+    db.raw.exec("INSERT INTO card_gate (tool_slug, flagged, passes, gate_reason, flag_source, basis, verdict_at_load) VALUES ('x.com', 0, 1, 'r', 'tracker', 'held_tracker', 'unpublished')");
+    expect(db.raw.prepare(gateSql).all()).toEqual([{ tool_slug: "x.com", verdict_at_load: "unpublished", tool_name: null }]);
+  });
+});

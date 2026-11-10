@@ -1,7 +1,7 @@
 // MF9/MF11 verdict mirror refresh SQL (box only). Generates, applies nothing.
 // Usage: PROD_TOOLS_AS_OF=<ISO export time> node --experimental-strip-types outreach/scripts/build-verdicts-sql.ts <tools-export.json> <gate.json> <out.sql> [previousCount]
 // <tools-export.json>: wrangler --json output of the READ-ONLY policypeek-db SELECT (see refresh-verdicts.ts).
-// <gate.json>: wrangler --json output of `SELECT tool_slug, verdict_at_load FROM card_gate` on policypeek-outreach.
+// <gate.json>: wrangler --json output of refresh-verdicts.ts GATE_SQL (tool_slug, verdict_at_load, tool_name) on policypeek-outreach.
 // Refuses (exit 1, no file written) on a short/partial export, unknown or empty verdicts, a missing known tool,
 // or a missing/invalid PROD_TOOLS_AS_OF. There is no file-time fallback.
 import { readFileSync, writeFileSync } from "node:fs";

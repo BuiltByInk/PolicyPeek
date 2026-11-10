@@ -10,7 +10,8 @@
 //     count from policypeek-outreach (fixed SELECTs).
 //  3. Validate and build the UPDATE SQL (loader.verdictRefreshSql): refuses a
 //     short export, any missing/unknown/empty verdict, duplicate keys, or a
-//     missing known tool.
+//     missing known tool, or an 'unpublished' tool that may now be
+//     published under another key (MF12).
 //  4. Only with --apply: write the UPDATEs (live_verdict, verdict_as_of = T)
 //     and the new catalog count to policypeek-outreach. Nothing else.
 // Fail closed: if ANY step fails, nothing is written. The sender requires the
@@ -27,7 +28,7 @@ import { join } from "node:path";
 import { requireAsOf, toolsFromExport, verdictRefreshSql, type GateRow } from "../src/loader.ts";
 
 export const EXPORT_SQL = "SELECT domain, name, compliance_status, source_urls FROM tools ORDER BY domain, name";
-export const GATE_SQL = "SELECT tool_slug, verdict_at_load FROM card_gate ORDER BY tool_slug";
+export const GATE_SQL = "SELECT g.tool_slug, g.verdict_at_load, (SELECT c.tool_name FROM outreach_contacts c WHERE c.tool_slug = g.tool_slug LIMIT 1) AS tool_name FROM card_gate g ORDER BY g.tool_slug";
 export const PREV_SQL = "SELECT value FROM outreach_settings WHERE key = 'catalog_tools_count'";
 const W = ["wrangler"];
 const EXPORT_CMD = [...W, "d1", "execute", "policypeek-db", "--remote", "--json", "--command", EXPORT_SQL]; // run in ../backend (its wrangler.toml binds policypeek-db)

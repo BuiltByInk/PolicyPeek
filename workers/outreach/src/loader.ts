@@ -1,7 +1,7 @@
 // Gate 2 loader (offline, run on the box): turns the tracker/research files
 // into a SQL file for the outreach D1 database. The Worker never reads these
 // files; D1 is the source of truth. Nothing here sets card_confirmed.
-import { isSharedDomain, registrable, toolKey, vetContact, type Role } from "./contacts.ts";
+import { isSharedDomain, nameSlug, registrable, toolKey, vetContact, type Role } from "./contacts.ts";
 
 export function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
@@ -383,7 +383,12 @@ export function toolsFromExport(dump: unknown): LiveTool[] {
   return rows as LiveTool[];
 }
 
-export interface GateRow { tool_slug: string; verdict_at_load: string | null }
+// tool_name is optional (GATE_SQL joins it from outreach_contacts); when given,
+// MF12 also matches the tool by its name slug.
+export interface GateRow { tool_slug: string; verdict_at_load: string | null; tool_name?: string | null }
+
+const keyDomain = (k: string) => k.split("#")[0].toLowerCase();
+const regOrSelf = (d: string) => registrable(d) ?? d.toLowerCase();
 
 export function validateExport(tools: LiveTool[], opts: { minRows?: number; previousCount?: number; known?: GateRow[] } = {}): Map<string, string> {
   const min = Math.max(opts.minRows ?? MIN_CATALOG_TOOLS, opts.previousCount ?? 0);
@@ -401,10 +406,27 @@ export function validateExport(tools: LiveTool[], opts: { minRows?: number; prev
     if (byKey.has(k)) throw new ExportError(`export has duplicate tool key ${k}`);
     byKey.set(k, t.compliance_status as string);
   }
+  // MF12: an absent 'unpublished' row may only stay 'unpublished' if nothing in
+  // the export could be that same tool under a different key. Same registrable
+  // domain (domain part of the key, e.g. x.com vs x.com#xbot) or same name slug
+  // (the '#slug' part, or the contact's tool_name) => refuse; a human re-runs
+  // the loader and Security reviews the new gate file.
+  const exportDomains = new Map<string, string>();
+  const exportSlugs = new Map<string, string>();
+  for (const t of tools) {
+    const k = toolKey(t.domain, t.name, multi);
+    exportDomains.set(regOrSelf(t.domain), k);
+    exportSlugs.set(nameSlug(t.name), k);
+  }
   for (const g of opts.known ?? []) {
     if (byKey.has(g.tool_slug)) continue;
-    if (g.verdict_at_load === UNPUBLISHED) continue; // held/unpublished at review: may legitimately be absent
-    throw new ExportError(`export is missing known tool ${g.tool_slug} (reviewed as ${g.verdict_at_load ?? "NULL"})`);
+    if (g.verdict_at_load !== UNPUBLISHED) throw new ExportError(`export is missing known tool ${g.tool_slug} (reviewed as ${g.verdict_at_load ?? "NULL"})`);
+    const dom = regOrSelf(keyDomain(g.tool_slug));
+    const slugs = new Set<string>();
+    if (g.tool_slug.includes("#")) slugs.add(g.tool_slug.split("#")[1]);
+    if (g.tool_name && g.tool_name.trim()) slugs.add(nameSlug(g.tool_name));
+    const hit = exportDomains.get(dom) ?? [...slugs].map((x) => exportSlugs.get(x)).find(Boolean);
+    if (hit) throw new ExportError(`unpublished tool ${g.tool_slug} may now be published as ${hit} (same domain or name); re-run the loader and get the gate reviewed (MF12)`);
   }
   return byKey;
 }

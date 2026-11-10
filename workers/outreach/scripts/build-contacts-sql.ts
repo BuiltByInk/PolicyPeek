@@ -1,7 +1,7 @@
 // Usage (box only): node --experimental-strip-types outreach/scripts/build-contacts-sql.ts <out-dir>
 // Writes contacts.sql + load-report.md. Does NOT apply anything to any database.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, requireAsOf, toolsFromExport, toSql, validateExport } from "../src/loader.ts";
+import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, requireAsOf, toolsFromExport, toSql, validateExport, verdictRefreshSql } from "../src/loader.ts";
 
 const HELD = "/workspace/deliverables/policypeek/held-outreach";
 const FLAGS = "/workspace/deliverables/research/ambiguous-cards-2026-11-10.csv";
@@ -27,6 +27,10 @@ const r = buildLoad({
   vettedBy: "dev-loader (Security gate 2 rules)",
   verdictAsOf,
 });
+// MF12 self-check: the gate we are about to write must pass the same refresh
+// validation the daily job runs (no 'unpublished' tool that the catalog may
+// already list under another key). Throws => nothing written.
+verdictRefreshSql(r.cardGate.map((g) => ({ tool_slug: g.tool_slug, verdict_at_load: g.verdict_at_load, tool_name: r.contacts.find((c) => c.tool_slug === g.tool_slug)?.tool_name ?? null })), allTools, verdictAsOf);
 const vettedAt = new Date().toISOString();
 writeFileSync(`${out}/contacts.sql`, toSql(r, "dev-loader (Security gate 2 rules)", vettedAt));
 const md = [
