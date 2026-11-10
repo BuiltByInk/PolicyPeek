@@ -70,7 +70,7 @@ describe("OpenRouter wording fix (11:57 UK)", () => {
 describe("gate 2 loader: dedupe, skips and card gate rows", () => {
   const md = "### 1. Alpha\n\n- **Policy reviewed:** Privacy Policy v1\n- **Contact source:** https://alpha.example.com/privacy\n\n**To:** `privacy@alpha.example.com`\n\n```\nHello,\n\nI run PolicyPeek.\n\nWe reviewed your Privacy Policy v1. It is silent.\n\nPlease could you confirm:\n1. a\n```\n";
   const tracker = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nAlpha,privacy@alpha.example.com,https://alpha.example.com/privacy,2026-11-10,drafted,,\nBeta,privacy@beta.example,https://beta.example/p,2026-11-10,sent,,\nGamma,privacy@gamma.example,https://gamma.example/p,2026-11-10,maybe,,\nDelta,support@delta.example,https://delta.example/p,2026-11-10,drafted,,\nEps,form only: https://eps.example/f,https://eps.example/p,2026-11-10,drafted,,\n");
-  const live = [{ domain: "live1.example", name: "Live One", source_urls: '["https://live1.example/privacy"]' }, { domain: "live2.example", name: "Live Two", source_urls: '["https://live2.example/privacy"]' }];
+  const live = [{ domain: "live1.example", name: "Live One", source_urls: '["https://live1.example/privacy"]' }, { domain: "live2.example", name: "Live Two", source_urls: '["https://live2.example/privacy"]', compliance_status: "unrated" }, { domain: "live3.example", name: "Live Three", source_urls: "[]", compliance_status: "compliant" }];
   const flags = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nLive One,privacy@live1.example,https://live1.example/privacy,2026-11-10,research,,\n");
   const recheckMd = "## Summary\n\n| # | Tool (slug) | Live verdict | Proposed | Email still needed? |\n|---|---|---|---|---|\n| 1 | Live One (live1.example) | Trains | **held** (may use) | Yes |\n\n### 1. Live One (live1.example)\n\n> we may use Content to train our models.\n\nSource: https://live1.example/terms — Updated 2026.\n";
   const recheck = parseRecheck(recheckMd);
@@ -90,7 +90,9 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
     expect(lo).toMatchObject({ kind: "ambiguous_live", status: "eligible", paused_reason: null, policy_url: "https://live1.example/terms" });
     expect(lo.question_text).toBe(`We reviewed https://live1.example/terms. It says: "we may use Content to train our models." We'd like to make sure we read this correctly.`);
     expect(r.cardGate.find((g) => g.tool_slug === "live1.example")).toMatchObject({ flagged: 1, passes: 1, gate_reason: "pass: steward ruling held (APPROVE)" });
-    expect(r.cardGate.find((g) => g.tool_slug === "live2.example")).toMatchObject({ flagged: 0, passes: 1 });
+    // MF7: an unflagged live card passes only with a held/unclear stored verdict.
+    expect(r.cardGate.find((g) => g.tool_slug === "live2.example")).toMatchObject({ flagged: 0, passes: 1, basis: "unclear_live", live_verdict: "unrated" });
+    expect(r.cardGate.find((g) => g.tool_slug === "live3.example")).toMatchObject({ flagged: 0, passes: 0, gate_reason: "blocked: unflagged live card with definite verdict compliant (MF7)" });
     expect(r.cardGate.find((g) => g.tool_slug === alpha.tool_slug)).toMatchObject({ passes: 1, gate_reason: "pass: held tool (held-outreach tracker)" });
     const sql = toSql(r, "t", "2026-11-10T00:00:00Z");
     // The loader never writes card_confirmed (only the admin action does).
@@ -121,7 +123,8 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
     const f = parseCsv("tool\n" + lt.map((t) => t.name).join("\n") + "\n");
     const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: lt, flagCsv: f, recheck: null, steward: st, vettedBy: "t" });
     const g = (x: string) => r.cardGate.find((y) => y.tool_slug === x)!;
-    expect(g("mailchimp.com").passes).toBe(1);
+    // MF9: Elliot's "unclear" ruling supersedes the steward's "held"; no stored verdict here => blocked.
+    expect(g("mailchimp.com")).toMatchObject({ passes: 0, gate_reason: expect.stringMatching(/owner ruling unclear but stored verdict unpublished/) });
     expect(g("stability.ai").passes).toBe(1);
     expect(g("meshy.ai")).toMatchObject({ passes: 0, gate_reason: "blocked: steward APPROVE compliant_with_caveats" });
     expect(g("ahrefs.com").gate_reason).toMatch(/^blocked: steward REJECT/);
@@ -159,5 +162,25 @@ describe("MF8: card gate keyed per tool, never per shared domain", () => {
     const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: lt, flagCsv: f, recheck: null, steward: st, vettedBy: "t" });
     const g = Object.fromEntries(r.cardGate.map((x) => [x.tool_slug, x.passes]));
     expect(g).toEqual({ "google.com#gemini": 1, "google.com#notebooklm": 0, "amazon.com#amazon-q-developer": 0, "two.example#tool-a": 1, "two.example#tool-b": 0 });
+  });
+});
+
+describe("MF9: Mailchimp follows its stored verdict, not the static steward file", () => {
+  const st = parseSteward("1. **Mailchimp** — not_compliant → held — **APPROVE.** a\n");
+  const f = parseCsv("tool\nMailchimp\n");
+  const load = (v: string) => buildLoad({ tracker: [], heldPack: new Map(), liveTools: [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: v }], flagCsv: f, recheck: null, steward: st, vettedBy: "t", verdictAsOf: "2026-11-10T12:00:00Z" }).cardGate[0];
+  it("stored not_compliant (export before PR #47) => blocked, despite the steward 'held'", () => {
+    expect(load("not_compliant")).toMatchObject({ passes: 0, basis: "blocked" });
+  });
+  it("stored unrated (PR #47 live) => unclear_live, which the sender re-checks against the mirror", () => {
+    expect(load("unrated")).toMatchObject({ passes: 1, basis: "unclear_live", verdict_at_load: "unrated", live_verdict: "unrated", verdict_as_of: "2026-11-10T12:00:00Z" });
+  });
+  it("verdict refresh SQL touches only the mirror columns", async () => {
+    const { verdictRefreshSql } = await import("../src/loader");
+    const sql = verdictRefreshSql(["mailchimp.com", "gone.example", "vercel.com#v0"], [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "vercel.com", name: "v0", source_urls: "[]", compliance_status: "shared_domain_unverified" }], "2026-11-11T08:00:00Z");
+    expect(sql).toContain("UPDATE card_gate SET live_verdict = 'unrated', verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'mailchimp.com';");
+    expect(sql).toContain("live_verdict = NULL, verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'gone.example'");
+    expect(sql).toContain("live_verdict = 'shared_domain_unverified', verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'vercel.com#v0'");
+    expect(sql).not.toMatch(/passes|basis|verdict_at_load|card_confirmed/);
   });
 });

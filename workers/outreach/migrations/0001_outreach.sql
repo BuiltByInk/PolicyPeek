@@ -105,7 +105,20 @@ CREATE TABLE IF NOT EXISTS card_gate (
   confirmed_by TEXT,
   confirmed_at TEXT,
   flag_source TEXT NOT NULL,
-  CHECK (card_confirmed = 0 OR (confirmed_by IS NOT NULL AND confirmed_at IS NOT NULL))
+  -- MF7/MF9 verdict mirror (Security re-review 10 Nov). The Worker has no
+  -- policypeek-db binding, so the loader / verdict refresh copies each tool's
+  -- stored compliance_status from a read-only export. NULL = not in the public
+  -- catalog (held/unpublished).
+  --   basis: why passes=1 (steward_held | held_tracker | unclear_live) or blocked.
+  --   verdict_at_load: status when the gate row was reviewed/generated.
+  --   live_verdict / verdict_as_of: latest mirrored status and export time.
+  -- Without a fresh mirror (VERDICT_MAX_AGE_HOURS) a passes=1 row is closed.
+  basis TEXT NOT NULL DEFAULT 'blocked' CHECK (basis IN ('steward_held', 'held_tracker', 'unclear_live', 'blocked')),
+  verdict_at_load TEXT,
+  live_verdict TEXT,
+  verdict_as_of TEXT,
+  CHECK (card_confirmed = 0 OR (confirmed_by IS NOT NULL AND confirmed_at IS NOT NULL)),
+  CHECK (passes = 0 OR basis <> 'blocked')
 );
 
 -- Gate 5: suppression keyed by address AND domain; checked before every send.

@@ -50,14 +50,35 @@ export async function sentTodayCount(db: D1Database, now: Date): Promise<number>
   return (await db.prepare("SELECT COUNT(*) AS n FROM outreach_sends WHERE claimed_at >= ? AND status IN ('claimed','sent')").bind(start).first<number>("n")) ?? 0;
 }
 
+// MF7/MF9: the gate reads the mirrored LIVE verdict, never only the static
+// steward file. A passes=1 row opens only while the mirror is fresh and:
+//  - unclear_live (unflagged live card, or Elliot ruled "unclear"): the live
+//    verdict is unclear ('unrated') or held;
+//  - held_tracker: the tool is still unpublished (NULL), held or unclear;
+//  - steward_held: the live verdict has not changed since the row was reviewed.
+// card_confirmed=1 (Elliot's per-card approval, admin route only) opens it.
+export const VERDICT_MAX_AGE_HOURS = 36;
+export const UNCLEAR_VERDICTS = ["unrated", "held"] as const;
+export const CARD_GATE_OPEN_SQL = `(g.card_confirmed = 1 OR (g.passes = 1 AND g.verdict_as_of IS NOT NULL AND g.verdict_as_of >= ?7 AND (
+    (g.basis = 'unclear_live' AND g.live_verdict IN ('unrated','held'))
+ OR (g.basis = 'held_tracker' AND (g.live_verdict IS NULL OR g.live_verdict IN ('unrated','held')))
+ OR (g.basis = 'steward_held' AND g.live_verdict IS g.verdict_at_load))))`;
+const freshSince = (now: Date) => iso(new Date(now.getTime() - VERDICT_MAX_AGE_HOURS * 3_600_000));
+
 // Card gate (Elliot 11:32, rule replaced 11:39 UK). No row => blocked (fail closed).
-export async function cardGate(db: D1Database, toolSlug: string): Promise<{ open: boolean; reason: string }> {
+export async function cardGate(db: D1Database, toolSlug: string, now = new Date()): Promise<{ open: boolean; reason: string }> {
   // MF8: a bare shared company domain can never carry a gate (it would cover every product there).
   if (!toolSlug.includes("#") && isSharedDomain(toolSlug)) return { open: false, reason: "blocked: shared company domain needs a per-tool key (MF8)" };
-  const g = await db.prepare("SELECT passes, gate_reason, card_confirmed, confirmed_by FROM card_gate WHERE tool_slug = ?").bind(toolSlug).first<{ passes: number; gate_reason: string; card_confirmed: number; confirmed_by: string | null }>();
+  const g = await db.prepare(`SELECT passes, gate_reason, card_confirmed, confirmed_by, basis, live_verdict, verdict_at_load, verdict_as_of,
+      (SELECT COUNT(*) FROM card_gate g WHERE g.tool_slug = ?1 AND ${CARD_GATE_OPEN_SQL}) AS open_now
+    FROM card_gate WHERE tool_slug = ?1`).bind(toolSlug, null, null, null, null, null, freshSince(now)).first<{ passes: number; gate_reason: string; card_confirmed: number; confirmed_by: string | null; basis: string; live_verdict: string | null; verdict_at_load: string | null; verdict_as_of: string | null; open_now: number }>();
   if (!g) return { open: false, reason: "blocked: no card_gate row (fail closed)" };
   if (g.card_confirmed === 1) return { open: true, reason: `pass: card confirmed by ${g.confirmed_by}` };
-  return { open: g.passes === 1, reason: g.gate_reason };
+  if (g.passes !== 1) return { open: false, reason: g.gate_reason };
+  if (g.open_now === 1) return { open: true, reason: `${g.gate_reason} [live verdict ${g.live_verdict ?? "unpublished"} as of ${g.verdict_as_of}]` };
+  if (!g.verdict_as_of || g.verdict_as_of < freshSince(now)) return { open: false, reason: `blocked: live verdict mirror missing or older than ${VERDICT_MAX_AGE_HOURS}h (MF9)` };
+  if (g.basis === "steward_held") return { open: false, reason: `blocked: live verdict changed since review (${g.verdict_at_load ?? "unpublished"} -> ${g.live_verdict ?? "unpublished"}) (MF9)` };
+  return { open: false, reason: `blocked: live verdict ${g.live_verdict ?? "unpublished"} is not held/unclear (MF7/MF9)` };
 }
 
 // Gate 5: address AND domain.
@@ -85,7 +106,7 @@ export async function checkContact(db: D1Database, c: ContactRow, kind: "initial
   if (!v.ok) return { ok: false, reason: `vet_${v.reason}` };
   // A parent-company address needs BOTH the code exception and the recorded reason on the row.
   if (v.domainMatchException && !c.domain_match_exception) return { ok: false, reason: "vet_domain_match_exception_not_recorded" };
-  const gate = await cardGate(db, c.tool_slug);
+  const gate = await cardGate(db, c.tool_slug, now);
   if (!gate.open) return { ok: false, reason: `card_gate ${gate.reason}` };
   if (await isSuppressed(db, c.contact_email, v.recipientDomain)) return { ok: false, reason: "suppressed" };
   const sends = (await db.prepare("SELECT kind, status, claimed_at FROM outreach_sends WHERE tool_slug = ? AND contact_email = ?").bind(c.tool_slug, c.contact_email).all<{ kind: string; status: string; claimed_at: string }>()).results;
@@ -156,7 +177,7 @@ const dayStartIso = (now: Date) => iso(new Date(Date.UTC(now.getUTCFullYear(), n
 //  - <= 2 per contact address for life, all tools (MF2)
 //  - no address or domain suppression
 //  - contact still 'eligible', not hand-sent; held rows need the hand-sent list
-//  - card gate still open (CARD_GATE_OPEN_SQL)
+//  - card gate still open incl. fresh live-verdict mirror (CARD_GATE_OPEN_SQL)
 // The email is sent only if this statement inserted exactly one row.
 const KNOWN_SHARED_SQL = KNOWN_SHARED_DOMAINS.map((d) => `'${d}'`).join(", ");
 export const CLAIM_SQL = `INSERT OR IGNORE INTO outreach_sends (contact_id, tool_slug, contact_email, recipient_domain, kind, status, claimed_at)
@@ -172,11 +193,11 @@ WHERE c.id = ?4
   AND (SELECT COUNT(*) FROM outreach_sends WHERE contact_email = lower(c.contact_email)) < ${LIFETIME_MAX_PER_CONTACT}
   AND NOT EXISTS (SELECT 1 FROM suppressions WHERE (kind = 'address' AND value = lower(c.contact_email)) OR (kind = 'domain' AND value = ?1))
   AND (instr(c.tool_slug, '#') > 0 OR c.tool_slug NOT IN (${KNOWN_SHARED_SQL}))
-  AND EXISTS (SELECT 1 FROM card_gate g WHERE g.tool_slug = c.tool_slug AND (g.card_confirmed = 1 OR g.passes = 1))`;
+  AND EXISTS (SELECT 1 FROM card_gate g WHERE g.tool_slug = c.tool_slug AND ${CARD_GATE_OPEN_SQL})`;
 
 export async function claimSend(db: D1Database, c: { contact: ContactRow; kind: "initial" | "followup"; recipientDomain: string }, now: Date): Promise<boolean> {
   const since = iso(new Date(now.getTime() - DOMAIN_GAP_DAYS * DAY));
-  const r = await db.prepare(CLAIM_SQL).bind(c.recipientDomain.toLowerCase(), c.kind, iso(now), c.contact.id, dayStartIso(now), since).run();
+  const r = await db.prepare(CLAIM_SQL).bind(c.recipientDomain.toLowerCase(), c.kind, iso(now), c.contact.id, dayStartIso(now), since, freshSince(now)).run();
   return r.meta.changes === 1;
 }
 

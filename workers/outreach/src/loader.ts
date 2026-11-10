@@ -114,7 +114,15 @@ export function parseSteward(md: string): Map<string, StewardRuling> {
   return out;
 }
 
-export interface LiveTool { domain: string; name: string; source_urls: string }
+export interface LiveTool { domain: string; name: string; source_urls: string; compliance_status?: string | null }
+
+// Elliot's later per-tool decisions, which supersede a steward ruling for the
+// card gate (MF9). "unclear": the tool may be emailed only while its STORED
+// live verdict is unclear ('unrated'), read from the verdict mirror.
+export const OWNER_RULINGS: Record<string, { outcome: "unclear"; source: string }> = {
+  "mailchimp.com": { outcome: "unclear", source: "Elliot 11:45 UK via Jump: Mailchimp to Policy unclear (supersedes steward 'held')" },
+};
+const isUnclearVerdict = (v: string | null | undefined) => v === "unrated" || v === "held";
 
 // Known hand-sent emails (Elliot, via Jump 11:37 UK). Matched on the contact's
 // registrable domain or the tool slug, any listed variant.
@@ -133,7 +141,7 @@ export interface ContactOut {
   question_text: string; status: "eligible" | "sent_by_hand" | "paused"; paused_reason: string | null; vetted_by: string | null; vetted_at: string | null; domain_match_exception: string | null; hand_sent_at: string | null; hand_sent_source: string | null;
 }
 export interface Skipped { tool: string; contact: string; kind: string; reason: string }
-export interface CardGateOut { tool_slug: string; flagged: 0 | 1; passes: 0 | 1; gate_reason: string; flag_source: string }
+export interface CardGateOut { tool_slug: string; flagged: 0 | 1; passes: 0 | 1; gate_reason: string; flag_source: string; basis: "steward_held" | "held_tracker" | "unclear_live" | "blocked"; verdict_at_load: string | null; live_verdict: string | null; verdict_as_of: string | null }
 
 export interface LoadResult {
   contacts: ContactOut[]; skipped: Skipped[]; cardGate: CardGateOut[];
@@ -158,6 +166,9 @@ export function buildLoad(input: {
   steward: Map<string, StewardRuling> | null; // null = steward file missing => everything fails closed
   vettedBy: string;
   handSent?: typeof HAND_SENT;
+  // Export time of liveTools (read-only policypeek-db export). null => no mirror => every passes=1 row is closed at send time.
+  verdictAsOf?: string | null;
+  ownerRulings?: typeof OWNER_RULINGS;
 }): LoadResult {
   const contacts: ContactOut[] = [];
   const skipped: Skipped[] = [];
@@ -268,19 +279,34 @@ export function buildLoad(input: {
   }
   const liveByKey = new Map(input.liveTools.map((t) => [keyOf(t.domain, t.name), t]));
   const slugs = new Set<string>([...liveByKey.keys(), ...contacts.map((c) => c.tool_slug)]);
+  const owner = input.ownerRulings ?? OWNER_RULINGS;
   for (const slug of slugs) {
     const live = liveByKey.get(slug);
     const flagged: 0 | 1 = live && input.flagCsv && !flaggedNames.has(live.name.toLowerCase()) ? 0 : 1;
     const st = stewardBySlug.get(slug);
-    let passes: 0 | 1 = 0, reason: string;
+    const own = owner[slug];
+    const verdict = live ? live.compliance_status ?? null : null;
+    let passes: 0 | 1 = 0, reason: string, basis: CardGateOut["basis"] = "blocked";
     if (failClosed) reason = !input.flagCsv ? "blocked: ambiguous-cards CSV missing (fail closed)" : "blocked: steward ruling file missing (fail closed)";
-    else if (st && st.held) { passes = 1; reason = `pass: steward ruling held (${st.decision})`; }
+    else if (own?.outcome === "unclear") {
+      // MF9: Elliot's ruling wins over the steward file; open only while the stored verdict is unclear.
+      if (isUnclearVerdict(verdict)) { passes = 1; basis = "unclear_live"; reason = `pass: owner ruling unclear, stored verdict ${verdict} (${own.source.slice(0, 40)})`; }
+      else reason = `blocked: owner ruling unclear but stored verdict ${verdict ?? "unpublished"}; re-export and re-run loader (MF9)`;
+    }
+    else if (st && st.held) { passes = 1; basis = "steward_held"; reason = `pass: steward ruling held (${st.decision})`; }
     else if (st) reason = `blocked: steward ${st.outcome.slice(0, 70)}`;
-    else if (heldSlugs.has(slug)) { passes = 1; reason = "pass: held tool (held-outreach tracker)"; }
-    else if (flagged === 0) { passes = 1; reason = "pass: live card not flagged by the audit"; }
+    else if (heldSlugs.has(slug)) {
+      if (!live || isUnclearVerdict(verdict)) { passes = 1; basis = "held_tracker"; reason = "pass: held tool (held-outreach tracker)"; }
+      else reason = `blocked: held-tracker tool now published as ${verdict} (MF7)`;
+    }
+    else if (flagged === 0) {
+      // MF7: an unflagged live card passes only if its stored verdict is held/unclear.
+      if (isUnclearVerdict(verdict)) { passes = 1; basis = "unclear_live"; reason = `pass: unflagged live card, stored verdict ${verdict}`; }
+      else reason = `blocked: unflagged live card with definite verdict ${verdict ?? "unknown"} (MF7)`;
+    }
     else if (live) reason = "blocked: flagged in ambiguous-cards audit, no steward ruling";
     else reason = "blocked: unknown tool (fail closed)";
-    cardGate.push({ tool_slug: slug, flagged, passes, gate_reason: reason, flag_source: "factcheck-recheck-2026-11-10.md (steward) + tracker.csv + ambiguous-cards-2026-11-10.csv" });
+    cardGate.push({ tool_slug: slug, flagged, passes, gate_reason: reason, basis, verdict_at_load: verdict, live_verdict: verdict, verdict_as_of: input.verdictAsOf ?? null, flag_source: "factcheck-recheck-2026-11-10.md (steward) + OWNER_RULINGS + tracker.csv + ambiguous-cards-2026-11-10.csv + policypeek-db export" });
   }
   return { contacts, skipped, cardGate, counts };
 }
@@ -294,6 +320,19 @@ export function toSql(r: LoadResult, vettedBy: string, vettedAt: string): string
   for (const h of HAND_SENT) for (const d of h.domains)
     lines.push(`INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ${q(d)}, 'manual');`);
   for (const g of r.cardGate)
-    lines.push(`INSERT INTO card_gate (tool_slug, flagged, passes, gate_reason, flag_source) VALUES (${q(g.tool_slug)}, ${g.flagged}, ${g.passes}, ${q(g.gate_reason)}, ${q(g.flag_source)}) ON CONFLICT (tool_slug) DO UPDATE SET flagged = excluded.flagged, passes = excluded.passes, gate_reason = excluded.gate_reason, flag_source = excluded.flag_source;`);
+    lines.push(`INSERT INTO card_gate (tool_slug, flagged, passes, gate_reason, flag_source, basis, verdict_at_load, live_verdict, verdict_as_of) VALUES (${[g.tool_slug, g.flagged, g.passes, g.gate_reason, g.flag_source, g.basis, g.verdict_at_load, g.live_verdict, g.verdict_as_of].map(q).join(", ")}) ON CONFLICT (tool_slug) DO UPDATE SET flagged = excluded.flagged, passes = excluded.passes, gate_reason = excluded.gate_reason, flag_source = excluded.flag_source, basis = excluded.basis, verdict_at_load = excluded.verdict_at_load, live_verdict = excluded.live_verdict, verdict_as_of = excluded.verdict_as_of;`);
+  return lines.join("\n") + "\n";
+}
+
+// MF9 verdict refresh: from a fresh READ-ONLY policypeek-db export, update only
+// the mirror columns (never passes, basis, verdict_at_load or card_confirmed).
+// A tool missing from the export is mirrored as NULL (unpublished).
+export function verdictRefreshSql(gateKeys: string[], liveTools: LiveTool[], asOf: string): string {
+  const per = new Map<string, number>();
+  for (const t of liveTools) per.set(t.domain, (per.get(t.domain) ?? 0) + 1);
+  const multi = [...per].filter(([, n]) => n > 1).map(([d]) => d);
+  const byKey = new Map(liveTools.map((t) => [toolKey(t.domain, t.name, multi), t.compliance_status ?? null]));
+  const lines = [`-- Verdict mirror refresh (MF9). Export time ${asOf}. Updates live_verdict/verdict_as_of only.`];
+  for (const k of gateKeys) lines.push(`UPDATE card_gate SET live_verdict = ${q(byKey.get(k) ?? null)}, verdict_as_of = ${q(asOf)} WHERE tool_slug = ${q(k)};`);
   return lines.join("\n") + "\n";
 }

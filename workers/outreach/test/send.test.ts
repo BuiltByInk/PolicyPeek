@@ -14,8 +14,12 @@ function addContact(raw: any, o: Partial<Record<string, any>> = {}) {
   const r = raw.prepare(`INSERT INTO outreach_contacts (${Object.keys(c).join(",")}) VALUES (${Object.keys(c).map(() => "?").join(",")})`).run(...Object.values(c));
   return Number(r.lastInsertRowid);
 }
-function gate(raw: any, slug: string, passes: 0 | 1, reason = passes ? "pass: test" : "blocked: test", confirmed = 0) {
-  raw.prepare("INSERT INTO card_gate (tool_slug, flagged, passes, gate_reason, card_confirmed, confirmed_by, confirmed_at, flag_source) VALUES (?, 1, ?, ?, ?, ?, ?, 'test')").run(slug, passes, reason, confirmed, confirmed ? "Elliot" : null, confirmed ? "2026-11-10" : null);
+// Test gate rows: an unclear live card with a mirror that never goes stale
+// within these multi-month simulations (freshness has its own tests below).
+const FAR = "2099-01-01T00:00:00.000Z";
+function gate(raw: any, slug: string, passes: 0 | 1, reason = passes ? "pass: test" : "blocked: test", confirmed = 0, o: { basis?: string; live?: string | null; atLoad?: string | null; asOf?: string | null } = {}) {
+  raw.prepare("INSERT INTO card_gate (tool_slug, flagged, passes, gate_reason, card_confirmed, confirmed_by, confirmed_at, flag_source, basis, verdict_at_load, live_verdict, verdict_as_of) VALUES (?, 1, ?, ?, ?, ?, ?, 'test', ?, ?, ?, ?)")
+    .run(slug, passes, reason, confirmed, confirmed ? "Elliot" : null, confirmed ? "2026-11-10" : null, o.basis ?? (passes ? "unclear_live" : "blocked"), o.atLoad === undefined ? "unrated" : o.atLoad, o.live === undefined ? "unrated" : o.live, o.asOf === undefined ? FAR : o.asOf);
 }
 function sendMock() {
   return { send: vi.fn(async () => ({ messageId: `<m${Math.random().toString(36).slice(2)}@mail.getpolicypeek.com>` })) };
@@ -36,7 +40,7 @@ describe("gate 3: kill switch, paused flag, dry-run default", () => {
     const r = await runDaily({ DB: db.d1, EMAIL } as any, NOW);
     expect(r.mode).toBe("dry_run");
     expect(r.rendered).toHaveLength(1);
-    expect(r.rendered[0].card_gate).toBe("pass: test");
+    expect(r.rendered[0].card_gate).toMatch(/^pass: test \[live verdict unrated/);
     expect(EMAIL.send).not.toHaveBeenCalled();
   });
   it("live mode still sends nothing unless OUTREACH_ENABLED=true AND paused=0", async () => {
@@ -150,7 +154,7 @@ describe("card gate (11:32 / 11:39 UK)", () => {
   });
   it("flagged tool confirmed by an admin => queued, and the dry run shows why", async () => {
     addContact(db.raw); gate(db.raw, "alpha.example.com", 0, "blocked: flagged", 1);
-    expect(await cardGate(db.d1, "alpha.example.com")).toEqual({ open: true, reason: "pass: card confirmed by Elliot" });
+    expect(await cardGate(db.d1, "alpha.example.com", NOW)).toEqual({ open: true, reason: "pass: card confirmed by Elliot" });
     expect((await runDaily(live(db), NOW)).sent).toHaveLength(1);
   });
   it("tool that isn't flagged (or proposes held) => normal rules", async () => {
@@ -352,5 +356,45 @@ describe("MF8: sender refuses a gate keyed on a bare shared domain", () => {
     gate(db.raw, "vercel.com#v0", 0);
     const res = await handleAdmin(new Request("https://x/admin/card-confirm", { method: "POST", headers: { "X-Admin-Token": TOKEN }, body: JSON.stringify({ tool_slug: "vercel.com#v0", confirmed_by: "Elliot" }) }), { DB: db.d1, OUTREACH_ADMIN_TOKEN: TOKEN }, NOW);
     expect(res.status).toBe(200);
+  });
+});
+
+describe("MF7/MF9: the gate reads the mirrored LIVE verdict, not the static steward file", () => {
+  const T = NOW;
+  const fresh = new Date(T.getTime() - 3600_000).toISOString();
+  const stale = new Date(T.getTime() - 48 * 3600_000).toISOString();
+  it("unclear_live opens only while the live verdict is unclear/held and the mirror is fresh", async () => {
+    gate(db.raw, "u.example", 1, "pass: x", 0, { basis: "unclear_live", live: "unrated", asOf: fresh });
+    expect((await cardGate(db.d1, "u.example", T)).open).toBe(true);
+    db.raw.prepare("UPDATE card_gate SET live_verdict = 'not_compliant'").run();
+    expect(await cardGate(db.d1, "u.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/not held\/unclear/) });
+    db.raw.prepare("UPDATE card_gate SET live_verdict = 'unrated', verdict_as_of = ?").run(stale);
+    expect(await cardGate(db.d1, "u.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/older than 36h/) });
+    db.raw.prepare("UPDATE card_gate SET verdict_as_of = NULL").run();
+    expect((await cardGate(db.d1, "u.example", T)).open).toBe(false);
+  });
+  it("steward_held closes if the live verdict changes after review", async () => {
+    gate(db.raw, "s.example", 1, "pass: steward", 0, { basis: "steward_held", atLoad: "not_compliant", live: "not_compliant", asOf: fresh });
+    expect((await cardGate(db.d1, "s.example", T)).open).toBe(true);
+    db.raw.prepare("UPDATE card_gate SET live_verdict = 'compliant'").run();
+    expect(await cardGate(db.d1, "s.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/changed since review/) });
+  });
+  it("held_tracker closes if the tool is published with a definite verdict", async () => {
+    gate(db.raw, "h.example", 1, "pass: held", 0, { basis: "held_tracker", atLoad: null, live: null, asOf: fresh });
+    expect((await cardGate(db.d1, "h.example", T)).open).toBe(true);
+    db.raw.prepare("UPDATE card_gate SET live_verdict = 'compliant_with_caveats'").run();
+    expect((await cardGate(db.d1, "h.example", T)).open).toBe(false);
+  });
+  it("the atomic claim applies the same live-verdict rule (no send on a stale or changed mirror)", async () => {
+    addContact(db.raw, { tool_slug: "u.example", tool_name: "U" });
+    gate(db.raw, "u.example", 1, "pass: x", 0, { basis: "unclear_live", live: "unrated", asOf: stale });
+    const env = live(db);
+    expect((await runDaily(env, T)).sent).toHaveLength(0);
+    db.raw.prepare("UPDATE card_gate SET verdict_as_of = ?").run(fresh);
+    expect((await runDaily(env, T)).sent).toHaveLength(1);
+  });
+  it("card_confirmed (Elliot, admin route) still opens regardless of the mirror", async () => {
+    gate(db.raw, "c.example", 0, "blocked: x", 1, { live: "compliant", asOf: null });
+    expect((await cardGate(db.d1, "c.example", T)).open).toBe(true);
   });
 });

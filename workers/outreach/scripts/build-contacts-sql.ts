@@ -1,6 +1,6 @@
 // Usage (box only): node --experimental-strip-types outreach/scripts/build-contacts-sql.ts <out-dir>
 // Writes contacts.sql + load-report.md. Does NOT apply anything to any database.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader.ts";
 
 const HELD = "/workspace/deliverables/policypeek/held-outreach";
@@ -9,7 +9,10 @@ const RECHECK = "/workspace/deliverables/research/recheck-2026-11-10.md";
 const STEWARD = "/workspace/deliverables/research/catalog-daily/factcheck-recheck-2026-11-10.md";
 const out = process.argv[2] ?? "out";
 mkdirSync(out, { recursive: true });
-const toolsDump = JSON.parse(readFileSync(process.env.PROD_TOOLS_JSON ?? "/tmp/prod-tools.json", "utf8"));
+const TOOLS = process.env.PROD_TOOLS_JSON ?? "/tmp/prod-tools.json";
+const toolsDump = JSON.parse(readFileSync(TOOLS, "utf8"));
+// MF9: export time of the read-only policypeek-db dump = verdict mirror time.
+const verdictAsOf = process.env.PROD_TOOLS_AS_OF ?? statSync(TOOLS).mtime.toISOString();
 const liveTools = (Array.isArray(toolsDump) ? toolsDump[0].results : toolsDump.results).filter((t: any) => t.compliance_status !== "held");
 const r = buildLoad({
   tracker: parseCsv(readFileSync(`${HELD}/tracker.csv`, "utf8")),
@@ -19,6 +22,7 @@ const r = buildLoad({
   recheck: existsSync(RECHECK) ? parseRecheck(readFileSync(RECHECK, "utf8")) : null,
   steward: existsSync(STEWARD) ? parseSteward(readFileSync(STEWARD, "utf8")) : null,
   vettedBy: "dev-loader (Security gate 2 rules)",
+  verdictAsOf,
 });
 const vettedAt = new Date().toISOString();
 writeFileSync(`${out}/contacts.sql`, toSql(r, "dev-loader (Security gate 2 rules)", vettedAt));
@@ -28,7 +32,7 @@ const md = [
   "## Loadable contacts (all still behind kill switch, paused flag and card gate)", "", "| tool_slug | kind | contact | source | status | domain exception | card gate |", "|---|---|---|---|---|---|---|",
   ...r.contacts.map((c) => { const g = r.cardGate.find((x) => x.tool_slug === c.tool_slug)!; return `| ${c.tool_slug} | ${c.kind} | ${c.contact_email} | ${c.contact_source_url} | ${c.status}${c.paused_reason ? ` (${c.paused_reason})` : ""} | ${c.domain_match_exception ?? ""} | ${g.gate_reason} |`; }), "",
   "## Dropped / skipped", "", "| tool | kind | contact | reason |", "|---|---|---|---|", ...r.skipped.map((s) => `| ${s.tool} | ${s.kind} | ${s.contact} | ${s.reason} |`), "",
-  "## Card gate (all tools)", "", `pass: ${r.cardGate.filter((g) => g.passes).length}, blocked: ${r.cardGate.filter((g) => !g.passes).length}`, "", "| tool_slug | flagged | gate |", "|---|---|---|", ...r.cardGate.map((g) => `| ${g.tool_slug} | ${g.flagged} | ${g.gate_reason} |`), "",
+  "## Card gate (all tools)", "", `pass: ${r.cardGate.filter((g) => g.passes).length}, blocked: ${r.cardGate.filter((g) => !g.passes).length}`, "", `Verdict mirror: ${TOOLS}, as of ${verdictAsOf}`, "", "| tool_slug | flagged | basis | stored verdict | gate |", "|---|---|---|---|---|", ...r.cardGate.map((g) => `| ${g.tool_slug} | ${g.flagged} | ${g.basis} | ${g.verdict_at_load ?? "unpublished"} | ${g.gate_reason} |`), "",
 ];
 writeFileSync(`${out}/load-report.md`, md.join("\n"));
 console.log(JSON.stringify(r.counts), "contacts", r.contacts.length, "gate", r.cardGate.length);
