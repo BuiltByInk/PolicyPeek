@@ -256,7 +256,7 @@ describe("MF11: verdict refresh fails closed", () => {
     expect(() => mod.verdictRefreshSql(gate, cat(70), "", { now: T })).toThrow(/PROD_TOOLS_AS_OF is required/);
   });
   it("the scripts read no file time and require PROD_TOOLS_AS_OF", () => {
-    for (const f of ["build-verdicts-sql.ts", "build-contacts-sql.ts"]) {
+    for (const f of ["build-verdicts-sql.ts", "build-contacts-sql.ts", "refresh-verdicts.ts"]) {
       const src = readFileSync(new URL(`../scripts/${f}`, import.meta.url), "utf8");
       expect(src).not.toMatch(/mtime|statSync/);
       expect(src).toMatch(/requireAsOf\(process\.env\.PROD_TOOLS_AS_OF/);
@@ -268,5 +268,22 @@ describe("MF11: verdict refresh fails closed", () => {
     const r = buildLoad({ tracker: tr, heldPack: pack, liveTools: [{ domain: "pub.example", name: "Pub", source_urls: "[]", compliance_status: "" }], flagCsv: parseCsv("tool\n"), recheck: null, steward: parseSteward(""), vettedBy: "t", verdictAsOf: "2026-11-10T12:00:00Z" });
     expect(r.cardGate.find((g) => g.tool_slug === "heldone.example")).toMatchObject({ passes: 1, basis: "held_tracker", verdict_at_load: "unpublished", live_verdict: "unpublished" });
     expect(r.cardGate.find((g) => g.tool_slug === "pub.example")).toMatchObject({ passes: 0, verdict_at_load: null });
+  });
+});
+
+describe("daily verdict refresh job (Jump: automatic, fail closed; not scheduled)", () => {
+  const src = readFileSync(new URL("../scripts/refresh-verdicts.ts", import.meta.url), "utf8");
+  it("policypeek-db is only ever read with a fixed SELECT via --command, never --file", () => {
+    expect(src).toMatch(/export const EXPORT_SQL = "SELECT domain, name, compliance_status, source_urls FROM tools ORDER BY domain, name";/);
+    const exportCmd = src.split("\n").find((l) => l.startsWith("const EXPORT_CMD"))!;
+    expect(exportCmd).toMatch(/"policypeek-db", "--remote", "--json", "--command", EXPORT_SQL/);
+    expect(exportCmd).not.toMatch(/--file/);
+    expect(src.split("\n").filter((l) => /policypeek-db/.test(l) && !/^\s*\/\//.test(l))).toEqual([exportCmd]); // only the export command touches it
+  });
+  it("writes only to policypeek-outreach, only with --apply, and only after verdictRefreshSql validated the export", () => {
+    expect(src).toMatch(/const applyCmd = \(file: string\) => \[\.\.\.W, "d1", "execute", "policypeek-outreach", \.\.\.OUTREACH, "--file", file\]/);
+    expect(src.indexOf("verdictRefreshSql(gate, tools, asOf, { previousCount })")).toBeLessThan(src.indexOf("npx(applyCmd(file), workers)"));
+    expect(src).toMatch(/!args\.includes\("--apply"\)/);
+    expect(src).toMatch(/process\.exit\(1\)/);
   });
 });
