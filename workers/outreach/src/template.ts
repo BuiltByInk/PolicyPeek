@@ -151,7 +151,20 @@ export const IMPLIES_TRAINING = [
   /\bwhy\s+(?:do|does|are)\s+you\s+train/i,
   /\b(?:trains|is training|trained)\s+on\s+(?:your|customer|user)\s+(?:data|content)/i,
 ];
+// SF7 (Security re-review 10 Nov): our OWN words never state a verdict.
+// Checked on the subject and the body with every double-quoted span removed
+// (vendor quotes are the company's words, attributed, not ours).
+export const VERDICT_WORDS = [
+  /\bheld\b/i, /\bon hold\b/i, /\bverdicts?\b/i, /\bratings?\b/i, /\brated\b/i, /\bbadges?\b/i,
+  /\b(?:non-?|not\s+)?compliant\b/i, /\bcompliance status\b/i, /\bwe (?:have )?found that\b/i,
+  /\byou\s+(?:do\s+)?train\b/i, /\byou\s+use\b[^.?!\n]{0,60}\bto\s+train\b/i,
+];
+export function ownWords(text: string): string {
+  return text.replace(/"[^"\n]*"/g, " ").replace(/“[^”\n]*”/g, " ");
+}
 export function assertNoBanned(e: RenderedEmail): void {
   for (const b of BANNED) if (b.test(e.subject) || b.test(e.text)) throw new TemplateError(`banned_wording ${b}`);
   for (const b of IMPLIES_TRAINING) if (b.test(e.subject) || b.test(e.text)) throw new TemplateError(`implies_training ${b}`);
+  const own = ownWords(e.text);
+  for (const b of VERDICT_WORDS) if (b.test(e.subject) || b.test(own)) throw new TemplateError(`verdict_wording ${b}`);
 }

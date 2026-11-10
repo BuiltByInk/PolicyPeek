@@ -58,3 +58,15 @@ describe("gate 1: templates", () => {
     expect(() => assertNoBanned({ subject: "s", text: "our paid plan" })).toThrow();
   });
 });
+
+import { ownWords, renderInitial as ri, TemplateError as TE } from "../src/template";
+describe("SF7: no verdict vocabulary in our own words", () => {
+  const base = { toolName: "Acme", policyUrl: "https://acme.example/privacy", storedPolicyUrl: "https://acme.example/privacy" };
+  for (const ctx of ["We reviewed your policy. Your listing is held while we check.", "Our verdict is unclear.", "We rated this not compliant.", "We found that the policy allows it.", "Your badge shows Trains on data.", "We think you train on uploads.", "We believe you use uploaded files to train models."])
+    it(`rejects: ${ctx}`, () => expect(() => ri({ ...base, contextParagraph: ctx })).toThrow(TE));
+  it("allows the same words inside an attributed vendor quote", () => {
+    const e = ri({ ...base, contextParagraph: `We reviewed https://acme.example/privacy. It says: "Content is held for 30 days and we remain compliant with GDPR." We'd like to make sure we read this correctly.` });
+    expect(e.text).toContain("held for 30 days");
+    expect(ownWords(e.text)).not.toContain("held for 30 days");
+  });
+});
