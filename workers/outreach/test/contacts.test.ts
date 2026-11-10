@@ -198,3 +198,24 @@ describe("MF10: hand-sent check applies to any tool on the held tracker", () => 
     expect(toSql(r, "t", "now")).toMatch(/'mailchimp\.com', 'Mailchimp', 'mailchimp\.com', 'ambiguous_live', 'privacy@intuit\.com'.*, 1, 'paused', 'on held tracker: awaiting hand-sent list'/);
   });
 });
+
+describe("SF6 + step (c): blocked tools load paused; the generated SQL has no eligible row", () => {
+  const live = [["ahrefs.com", "Ahrefs", "not_compliant"], ["buffer.com", "Buffer", "unrated"]].map(([domain, name, compliance_status]) => ({ domain, name, source_urls: "[]", compliance_status }));
+  const flags = parseCsv("tool,contact,contact_source_url\nAhrefs,privacy@ahrefs.com,https://ahrefs.com/legal/privacy-policy\nBuffer,privacy@buffer.com,https://buffer.com/legal\n");
+  const rc = parseRecheck("| 1 | Ahrefs (ahrefs.com) | x | y | Yes |\n| 2 | Buffer (buffer.com) | x | y | Yes |\n### 1. Ahrefs (ahrefs.com)\n> q1\nSource: https://ahrefs.com/legal/privacy-policy — x\n### 2. Buffer (buffer.com)\n> q2\nSource: https://buffer.com/legal — x\n");
+  const st = parseSteward("1. **Ahrefs** — not_compliant → held — **REJECT (keep).** a\n2. **Buffer** — held (unchanged) — **APPROVE.** b\n");
+  const r = buildLoad({ tracker: [], heldPack: new Map(), liveTools: live, flagCsv: flags, recheck: rc, steward: st, vettedBy: "t", verdictAsOf: "2026-11-10T12:00:00Z" });
+  it("definite-verdict (gate-blocked) tool => paused 'definite verdict: needs card_confirmed'; steward-held stays eligible in the plan", () => {
+    expect(r.contacts.find((c) => c.tool_slug === "ahrefs.com")).toMatchObject({ status: "paused", paused_reason: "definite verdict: needs card_confirmed" });
+    expect(r.contacts.find((c) => c.tool_slug === "buffer.com")).toMatchObject({ status: "eligible" });
+  });
+  it("toSql default writes every contact paused or sent_by_hand, never card_confirmed", async () => {
+    const sql = toSql(r, "t", "now");
+    const { makeDb } = await import("../../test-utils/d1shim");
+    const db = makeDb(new URL("../migrations/0001_outreach.sql", import.meta.url).pathname);
+    db.raw.exec(sql);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_contacts WHERE status NOT IN ('paused','sent_by_hand')").get().n).toBe(0);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM card_gate WHERE card_confirmed = 1").get().n).toBe(0);
+    expect(db.raw.prepare("SELECT paused_reason FROM outreach_contacts WHERE tool_slug = 'buffer.com'").get().paused_reason).toMatch(/^initial load: paused/);
+  });
+});
