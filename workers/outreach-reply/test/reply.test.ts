@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
-import { FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
+import { ACCEPTED_RECIPIENTS, FORWARD_TO, handleEmail, registrable, stripQuoted } from "../src/reply";
 import { STOP_LINE } from "../../outreach/src/template";
 import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
@@ -9,13 +9,13 @@ const MIG = new URL("../../outreach/migrations/0001_outreach.sql", import.meta.u
 const SRC = readFileSync(new URL("../src/reply.ts", import.meta.url), "utf8") + readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const WRANGLER = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
 
-function msg(o: { from?: string; headers?: Record<string, string>; body?: string; size?: number } = {}) {
+function msg(o: { from?: string; to?: string; headers?: Record<string, string>; body?: string; size?: number } = {}) {
   const headers = new Headers({ subject: "Re: PolicyPeek question", "message-id": "<r1@example.com>", "authentication-results": "mx.cloudflare.net; spf=pass smtp.mailfrom=example.com; dkim=pass header.d=example.com; dmarc=pass header.from=example.com", ...o.headers });
   const raw = `From: ${o.from ?? "privacy@example.com"}\r\n${[...headers].map(([k, v]) => `${k}: ${v}`).join("\r\n")}\r\nContent-Type: text/plain\r\n\r\n${o.body ?? "Hello, we do not train on customer data. Our DPO."}\r\n`;
   const bytes = new TextEncoder().encode(raw);
   return {
     from: o.from ?? "privacy@example.com",
-    to: "privacy@getpolicypeek.com",
+    to: o.to ?? "privacy@getpolicypeek.com",
     headers,
     raw: new ReadableStream({ start(c) { c.enqueue(bytes); c.close(); } }),
     rawSize: o.size ?? bytes.byteLength,
@@ -215,5 +215,25 @@ describe("MF3: an objection suppresses the matched contact, the header From and 
     const { isSuppressed } = await import("../../outreach/src/send");
     expect(await isSuppressed(db.d1, "privacy@example.com", "example.com")).toBe(true);
     expect(await isSuppressed(db.d1, "legal@example.com", "example.com")).toBe(true);
+  });
+});
+
+describe("MF5: replies to the From address (privacy@mail.*) and to Reply-To (privacy@ apex) both reach Elliot", () => {
+  it("accepts exactly the two privacy@ recipients", async () => {
+    expect([...ACCEPTED_RECIPIENTS]).toEqual(["privacy@getpolicypeek.com", "privacy@mail.getpolicypeek.com"]);
+    for (const to of ["privacy@getpolicypeek.com", "privacy@mail.getpolicypeek.com", "PRIVACY@Mail.GetPolicyPeek.com"]) {
+      const m = msg({ to, headers: { "in-reply-to": "<s1@mail.getpolicypeek.com>" } });
+      expect((await handleEmail(m, env())).forwarded).toBe(true);
+      expect(m.forward.mock.calls[0][0]).toBe("elliotink@pm.me");
+    }
+  });
+  it("anything else routed here by mistake is rejected: no forward, no D1", async () => {
+    for (const to of ["hello@getpolicypeek.com", "privacy@cf-bounce.mail.getpolicypeek.com", "x@example.com"]) {
+      const m = msg({ to });
+      expect((await handleEmail(m, env())).classification).toBe("wrong_recipient");
+      expect(m.forward).not.toHaveBeenCalled();
+      expect(m.setReject).toHaveBeenCalled();
+    }
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_replies").get().n).toBe(0);
   });
 });

@@ -14,10 +14,18 @@ import { getDomain } from "tldts";
 export const FORWARD_TO = "elliotink@pm.me";
 export const MAX_PARSE_BYTES = 256 * 1024;
 const OWN_DOMAINS = ["getpolicypeek.com", "mail.getpolicypeek.com"];
+// MF5 (Jump 12:07 UK): we send From privacy@mail.getpolicypeek.com with
+// Reply-To privacy@getpolicypeek.com. Replies may come to either, so both
+// literal Email Routing rules (apex, and mail.* once MX is added there) point at
+// this Worker. Anything else routed here by mistake is rejected, not forwarded.
+export const ACCEPTED_RECIPIENTS = ["privacy@getpolicypeek.com", "privacy@mail.getpolicypeek.com"] as const;
+export function acceptedRecipient(to: string): boolean {
+  return (ACCEPTED_RECIPIENTS as readonly string[]).includes(to.trim().toLowerCase().replace(/^<|>$/g, ""));
+}
 
 export interface ReplyEnv { DB: D1Database }
 
-export type Classification = "dmarc_report" | "loop" | "bounce" | "auto_reply" | "objection" | "reply";
+export type Classification = "wrong_recipient" | "dmarc_report" | "loop" | "bounce" | "auto_reply" | "objection" | "reply";
 
 const lower = (s: string | null | undefined) => (s ?? "").toLowerCase();
 
@@ -154,6 +162,10 @@ export function objectionSuppressions(envelopeFrom: string, headerFrom: string):
 }
 
 export async function handleEmail(message: ForwardableEmailMessage, env: ReplyEnv, now = new Date()): Promise<HandleResult> {
+  if (!acceptedRecipient(message.to ?? "")) {
+    message.setReject("Unknown recipient");
+    return { classification: "wrong_recipient", forwarded: false, match: { contactId: null, toolSlug: null, method: null } };
+  }
   const from = message.from ?? "";
   const hdrFrom = headerFromAddress(message.headers);
   // Sender's company domain: header From when present (the real sender), else envelope.
