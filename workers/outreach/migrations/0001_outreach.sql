@@ -112,8 +112,9 @@ CREATE TABLE IF NOT EXISTS card_gate (
   flag_source TEXT NOT NULL,
   -- MF7/MF9 verdict mirror (Security re-review 10 Nov). The Worker has no
   -- policypeek-db binding, so the loader / verdict refresh copies each tool's
-  -- stored compliance_status from a read-only export. NULL = not in the public
-  -- catalog (held/unpublished).
+  -- stored compliance_status from a validated read-only export (MF11).
+  -- 'unpublished' = not in the public catalog (held); NULL/'' = unknown and
+  -- always blocks. Freshness: refreshed the same UTC day as the send.
   --   basis: why passes=1 (steward_held | held_tracker | unclear_live) or blocked.
   --   verdict_at_load: status when the gate row was reviewed/generated.
   --   live_verdict / verdict_as_of: latest mirrored status and export time.

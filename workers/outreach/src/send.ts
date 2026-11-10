@@ -60,11 +60,19 @@ export async function sentTodayCount(db: D1Database, now: Date): Promise<number>
 // card_confirmed=1 (Elliot's per-card approval, admin route only) opens it.
 export const VERDICT_MAX_AGE_HOURS = 36;
 export const UNCLEAR_VERDICTS = ["unrated", "held"] as const;
-export const CARD_GATE_OPEN_SQL = `(g.card_confirmed = 1 OR (g.passes = 1 AND g.verdict_as_of IS NOT NULL AND g.verdict_as_of >= ?7 AND (
+// MF11: NULL or '' never opens (a missing verdict blocks); "unpublished" is an
+// explicit value written only for tools reviewed as unpublished. Freshness is
+// the SAME UTC DAY (and within VERDICT_MAX_AGE_HOURS): if the morning refresh
+// fails or is refused, nothing sends that day.
+export const CARD_GATE_OPEN_SQL = `(g.card_confirmed = 1 OR (g.passes = 1 AND g.verdict_as_of IS NOT NULL AND g.verdict_as_of >= ?7
+ AND g.live_verdict IS NOT NULL AND g.live_verdict <> '' AND (
     (g.basis = 'unclear_live' AND g.live_verdict IN ('unrated','held'))
- OR (g.basis = 'held_tracker' AND (g.live_verdict IS NULL OR g.live_verdict IN ('unrated','held')))
- OR (g.basis = 'steward_held' AND g.live_verdict IS g.verdict_at_load))))`;
-const freshSince = (now: Date) => iso(new Date(now.getTime() - VERDICT_MAX_AGE_HOURS * 3_600_000));
+ OR (g.basis = 'held_tracker' AND g.live_verdict IN ('unpublished','unrated','held'))
+ OR (g.basis = 'steward_held' AND g.live_verdict = g.verdict_at_load))))`;
+const freshSince = (now: Date) => {
+  const day = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return iso(new Date(Math.max(day, now.getTime() - VERDICT_MAX_AGE_HOURS * 3_600_000)));
+};
 
 // Card gate (Elliot 11:32, rule replaced 11:39 UK). No row => blocked (fail closed).
 export async function cardGate(db: D1Database, toolSlug: string, now = new Date()): Promise<{ open: boolean; reason: string }> {
@@ -76,10 +84,11 @@ export async function cardGate(db: D1Database, toolSlug: string, now = new Date(
   if (!g) return { open: false, reason: "blocked: no card_gate row (fail closed)" };
   if (g.card_confirmed === 1) return { open: true, reason: `pass: card confirmed by ${g.confirmed_by}` };
   if (g.passes !== 1) return { open: false, reason: g.gate_reason };
-  if (g.open_now === 1) return { open: true, reason: `${g.gate_reason} [live verdict ${g.live_verdict ?? "unpublished"} as of ${g.verdict_as_of}]` };
-  if (!g.verdict_as_of || g.verdict_as_of < freshSince(now)) return { open: false, reason: `blocked: live verdict mirror missing or older than ${VERDICT_MAX_AGE_HOURS}h (MF9)` };
-  if (g.basis === "steward_held") return { open: false, reason: `blocked: live verdict changed since review (${g.verdict_at_load ?? "unpublished"} -> ${g.live_verdict ?? "unpublished"}) (MF9)` };
-  return { open: false, reason: `blocked: live verdict ${g.live_verdict ?? "unpublished"} is not held/unclear (MF7/MF9)` };
+  if (g.open_now === 1) return { open: true, reason: `${g.gate_reason} [live verdict ${g.live_verdict} as of ${g.verdict_as_of}]` };
+  if (!g.verdict_as_of || g.verdict_as_of < freshSince(now)) return { open: false, reason: "blocked: live verdict mirror not refreshed today (MF9/MF11)" };
+  if (!g.live_verdict) return { open: false, reason: "blocked: live verdict missing (MF11)" };
+  if (g.basis === "steward_held") return { open: false, reason: `blocked: live verdict changed since review (${g.verdict_at_load ?? "missing"} -> ${g.live_verdict}) (MF9)` };
+  return { open: false, reason: `blocked: live verdict ${g.live_verdict} is not held/unclear (MF7/MF9)` };
 }
 
 // Gate 5: address AND domain.

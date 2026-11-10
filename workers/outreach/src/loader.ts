@@ -291,7 +291,9 @@ export function buildLoad(input: {
     const flagged: 0 | 1 = live && input.flagCsv && !flaggedNames.has(live.name.toLowerCase()) ? 0 : 1;
     const st = stewardBySlug.get(slug);
     const own = owner[slug];
-    const verdict = live ? live.compliance_status ?? null : null;
+    // MF11: absent from the catalog => explicit 'unpublished'; a live row with an
+    // empty verdict stays null and can never pass.
+    const verdict = live ? (live.compliance_status || null) : UNPUBLISHED;
     let passes: 0 | 1 = 0, reason: string, basis: CardGateOut["basis"] = "blocked";
     if (failClosed) reason = !input.flagCsv ? "blocked: ambiguous-cards CSV missing (fail closed)" : "blocked: steward ruling file missing (fail closed)";
     else if (own?.outcome === "unclear") {
@@ -302,7 +304,7 @@ export function buildLoad(input: {
     else if (st && st.held) { passes = 1; basis = "steward_held"; reason = `pass: steward ruling held (${st.decision})`; }
     else if (st) reason = `blocked: steward ${st.outcome.slice(0, 70)}`;
     else if (heldSlugs.has(slug)) {
-      if (!live || isUnclearVerdict(verdict)) { passes = 1; basis = "held_tracker"; reason = "pass: held tool (held-outreach tracker)"; }
+      if (verdict === UNPUBLISHED || isUnclearVerdict(verdict)) { passes = 1; basis = "held_tracker"; reason = "pass: held tool (held-outreach tracker)"; }
       else reason = `blocked: held-tracker tool now published as ${verdict} (MF7)`;
     }
     else if (flagged === 0) {
@@ -346,15 +348,74 @@ export function toSql(r: LoadResult, vettedBy: string, vettedAt: string, opts: {
   return lines.join("\n") + "\n";
 }
 
-// MF9 verdict refresh: from a fresh READ-ONLY policypeek-db export, update only
-// the mirror columns (never passes, basis, verdict_at_load or card_confirmed).
-// A tool missing from the export is mirrored as NULL (unpublished).
-export function verdictRefreshSql(gateKeys: string[], liveTools: LiveTool[], asOf: string): string {
+// ---------------------------------------------------------------------------
+// MF11 (Security re-review 9.1): the verdict mirror must fail CLOSED.
+// - An explicit export time is required (PROD_TOOLS_AS_OF); never a file mtime.
+// - A short export, a malformed row, an unknown/empty verdict, a duplicate key,
+//   or a missing tool that the gate knew as published => the export is refused
+//   and nothing is written. Next send day the mirror is stale => gate closed.
+// - Only a tool the gate recorded as 'unpublished' at load may be absent; it is
+//   then mirrored as the explicit value 'unpublished'. NULL/'' are never
+//   written and always block in the sender.
+export const UNPUBLISHED = "unpublished";
+// Catalog size at the 10 Nov 11:58 export (66 tools, also asserted in the
+// catalog data-updates). Raise it when the catalog grows; never lower it
+// without Elliot.
+export const MIN_CATALOG_TOOLS = 66;
+export const VALID_VERDICTS = ["compliant", "compliant_with_caveats", "not_compliant", "unrated", "shared_domain_unverified", "not_ai_tool", "held"] as const;
+export class ExportError extends Error {}
+
+export function requireAsOf(value: string | undefined, now = new Date()): string {
+  if (!value || !value.trim()) throw new ExportError("PROD_TOOLS_AS_OF is required (ISO time the export was taken); no file-time fallback (MF11)");
+  const v = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/.test(v)) throw new ExportError(`PROD_TOOLS_AS_OF not an ISO timestamp with zone: ${v}`);
+  const t = Date.parse(v);
+  if (Number.isNaN(t)) throw new ExportError(`PROD_TOOLS_AS_OF unparseable: ${v}`);
+  if (t > now.getTime() + 5 * 60_000) throw new ExportError(`PROD_TOOLS_AS_OF is in the future: ${v}`);
+  return new Date(t).toISOString();
+}
+
+// wrangler `d1 execute --json` output, or a bare array.
+export function toolsFromExport(dump: unknown): LiveTool[] {
+  const d = dump as any;
+  const rows = Array.isArray(d) ? (d.length && d[0] && Array.isArray(d[0].results) ? d[0].results : d) : d?.results;
+  if (!Array.isArray(rows)) throw new ExportError("export is not a wrangler --json result or array");
+  return rows as LiveTool[];
+}
+
+export interface GateRow { tool_slug: string; verdict_at_load: string | null }
+
+export function validateExport(tools: LiveTool[], opts: { minRows?: number; previousCount?: number; known?: GateRow[] } = {}): Map<string, string> {
+  const min = Math.max(opts.minRows ?? MIN_CATALOG_TOOLS, opts.previousCount ?? 0);
+  if (tools.length < min) throw new ExportError(`export has ${tools.length} tools, expected at least ${min} (short or failed export)`);
+  for (const t of tools) {
+    if (!t || typeof t.domain !== "string" || !t.domain.trim() || typeof t.name !== "string" || !t.name.trim()) throw new ExportError("export row missing domain or name");
+    if (!(VALID_VERDICTS as readonly string[]).includes(String(t.compliance_status ?? ""))) throw new ExportError(`export row ${t.domain} has missing/unknown verdict '${t.compliance_status ?? ""}'`);
+  }
   const per = new Map<string, number>();
-  for (const t of liveTools) per.set(t.domain, (per.get(t.domain) ?? 0) + 1);
+  for (const t of tools) per.set(t.domain, (per.get(t.domain) ?? 0) + 1);
   const multi = [...per].filter(([, n]) => n > 1).map(([d]) => d);
-  const byKey = new Map(liveTools.map((t) => [toolKey(t.domain, t.name, multi), t.compliance_status ?? null]));
-  const lines = [`-- Verdict mirror refresh (MF9). Export time ${asOf}. Updates live_verdict/verdict_as_of only.`];
-  for (const k of gateKeys) lines.push(`UPDATE card_gate SET live_verdict = ${q(byKey.get(k) ?? null)}, verdict_as_of = ${q(asOf)} WHERE tool_slug = ${q(k)};`);
+  const byKey = new Map<string, string>();
+  for (const t of tools) {
+    const k = toolKey(t.domain, t.name, multi);
+    if (byKey.has(k)) throw new ExportError(`export has duplicate tool key ${k}`);
+    byKey.set(k, t.compliance_status as string);
+  }
+  for (const g of opts.known ?? []) {
+    if (byKey.has(g.tool_slug)) continue;
+    if (g.verdict_at_load === UNPUBLISHED) continue; // held/unpublished at review: may legitimately be absent
+    throw new ExportError(`export is missing known tool ${g.tool_slug} (reviewed as ${g.verdict_at_load ?? "NULL"})`);
+  }
+  return byKey;
+}
+
+// MF9/MF11 verdict refresh from a validated READ-ONLY policypeek-db export.
+// Updates only live_verdict/verdict_as_of. Throws (writes nothing) on any doubt.
+export function verdictRefreshSql(gate: GateRow[], liveTools: LiveTool[], asOf: string, opts: { minRows?: number; previousCount?: number; now?: Date } = {}): string {
+  const at = requireAsOf(asOf, opts.now);
+  if (!gate.length) throw new ExportError("no card_gate rows given (outreach DB read failed?)");
+  const byKey = validateExport(liveTools, { minRows: opts.minRows, previousCount: opts.previousCount, known: gate });
+  const lines = [`-- Verdict mirror refresh (MF9/MF11). Export time ${at}. ${liveTools.length} catalog tools. Updates live_verdict/verdict_as_of only.`];
+  for (const g of gate) lines.push(`UPDATE card_gate SET live_verdict = ${q(byKey.get(g.tool_slug) ?? UNPUBLISHED)}, verdict_as_of = ${q(at)} WHERE tool_slug = ${q(g.tool_slug)};`);
   return lines.join("\n") + "\n";
 }

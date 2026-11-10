@@ -175,13 +175,14 @@ describe("MF9: Mailchimp follows its stored verdict, not the static steward file
   it("stored unrated (PR #47 live) => unclear_live, which the sender re-checks against the mirror", () => {
     expect(load("unrated")).toMatchObject({ passes: 1, basis: "unclear_live", verdict_at_load: "unrated", live_verdict: "unrated", verdict_as_of: "2026-11-10T12:00:00Z" });
   });
-  it("verdict refresh SQL touches only the mirror columns", async () => {
+  it("verdict refresh SQL touches only the mirror columns; reviewed-unpublished tools become 'unpublished', never NULL", async () => {
     const { verdictRefreshSql } = await import("../src/loader");
-    const sql = verdictRefreshSql(["mailchimp.com", "gone.example", "vercel.com#v0"], [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "vercel.com", name: "v0", source_urls: "[]", compliance_status: "shared_domain_unverified" }], "2026-11-11T08:00:00Z");
-    expect(sql).toContain("UPDATE card_gate SET live_verdict = 'unrated', verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'mailchimp.com';");
-    expect(sql).toContain("live_verdict = NULL, verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'gone.example'");
-    expect(sql).toContain("live_verdict = 'shared_domain_unverified', verdict_as_of = '2026-11-11T08:00:00Z' WHERE tool_slug = 'vercel.com#v0'");
-    expect(sql).not.toMatch(/passes|basis|verdict_at_load|card_confirmed/);
+    const gate = [{ tool_slug: "mailchimp.com", verdict_at_load: "not_compliant" }, { tool_slug: "gone.example", verdict_at_load: "unpublished" }, { tool_slug: "vercel.com#v0", verdict_at_load: "shared_domain_unverified" }];
+    const sql = verdictRefreshSql(gate, [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "vercel.com", name: "v0", source_urls: "[]", compliance_status: "shared_domain_unverified" }], "2026-11-11T08:00:00Z", { minRows: 2, now: new Date("2026-11-11T08:05:00Z") });
+    expect(sql).toContain("UPDATE card_gate SET live_verdict = 'unrated', verdict_as_of = '2026-11-11T08:00:00.000Z' WHERE tool_slug = 'mailchimp.com';");
+    expect(sql).toContain("live_verdict = 'unpublished', verdict_as_of = '2026-11-11T08:00:00.000Z' WHERE tool_slug = 'gone.example'");
+    expect(sql).toContain("live_verdict = 'shared_domain_unverified', verdict_as_of = '2026-11-11T08:00:00.000Z' WHERE tool_slug = 'vercel.com#v0'");
+    expect(sql).not.toMatch(/NULL|passes|basis|verdict_at_load|card_confirmed/);
   });
 });
 
@@ -217,5 +218,55 @@ describe("SF6 + step (c): blocked tools load paused; the generated SQL has no el
     expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_contacts WHERE status NOT IN ('paused','sent_by_hand')").get().n).toBe(0);
     expect(db.raw.prepare("SELECT COUNT(*) n FROM card_gate WHERE card_confirmed = 1").get().n).toBe(0);
     expect(db.raw.prepare("SELECT paused_reason FROM outreach_contacts WHERE tool_slug = 'buffer.com'").get().paused_reason).toMatch(/^initial load: paused/);
+  });
+});
+
+describe("MF11: verdict refresh fails closed", () => {
+  const T = new Date("2026-11-11T07:30:00Z");
+  const cat = (n: number) => Array.from({ length: n }, (_, i) => ({ domain: `t${i}.example`, name: `T${i}`, source_urls: "[]", compliance_status: "compliant" as string | null }));
+  const gate = [{ tool_slug: "t0.example", verdict_at_load: "compliant" }, { tool_slug: "held.example", verdict_at_load: "unpublished" }];
+  let mod: typeof import("../src/loader");
+  it("loads", async () => { mod = await import("../src/loader"); expect(mod.MIN_CATALOG_TOOLS).toBe(66); });
+  it("refuses a short export (fewer than the known catalog size 66, or fewer than the previous count)", () => {
+    expect(() => mod.verdictRefreshSql(gate, cat(65), "2026-11-11T07:00:00Z", { now: T })).toThrow(/expected at least 66/);
+    expect(() => mod.verdictRefreshSql(gate, cat(66), "2026-11-11T07:00:00Z", { now: T })).not.toThrow();
+    expect(() => mod.verdictRefreshSql(gate, cat(70), "2026-11-11T07:00:00Z", { now: T, previousCount: 71 })).toThrow(/expected at least 71/);
+    expect(() => mod.verdictRefreshSql(gate, [], "2026-11-11T07:00:00Z", { now: T })).toThrow();
+  });
+  it("refuses an export missing any tool the gate knew as published (even if long enough)", () => {
+    const c = cat(70).filter((t) => t.domain !== "t0.example");
+    expect(() => mod.verdictRefreshSql(gate, c, "2026-11-11T07:00:00Z", { now: T })).toThrow(/missing known tool t0\.example/);
+    // a gate row with a NULL verdict_at_load (unknown) missing from the export also refuses
+    expect(() => mod.verdictRefreshSql([{ tool_slug: "x.example", verdict_at_load: null }], cat(70), "2026-11-11T07:00:00Z", { now: T })).toThrow(/missing known tool x\.example/);
+  });
+  it("refuses empty/unknown verdicts, rows without domain/name, and duplicate keys", () => {
+    for (const bad of [null, "", "trains", " compliant"]) {
+      const c = cat(70); c[3].compliance_status = bad;
+      expect(() => mod.verdictRefreshSql(gate, c, "2026-11-11T07:00:00Z", { now: T })).toThrow(/missing\/unknown verdict/);
+    }
+    const c2 = cat(70); (c2[4] as any).domain = "";
+    expect(() => mod.verdictRefreshSql(gate, c2, "2026-11-11T07:00:00Z", { now: T })).toThrow(/missing domain or name/);
+    const c3 = [...cat(70), { domain: "t1.example", name: "T1", source_urls: "[]", compliance_status: "compliant" }];
+    expect(() => mod.verdictRefreshSql(gate, c3, "2026-11-11T07:00:00Z", { now: T })).toThrow(/duplicate/);
+  });
+  it("requires an explicit PROD_TOOLS_AS_OF: no mtime fallback, ISO with zone, not in the future", () => {
+    for (const bad of [undefined, "", "  ", "yesterday", "2026-11-11 07:00", "2026-11-11T07:00:00", "2026-11-11T09:00:00Z"])
+      expect(() => mod.requireAsOf(bad as any, T)).toThrow(mod.ExportError);
+    expect(mod.requireAsOf("2026-11-11T07:00:00Z", T)).toBe("2026-11-11T07:00:00.000Z");
+    expect(() => mod.verdictRefreshSql(gate, cat(70), "", { now: T })).toThrow(/PROD_TOOLS_AS_OF is required/);
+  });
+  it("the scripts read no file time and require PROD_TOOLS_AS_OF", () => {
+    for (const f of ["build-verdicts-sql.ts", "build-contacts-sql.ts"]) {
+      const src = readFileSync(new URL(`../scripts/${f}`, import.meta.url), "utf8");
+      expect(src).not.toMatch(/mtime|statSync/);
+      expect(src).toMatch(/requireAsOf\(process\.env\.PROD_TOOLS_AS_OF/);
+    }
+  });
+  it("loader writes 'unpublished' for tools absent from the catalog and never passes an empty live verdict", () => {
+    const tr = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nHeldOne,privacy@heldone.example,https://heldone.example/p,2026-11-10,drafted,,\nPub,privacy@pub.example,https://pub.example/p,2026-11-10,drafted,,\n");
+    const pack = new Map([["heldone", { toolName: "HeldOne", to: "", policyLabel: "p", contactSource: "", context: "We reviewed it." }], ["pub", { toolName: "Pub", to: "", policyLabel: "p", contactSource: "", context: "We reviewed it." }]]);
+    const r = buildLoad({ tracker: tr, heldPack: pack, liveTools: [{ domain: "pub.example", name: "Pub", source_urls: "[]", compliance_status: "" }], flagCsv: parseCsv("tool\n"), recheck: null, steward: parseSteward(""), vettedBy: "t", verdictAsOf: "2026-11-10T12:00:00Z" });
+    expect(r.cardGate.find((g) => g.tool_slug === "heldone.example")).toMatchObject({ passes: 1, basis: "held_tracker", verdict_at_load: "unpublished", live_verdict: "unpublished" });
+    expect(r.cardGate.find((g) => g.tool_slug === "pub.example")).toMatchObject({ passes: 0, verdict_at_load: null });
   });
 });

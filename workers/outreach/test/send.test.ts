@@ -370,7 +370,7 @@ describe("MF7/MF9: the gate reads the mirrored LIVE verdict, not the static stew
     db.raw.prepare("UPDATE card_gate SET live_verdict = 'not_compliant'").run();
     expect(await cardGate(db.d1, "u.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/not held\/unclear/) });
     db.raw.prepare("UPDATE card_gate SET live_verdict = 'unrated', verdict_as_of = ?").run(stale);
-    expect(await cardGate(db.d1, "u.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/older than 36h/) });
+    expect(await cardGate(db.d1, "u.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/not refreshed today/) });
     db.raw.prepare("UPDATE card_gate SET verdict_as_of = NULL").run();
     expect((await cardGate(db.d1, "u.example", T)).open).toBe(false);
   });
@@ -381,7 +381,7 @@ describe("MF7/MF9: the gate reads the mirrored LIVE verdict, not the static stew
     expect(await cardGate(db.d1, "s.example", T)).toMatchObject({ open: false, reason: expect.stringMatching(/changed since review/) });
   });
   it("held_tracker closes if the tool is published with a definite verdict", async () => {
-    gate(db.raw, "h.example", 1, "pass: held", 0, { basis: "held_tracker", atLoad: null, live: null, asOf: fresh });
+    gate(db.raw, "h.example", 1, "pass: held", 0, { basis: "held_tracker", atLoad: "unpublished", live: "unpublished", asOf: fresh });
     expect((await cardGate(db.d1, "h.example", T)).open).toBe(true);
     db.raw.prepare("UPDATE card_gate SET live_verdict = 'compliant_with_caveats'").run();
     expect((await cardGate(db.d1, "h.example", T)).open).toBe(false);
@@ -449,7 +449,7 @@ describe("Jump 12:07: Mailchimp stays out of the first live run (MF9 + MF10)", (
   });
   it("a verdict refresh alone cannot flip a stale steward 'held' into a send: the old load's gate stays closed", async () => {
     loadFirstRun("not_compliant", new Date(NOW.getTime() - 3600_000).toISOString());
-    db.raw.exec(verdictRefreshSql(["mailchimp.com", "buffer.com"], [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "buffer.com", name: "Buffer", source_urls: "[]", compliance_status: "unrated" }], NOW.toISOString()));
+    db.raw.exec(verdictRefreshSql([{ tool_slug: "mailchimp.com", verdict_at_load: "not_compliant" }, { tool_slug: "buffer.com", verdict_at_load: "unrated" }], [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: "[]", compliance_status: "unrated" }, { domain: "buffer.com", name: "Buffer", source_urls: "[]", compliance_status: "unrated" }], NOW.toISOString(), { minRows: 2, now: NOW }));
     db.raw.prepare("UPDATE outreach_contacts SET status = 'eligible', paused_reason = NULL").run();
     const r = await runDaily(live(db), NOW);
     expect(r.sent.map((s) => s.tool_slug)).not.toContain("mailchimp.com");
@@ -536,5 +536,31 @@ describe("step (f) dev SQL", () => {
   it("setup refuses a dev DB that already holds contacts", () => {
     addContact(db.raw);
     expect(() => db.raw.exec(SETUP)).toThrow();
+  });
+});
+
+describe("MF11: a missing or empty mirrored verdict blocks; refresh must be from today", () => {
+  const T = NOW; // 09:00 UTC
+  for (const basis of ["held_tracker", "unclear_live", "steward_held"]) {
+    it(`${basis}: NULL or '' live verdict never opens (gate and claim)`, async () => {
+      for (const v of [null, ""]) {
+        db = makeDb(MIG);
+        addContact(db.raw, { tool_slug: "h.example", tool_name: "H" });
+        gate(db.raw, "h.example", 1, "pass: x", 0, { basis, atLoad: v, live: v, asOf: new Date(T.getTime() - 600_000).toISOString() });
+        expect(await cardGate(db.d1, "h.example", T)).toMatchObject({ open: false, reason: "blocked: live verdict missing (MF11)" });
+        const env = live(db);
+        expect((await runDaily(env, T)).sent).toHaveLength(0);
+        const contact = db.raw.prepare("SELECT * FROM outreach_contacts").get();
+        expect(await claimSend(db.d1, { contact, kind: "initial", recipientDomain: "h.example" }, T)).toBe(false);
+      }
+    });
+  }
+  it("a refresh from yesterday evening does not open today (refresh failed => no sends that day)", async () => {
+    addContact(db.raw, { tool_slug: "u.example", tool_name: "U" });
+    gate(db.raw, "u.example", 1, "pass: x", 0, { basis: "unclear_live", live: "unrated", asOf: "2026-11-30T23:30:00.000Z" });
+    const env = live(db);
+    expect((await runDaily(env, T)).sent).toHaveLength(0);
+    db.raw.prepare("UPDATE card_gate SET verdict_as_of = '2026-12-01T07:30:00.000Z'").run();
+    expect((await runDaily(env, T)).sent).toHaveLength(1);
   });
 });

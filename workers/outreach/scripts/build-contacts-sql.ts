@@ -1,7 +1,7 @@
 // Usage (box only): node --experimental-strip-types outreach/scripts/build-contacts-sql.ts <out-dir>
 // Writes contacts.sql + load-report.md. Does NOT apply anything to any database.
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader.ts";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, requireAsOf, toolsFromExport, toSql, validateExport } from "../src/loader.ts";
 
 const HELD = "/workspace/deliverables/policypeek/held-outreach";
 const FLAGS = "/workspace/deliverables/research/ambiguous-cards-2026-11-10.csv";
@@ -9,11 +9,14 @@ const RECHECK = "/workspace/deliverables/research/recheck-2026-11-10.md";
 const STEWARD = "/workspace/deliverables/research/catalog-daily/factcheck-recheck-2026-11-10.md";
 const out = process.argv[2] ?? "out";
 mkdirSync(out, { recursive: true });
-const TOOLS = process.env.PROD_TOOLS_JSON ?? "/tmp/prod-tools.json";
-const toolsDump = JSON.parse(readFileSync(TOOLS, "utf8"));
-// MF9: export time of the read-only policypeek-db dump = verdict mirror time.
-const verdictAsOf = process.env.PROD_TOOLS_AS_OF ?? statSync(TOOLS).mtime.toISOString();
-const liveTools = (Array.isArray(toolsDump) ? toolsDump[0].results : toolsDump.results).filter((t: any) => t.compliance_status !== "held");
+// MF11: explicit export file AND export time; the export is validated (size,
+// verdicts, keys) before anything is generated. No file-time fallback.
+const TOOLS = process.env.PROD_TOOLS_JSON;
+if (!TOOLS) throw new Error("PROD_TOOLS_JSON is required (read-only policypeek-db export)");
+const verdictAsOf = requireAsOf(process.env.PROD_TOOLS_AS_OF);
+const allTools = toolsFromExport(JSON.parse(readFileSync(TOOLS, "utf8")));
+validateExport(allTools);
+const liveTools = allTools.filter((t) => t.compliance_status !== "held");
 const r = buildLoad({
   tracker: parseCsv(readFileSync(`${HELD}/tracker.csv`, "utf8")),
   heldPack: parseHeldPack(readFileSync(`${HELD}/held-outreach-2026-11-10.md`, "utf8")),
