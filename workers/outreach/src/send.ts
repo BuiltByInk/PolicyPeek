@@ -81,6 +81,8 @@ export async function checkContact(db: D1Database, c: ContactRow, kind: "initial
   if (c.kind === "held" && (await setting(db, "held_hand_list_received")) !== "1") return { ok: false, reason: "held_awaiting_hand_sent_list" };
   const v = vetContact({ contactEmail: c.contact_email, toolDomain: c.tool_domain, contactSourceUrl: c.contact_source_url });
   if (!v.ok) return { ok: false, reason: `vet_${v.reason}` };
+  // A parent-company address needs BOTH the code exception and the recorded reason on the row.
+  if (v.domainMatchException && !c.domain_match_exception) return { ok: false, reason: "vet_domain_match_exception_not_recorded" };
   const gate = await cardGate(db, c.tool_slug);
   if (!gate.open) return { ok: false, reason: `card_gate ${gate.reason}` };
   if (await isSuppressed(db, c.contact_email, v.recipientDomain)) return { ok: false, reason: "suppressed" };

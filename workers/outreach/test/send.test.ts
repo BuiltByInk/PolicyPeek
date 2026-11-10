@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
 import { handleAdmin } from "../src/admin";
-import { cardGate, HARD_DAILY_MAX, planDay, runDaily } from "../src/send";
+import { cardGate, FROM, HARD_DAILY_MAX, planDay, REPLY_TO, runDaily } from "../src/send";
+import { readFileSync } from "node:fs";
 
 const MIG = new URL("../migrations/0001_outreach.sql", import.meta.url).pathname;
 const NOW = new Date("2026-12-01T09:00:00Z");
@@ -9,7 +10,7 @@ const TOKEN = "t".repeat(40);
 
 function addContact(raw: any, o: Partial<Record<string, any>> = {}) {
   const slug = o.tool_slug ?? "alpha.example.com";
-  const c = { tool_slug: slug, tool_name: o.tool_name ?? "Alpha", tool_domain: slug, kind: o.kind ?? "ambiguous_live", contact_email: o.contact_email ?? `privacy@${slug}`, role: "privacy", contact_source_url: `https://${slug}/privacy`, policy_url: `https://${slug}/privacy`, policy_label: "Privacy Policy", question_text: "We reviewed your Privacy Policy. It does not say whether customer data is used to train AI models.", vetted_by: "test", vetted_at: "2026-11-10", status: o.status ?? "eligible", hand_sent_at: o.hand_sent_at ?? null, hand_sent_source: o.hand_sent_source ?? null };
+  const c = { tool_slug: slug, tool_name: o.tool_name ?? "Alpha", tool_domain: slug, kind: o.kind ?? "ambiguous_live", contact_email: o.contact_email ?? `privacy@${slug}`, role: "privacy", contact_source_url: o.contact_source_url ?? `https://${slug}/privacy`, policy_url: `https://${slug}/privacy`, policy_label: "Privacy Policy", question_text: "We reviewed your Privacy Policy. It does not say whether customer data is used to train AI models.", vetted_by: "test", vetted_at: "2026-11-10", domain_match_exception: o.domain_match_exception ?? null, status: o.status ?? "eligible", hand_sent_at: o.hand_sent_at ?? null, hand_sent_source: o.hand_sent_source ?? null };
   const r = raw.prepare(`INSERT INTO outreach_contacts (${Object.keys(c).join(",")}) VALUES (${Object.keys(c).map(() => "?").join(",")})`).run(...Object.values(c));
   return Number(r.lastInsertRowid);
 }
@@ -29,7 +30,7 @@ let db: ReturnType<typeof makeDb>;
 beforeEach(() => { db = makeDb(MIG); });
 
 describe("gate 3: kill switch, paused flag, dry-run default", () => {
-  it("defaults: D1 paused, cap 3, dry-run => nothing sent", async () => {
+  it("defaults: D1 paused, cap 5, dry-run => nothing sent", async () => {
     addContact(db.raw); gate(db.raw, "alpha.example.com", 1);
     const EMAIL = sendMock();
     const r = await runDaily({ DB: db.d1, EMAIL } as any, NOW);
@@ -59,13 +60,18 @@ describe("gate 3: kill switch, paused flag, dry-run default", () => {
 });
 
 describe("gate 3: caps and idempotency", () => {
-  it("cap: D1 value clamped to the hard max of 5; default 3", async () => {
-    for (let i = 0; i < 8; i++) { const s = `t${i}.example`; addContact(db.raw, { tool_slug: s }); gate(db.raw, s, 1); }
+  it("cap: default 5 (Elliot 11:20 UK); any D1 value clamped to the hard max of 5", async () => {
+    expect(HARD_DAILY_MAX).toBe(5);
+    expect(db.raw.prepare("SELECT value FROM outreach_settings WHERE key = 'daily_cap'").get().value).toBe("5");
+    for (let i = 0; i < 12; i++) { const s = `t${i}.example`; addContact(db.raw, { tool_slug: s }); gate(db.raw, s, 1); }
     const env = live(db);
-    expect((await runDaily(env, NOW)).sent).toHaveLength(3);
+    expect((await runDaily(env, NOW)).sent).toHaveLength(5);
+    expect((await runDaily(env, NOW)).sent).toHaveLength(0); // 5 already today
     db.raw.prepare("UPDATE outreach_settings SET value = '50' WHERE key = 'daily_cap'").run();
     expect((await planDay(db.d1, NOW)).cap).toBe(HARD_DAILY_MAX);
-    expect((await runDaily(env, NOW)).sent).toHaveLength(2); // 3 + 2 = 5 today
+    expect((await runDaily(env, NOW)).sent).toHaveLength(0); // still 5, never more
+    db.raw.prepare("UPDATE outreach_settings SET value = '2' WHERE key = 'daily_cap'").run();
+    expect((await planDay(db.d1, new Date(NOW.getTime() + 86400000))).cap).toBe(2); // a lower value is respected
   });
   it("<= 1 per recipient domain per 14 days", async () => {
     addContact(db.raw, { tool_slug: "a.example.com", contact_email: "privacy@a.example.com" });
@@ -212,5 +218,40 @@ describe("gate 5: suppression by address and domain", () => {
     const r = await runDaily(env, NOW);
     expect(env.EMAIL.send).not.toHaveBeenCalled();
     expect(r.skipped.map((s) => s.reason)).toEqual(["suppressed", "suppressed"]);
+  });
+});
+
+describe("sender identity (11:57 UK)", () => {
+  it("From privacy@mail.getpolicypeek.com, Reply-To privacy@getpolicypeek.com, in code, bindings and every real send", async () => {
+    expect(FROM).toEqual({ email: "privacy@mail.getpolicypeek.com", name: "PolicyPeek" });
+    expect(REPLY_TO).toBe("privacy@getpolicypeek.com");
+    const cfg = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+    const senders = [...cfg.matchAll(/"allowed_sender_addresses":\s*\[([^\]]*)\]/g)].map((m) => m[1].trim());
+    expect(senders.length).toBeGreaterThanOrEqual(2);
+    for (const s of senders) expect(s).toBe('"privacy@mail.getpolicypeek.com"');
+    addContact(db.raw); gate(db.raw, "alpha.example.com", 1);
+    const env = live(db);
+    await runDaily(env, NOW);
+    expect(env.EMAIL.send).toHaveBeenCalledTimes(1);
+    const msg = (env.EMAIL.send.mock.calls[0] as any)[0];
+    expect(msg.from).toEqual({ email: "privacy@mail.getpolicypeek.com", name: "PolicyPeek" });
+    expect(msg.replyTo).toBe("privacy@getpolicypeek.com");
+    expect(msg.text).toContain("https://getpolicypeek.com/privacy");
+  });
+});
+
+describe("parent-company exception at send time (11:57 UK)", () => {
+  it("a listed exception sends only when the row records its reason", async () => {
+    const o = { tool_slug: "poe.com", tool_name: "Poe", contact_email: "privacy@quora.com", contact_source_url: "https://poe.com/pages/privacy" };
+    addContact(db.raw, o); gate(db.raw, "poe.com", 1);
+    expect((await planDay(db.d1, NOW)).skipped).toEqual([{ tool_slug: "poe.com", reason: "vet_domain_match_exception_not_recorded" }]);
+    db.raw.prepare("UPDATE outreach_contacts SET domain_match_exception = 'parent company' WHERE tool_slug = 'poe.com'").run();
+    expect((await planDay(db.d1, NOW)).queue).toHaveLength(1);
+  });
+  it("a recorded reason alone never opens an unlisted parent domain", async () => {
+    addContact(db.raw, { tool_slug: "t1.example", contact_email: "privacy@parent.example", domain_match_exception: "parent company" }); gate(db.raw, "t1.example", 1);
+    const r = await planDay(db.d1, NOW);
+    expect(r.queue).toHaveLength(0);
+    expect(r.skipped[0].reason).toMatch(/^vet_domain_mismatch/);
   });
 });

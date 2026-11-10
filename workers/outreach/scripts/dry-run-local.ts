@@ -14,16 +14,17 @@ const p = (s = "") => lines.push(s);
 
 (async () => {
   p(`PolicyPeek outreach DRY RUN, ${now.toISOString()} (UTC). Nothing was sent. Local in-memory D1 loaded from contacts.sql.`);
-  p(`Defaults: OUTREACH_MODE=dry_run, OUTREACH_ENABLED unset, paused=1, daily_cap=3 (hard max 5), held_hand_list_received=0.`);
+  p(`Defaults: OUTREACH_MODE=dry_run, OUTREACH_ENABLED unset, paused=1, daily_cap=5 (hard max 5), held_hand_list_received=0.`);
   const r = await runDaily({ DB: db.d1 } as any, now);
-  p(`\n== A. TODAY, real state ==\nwould send: ${r.planned}`);
+  p(`\n== A. TODAY, real state (kill switch still OFF, so nothing can send; this is what the first live run would pick) ==\nwould send: ${r.planned}`);
+  for (const x of r.rendered) p(`  queue ${x.kind} ${x.tool_slug} -> ${(db.raw.prepare("SELECT contact_email e FROM outreach_contacts WHERE tool_slug = ?").get(x.tool_slug) as any)?.e} | card gate: ${x.card_gate}`);
   for (const s of r.skipped) p(`  skip ${s.tool_slug}: ${s.reason}`);
 
   // B: what the queue would look like once the hand-sent list arrives and the
-  // contacts are marked eligible (still capped). Hypothetical, for review only.
+  // held contacts are marked eligible (still capped). Hypothetical, for review only.
   db.raw.exec("UPDATE outreach_settings SET value='1' WHERE key='held_hand_list_received'; UPDATE outreach_contacts SET status='eligible', paused_reason=NULL WHERE status='paused';");
   const plan = await planDay(db.d1, now);
-  p(`\n== B. HYPOTHETICAL: hand-sent list received + paused rows set eligible (cap ${plan.cap}) ==\nwould send: ${plan.queue.length}`);
+  p(`\n== B. HYPOTHETICAL: hand-sent list received + held rows set eligible (cap ${plan.cap}) ==\nwould send: ${plan.queue.length}`);
   for (const c of plan.queue) {
     const e = render(c);
     p(`\n--- ${c.kind.toUpperCase()} | tool ${c.contact.tool_slug} | to ${c.contact.contact_email} | card gate: ${c.gateReason}`);

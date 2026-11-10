@@ -25,8 +25,8 @@ writeFileSync(`${out}/contacts.sql`, toSql(r, "dev-loader (Security gate 2 rules
 const md = [
   `# Outreach contact load report (${vettedAt})`, "", "Not applied to any database.", "",
   "## Counts", "", ...Object.entries(r.counts).map(([k, v]) => `- ${k}: ${v}`), `- live tools in dump: ${liveTools.length}`, "",
-  "## Loadable contacts (all still behind kill switch, paused flag and card gate)", "", "| tool_slug | kind | contact | source | status | card gate |", "|---|---|---|---|---|---|",
-  ...r.contacts.map((c) => { const g = r.cardGate.find((x) => x.tool_slug === c.tool_slug)!; return `| ${c.tool_slug} | ${c.kind} | ${c.contact_email} | ${c.contact_source_url} | ${c.status}${c.paused_reason ? ` (${c.paused_reason})` : ""} | ${g.gate_reason} |`; }), "",
+  "## Loadable contacts (all still behind kill switch, paused flag and card gate)", "", "| tool_slug | kind | contact | source | status | domain exception | card gate |", "|---|---|---|---|---|---|---|",
+  ...r.contacts.map((c) => { const g = r.cardGate.find((x) => x.tool_slug === c.tool_slug)!; return `| ${c.tool_slug} | ${c.kind} | ${c.contact_email} | ${c.contact_source_url} | ${c.status}${c.paused_reason ? ` (${c.paused_reason})` : ""} | ${c.domain_match_exception ?? ""} | ${g.gate_reason} |`; }), "",
   "## Dropped / skipped", "", "| tool | kind | contact | reason |", "|---|---|---|---|", ...r.skipped.map((s) => `| ${s.tool} | ${s.kind} | ${s.contact} | ${s.reason} |`), "",
   "## Card gate (all tools)", "", `pass: ${r.cardGate.filter((g) => g.passes).length}, blocked: ${r.cardGate.filter((g) => !g.passes).length}`, "", "| tool_slug | flagged | gate |", "|---|---|---|", ...r.cardGate.map((g) => `| ${g.tool_slug} | ${g.flagged} | ${g.gate_reason} |`), "",
 ];

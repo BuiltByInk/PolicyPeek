@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { roleOf, vetContact } from "../src/contacts";
-import { buildLoad, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader";
+import { DOMAIN_MATCH_EXCEPTIONS, roleOf, vetContact } from "../src/contacts";
+import { applyContextEdit, buildLoad, CONTEXT_EDITS, parseCsv, parseHeldPack, parseRecheck, parseSteward, toSql } from "../src/loader";
 
 const ok = (contactEmail: string, toolDomain = "example.com", contactSourceUrl = "https://example.com/privacy") => vetContact({ contactEmail, toolDomain, contactSourceUrl });
 
@@ -27,6 +27,45 @@ describe("gate 2: role addresses only, domain match", () => {
   });
 });
 
+describe("gate 2: parent-company exceptions (Elliot 11:57 UK)", () => {
+  const X = [{ toolDomain: "tool.example", contactEmail: "privacy@parent.example", contactSourceUrl: "https://tool.example/privacy", reason: "parent company: test", vettedBy: "dev" as const, vettedAt: "2026-11-10T11:57:00Z" }];
+  const v = (email: string, src = "https://tool.example/privacy", tool = "tool.example") => vetContact({ contactEmail: email, toolDomain: tool, contactSourceUrl: src }, X);
+  it("allows the exact address on the exact source page for that tool, and says why", () => {
+    expect(v("privacy@parent.example")).toMatchObject({ ok: true, recipientDomain: "parent.example", domainMatchException: { reason: "parent company: test" } });
+    expect(v("PRIVACY@parent.example")).toMatchObject({ ok: true });
+  });
+  it("refuses any other address, source page or tool on that domain", () => {
+    expect(v("legal@parent.example")).toMatchObject({ ok: false });
+    expect(v("privacy@parent.example", "https://tool.example/terms")).toMatchObject({ ok: false });
+    expect(v("privacy@parent.example", "https://other.example/privacy", "other.example")).toMatchObject({ ok: false });
+  });
+  it("still needs a role address", () => {
+    const Y = [{ ...X[0], contactEmail: "support@parent.example" }];
+    expect(vetContact({ contactEmail: "support@parent.example", toolDomain: "tool.example", contactSourceUrl: "https://tool.example/privacy" }, Y)).toMatchObject({ ok: false, reason: "not_a_role_address" });
+  });
+  it("the shipped list is exactly the five Dev verified, all role addresses on https source pages", () => {
+    expect(DOMAIN_MATCH_EXCEPTIONS.map((x) => `${x.toolDomain}>${x.contactEmail}`)).toEqual(["mailchimp.com>privacy@intuit.com", "windsurf.com>privacy@cognition.ai", "poe.com>privacy@quora.com", "replit.com>privacy@repl.it", "remove.bg>privacy@edpo.com"]);
+    for (const x of DOMAIN_MATCH_EXCEPTIONS) {
+      expect(roleOf(x.contactEmail.split("@")[0])).not.toBeNull();
+      expect(x.contactSourceUrl.startsWith("https://")).toBe(true);
+      expect(x).toMatchObject({ vettedBy: "dev" });
+      expect(x.reason.length).toBeGreaterThan(10);
+    }
+  });
+});
+
+describe("OpenRouter wording fix (11:57 UK)", () => {
+  it("replaces only our own phrase, exactly once, and the result has no banned word", () => {
+    const before = "Users can opt out. Neither page states whether that routing setting is on by default for paid or free models.";
+    const after = applyContextEdit("OpenRouter", before);
+    expect(after).toBe("Users can opt out. Neither page states whether that routing setting is on by default across all model tiers.");
+    expect(after).not.toMatch(/\bpaid\b/i);
+    expect(() => applyContextEdit("OpenRouter", "different text")).toThrow(/expected 1 match/);
+    expect(applyContextEdit("Other", before)).toBe(before);
+    expect(Object.keys(CONTEXT_EDITS)).toEqual(["openrouter"]);
+  });
+});
+
 describe("gate 2 loader: dedupe, skips and card gate rows", () => {
   const md = "### 1. Alpha\n\n- **Policy reviewed:** Privacy Policy v1\n- **Contact source:** https://alpha.example.com/privacy\n\n**To:** `privacy@alpha.example.com`\n\n```\nHello,\n\nI run PolicyPeek.\n\nWe reviewed your Privacy Policy v1. It is silent.\n\nPlease could you confirm:\n1. a\n```\n";
   const tracker = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nAlpha,privacy@alpha.example.com,https://alpha.example.com/privacy,2026-11-10,drafted,,\nBeta,privacy@beta.example,https://beta.example/p,2026-11-10,sent,,\nGamma,privacy@gamma.example,https://gamma.example/p,2026-11-10,maybe,,\nDelta,support@delta.example,https://delta.example/p,2026-11-10,drafted,,\nEps,form only: https://eps.example/f,https://eps.example/p,2026-11-10,drafted,,\n");
@@ -46,7 +85,8 @@ describe("gate 2 loader: dedupe, skips and card gate rows", () => {
     const alpha = r.contacts.find((c) => c.tool_name === "Alpha")!;
     expect(alpha).toMatchObject({ status: "paused", paused_reason: "awaiting hand-sent list", question_text: "We reviewed your Privacy Policy v1. It is silent." });
     const lo = r.contacts.find((c) => c.tool_name === "Live One")!;
-    expect(lo).toMatchObject({ kind: "ambiguous_live", status: "paused", policy_url: "https://live1.example/terms" });
+    // 11:57 UK: unclear tools are emailed automatically (no wording pause); held stay paused.
+    expect(lo).toMatchObject({ kind: "ambiguous_live", status: "eligible", paused_reason: null, policy_url: "https://live1.example/terms" });
     expect(lo.question_text).toBe(`We reviewed https://live1.example/terms. It says: "we may use Content to train our models." We'd like to make sure we read this correctly.`);
     expect(r.cardGate.find((g) => g.tool_slug === "live1.example")).toMatchObject({ flagged: 1, passes: 1, gate_reason: "pass: steward ruling held (APPROVE)" });
     expect(r.cardGate.find((g) => g.tool_slug === "live2.example")).toMatchObject({ flagged: 0, passes: 1 });

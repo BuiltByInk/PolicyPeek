@@ -52,6 +52,25 @@ export interface RecheckEntry { name: string; slug: string; proposed: string; em
 // research/recheck-2026-11-10.md: the Summary table gives each tool's proposed
 // verdict and whether an email is still needed; the per-tool notes give the
 // vendor quote and its source (used as the ambiguous_live context paragraph).
+// Wording fixes to our own drafted context paragraphs (never to quoted vendor
+// text). Each must match exactly once or the load fails, so a changed draft is
+// noticed instead of silently keeping the old words. The neutral-wording check
+// is unchanged; these edits make the text pass it honestly.
+export const CONTEXT_EDITS: Record<string, { from: string; to: string; why: string }> = {
+  openrouter: {
+    from: "Neither page states whether that routing setting is on by default for paid or free models.",
+    to: "Neither page states whether that routing setting is on by default across all model tiers.",
+    why: "Elliot 11:57 UK: 'paid' trips the banned-word check; same question, neutral wording",
+  },
+};
+export function applyContextEdit(toolName: string, context: string, edits = CONTEXT_EDITS): string {
+  const e = edits[toolName.toLowerCase()];
+  if (!e || !context) return context;
+  const n = context.split(e.from).length - 1;
+  if (n !== 1) throw new Error(`context edit for ${toolName}: expected 1 match, found ${n}`);
+  return context.replace(e.from, e.to);
+}
+
 export function parseRecheck(md: string): Map<string, RecheckEntry> {
   const out = new Map<string, RecheckEntry>();
   for (const line of md.split("\n")) {
@@ -111,14 +130,14 @@ export function handSentFor(toolSlug: string, email: string, list = HAND_SENT) {
 export interface ContactOut {
   tool_slug: string; tool_name: string; tool_domain: string; kind: "held" | "ambiguous_live";
   contact_email: string; role: Role; contact_source_url: string; policy_url: string; policy_label: string;
-  question_text: string; status: "eligible" | "sent_by_hand" | "paused"; paused_reason: string | null; hand_sent_at: string | null; hand_sent_source: string | null;
+  question_text: string; status: "eligible" | "sent_by_hand" | "paused"; paused_reason: string | null; vetted_by: string | null; vetted_at: string | null; domain_match_exception: string | null; hand_sent_at: string | null; hand_sent_source: string | null;
 }
 export interface Skipped { tool: string; contact: string; kind: string; reason: string }
 export interface CardGateOut { tool_slug: string; flagged: 0 | 1; passes: 0 | 1; gate_reason: string; flag_source: string }
 
 export interface LoadResult {
   contacts: ContactOut[]; skipped: Skipped[]; cardGate: CardGateOut[];
-  counts: { totalHeld: number; alreadySentByHand: number; heldLoadedPaused: number; missingContact: number; droppedVetting: number; unclear: number; ambiguousRows: number; ambiguousLoadedPaused: number };
+  counts: { totalHeld: number; alreadySentByHand: number; heldLoadedPaused: number; missingContact: number; droppedVetting: number; unclear: number; ambiguousRows: number; ambiguousLoadedEligible: number; domainMatchExceptions: number };
 }
 
 // "Sent by hand" only if the tracker says so explicitly. Anything other than
@@ -143,7 +162,7 @@ export function buildLoad(input: {
   const contacts: ContactOut[] = [];
   const skipped: Skipped[] = [];
   const seen = new Set<string>();
-  const counts = { totalHeld: input.tracker.length, alreadySentByHand: 0, heldLoadedPaused: 0, missingContact: 0, droppedVetting: 0, unclear: 0, ambiguousRows: input.flagCsv?.length ?? 0, ambiguousLoadedPaused: 0 };
+  const counts = { totalHeld: input.tracker.length, alreadySentByHand: 0, heldLoadedPaused: 0, missingContact: 0, droppedVetting: 0, unclear: 0, ambiguousRows: input.flagCsv?.length ?? 0, ambiguousLoadedEligible: 0, domainMatchExceptions: 0 };
   const liveByName = new Map(input.liveTools.map((t) => [t.name.toLowerCase(), t]));
 
   const consider = (kind: "held" | "ambiguous_live", toolName: string, contact: string, sourceUrl: string, slugHint: string | null, policyUrl: string, label: string, context: string, hand: "sent" | "not_sent" | "unclear") => {
@@ -177,19 +196,23 @@ export function buildLoad(input: {
     const hs = handSentFor(toolDomain, contact, input.handSent ?? HAND_SENT);
     let status: ContactOut["status"]; let paused_reason: string | null = null;
     if (hs || hand === "sent") status = "sent_by_hand";
-    else if (kind === "ambiguous_live") { status = "paused"; paused_reason = "ambiguous wording needs Elliot's check"; }
+    // 11:57 UK (Elliot's 11:39 rule): unclear tools are emailed automatically
+    // without per-card approval. They still go through the card gate, vetting,
+    // suppression, caps and the neutral-wording check.
+    else if (kind === "ambiguous_live") { status = "eligible"; }
     // 11:37 UK: every held contact stays out of the live queue until the list
     // of held tools Elliot emailed by hand arrives.
     else { status = "paused"; paused_reason = "awaiting hand-sent list"; }
     if (kind === "held") { if (status === "sent_by_hand") counts.alreadySentByHand++; else counts.heldLoadedPaused++; }
-    else counts.ambiguousLoadedPaused++;
-    contacts.push({ tool_slug: toolDomain, tool_name: toolName, tool_domain: toolDomain, kind, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
+    else counts.ambiguousLoadedEligible++;
+    if (v.domainMatchException) counts.domainMatchExceptions++;
+    contacts.push({ tool_slug: toolDomain, tool_name: toolName, tool_domain: toolDomain, kind, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, vetted_by: v.domainMatchException ? v.domainMatchException.vettedBy : null, vetted_at: v.domainMatchException ? v.domainMatchException.vettedAt : null, domain_match_exception: v.domainMatchException ? v.domainMatchException.reason : null, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
   };
 
   for (const r of input.tracker) {
     const draft = input.heldPack.get(r.tool.toLowerCase());
     const live = liveByName.get(r.tool.toLowerCase());
-    consider("held", r.tool, r.contact, r.contact_source_url, live?.domain ?? null, r.contact_source_url, draft?.policyLabel ?? "", draft?.context ?? "", handStatus(r));
+    consider("held", r.tool, r.contact, r.contact_source_url, live?.domain ?? null, r.contact_source_url, draft?.policyLabel ?? "", applyContextEdit(r.tool, draft?.context ?? ""), handStatus(r));
   }
   for (const r of input.flagCsv ?? []) {
     const live = liveByName.get(r.tool.toLowerCase());
@@ -247,7 +270,7 @@ const q = (v: string | number | null) => (v === null ? "NULL" : typeof v === "nu
 export function toSql(r: LoadResult, vettedBy: string, vettedAt: string): string {
   const lines = ["-- Generated by scripts/build-contacts-sql.ts. Review before applying. Never sets card_confirmed."];
   for (const c of r.contacts)
-    lines.push(`INSERT OR IGNORE INTO outreach_contacts (tool_slug, tool_name, tool_domain, kind, contact_email, role, contact_source_url, policy_url, policy_label, question_text, vetted_by, vetted_at, status, paused_reason, hand_sent_at, hand_sent_source) VALUES (${[c.tool_slug, c.tool_name, c.tool_domain, c.kind, c.contact_email, c.role, c.contact_source_url, c.policy_url, c.policy_label, c.question_text, vettedBy, vettedAt, c.status, c.paused_reason, c.hand_sent_at, c.hand_sent_source].map(q).join(", ")});`);
+    lines.push(`INSERT OR IGNORE INTO outreach_contacts (tool_slug, tool_name, tool_domain, kind, contact_email, role, contact_source_url, policy_url, policy_label, question_text, vetted_by, vetted_at, domain_match_exception, status, paused_reason, hand_sent_at, hand_sent_source) VALUES (${[c.tool_slug, c.tool_name, c.tool_domain, c.kind, c.contact_email, c.role, c.contact_source_url, c.policy_url, c.policy_label, c.question_text, c.vetted_by ?? vettedBy, c.vetted_at ?? vettedAt, c.domain_match_exception, c.status, c.paused_reason, c.hand_sent_at, c.hand_sent_source].map(q).join(", ")});`);
   for (const h of HAND_SENT) for (const d of h.domains)
     lines.push(`INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ${q(d)}, 'manual');`);
   for (const g of r.cardGate)

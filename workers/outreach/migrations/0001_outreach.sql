@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS outreach_contacts (
   question_text TEXT NOT NULL,
   vetted_by TEXT NOT NULL,
   vetted_at TEXT NOT NULL,
+  -- Set only when the address is on another domain (parent company, older
+  -- domain, or UK representative) and that exact address is on the tool's own
+  -- policy page (Elliot 11:57 UK). The sender also re-checks it against the
+  -- code list DOMAIN_MATCH_EXCEPTIONS, so this column alone never allows a send.
+  domain_match_exception TEXT,
   -- sent_by_hand: Elliot emailed them himself; that email isn't in our system,
   -- so neither an initial nor a follow-up is ever sent automatically.
   status TEXT NOT NULL DEFAULT 'paused' CHECK (status IN ('eligible', 'sent_by_hand', 'paused', 'resolved')),
@@ -113,15 +118,15 @@ CREATE TABLE IF NOT EXISTS suppressions (
   UNIQUE (kind, value)
 );
 
--- Gate 3: D1 paused flag (default paused) and daily cap. Code clamps the cap
--- to HARD_DAILY_MAX (5, Elliot/LIA); the default here is Security's 3.
+-- Gate 3: D1 paused flag (default paused) and daily cap. Default 5 (Elliot
+-- 11:20 UK); code clamps any value to HARD_DAILY_MAX (5, Elliot/LIA).
 CREATE TABLE IF NOT EXISTS outreach_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
 -- held_hand_list_received: '0' until Jump/Elliot's list of held tools already
 -- emailed by hand is loaded (11:37 UK); while '0' no 'held' contact is queued.
-INSERT OR IGNORE INTO outreach_settings (key, value) VALUES ('paused', '1'), ('daily_cap', '3'), ('held_hand_list_received', '0');
+INSERT OR IGNORE INTO outreach_settings (key, value) VALUES ('paused', '1'), ('daily_cap', '5'), ('held_hand_list_received', '0');
 
 -- Gate 6: purge log (counts only).
 CREATE TABLE IF NOT EXISTS purge_log (
