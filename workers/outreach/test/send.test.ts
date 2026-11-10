@@ -255,3 +255,27 @@ describe("parent-company exception at send time (11:57 UK)", () => {
     expect(r.skipped[0].reason).toMatch(/^vet_domain_mismatch/);
   });
 });
+
+describe("MF2: lifetime max 2 per contact address, across all tools", () => {
+  it("one address shared by three tools gets at most 2 emails in total, ever", async () => {
+    for (const [slug, name] of [["t1.example", "T1"], ["t2.example", "T2"], ["t3.example", "T3"]]) {
+      addContact(db.raw, { tool_slug: slug, tool_name: name, contact_email: "privacy@parent.example", contact_source_url: "https://parent.example/privacy" });
+      gate(db.raw, slug, 1);
+    }
+    const env = live(db);
+    let total = 0;
+    // domain gap is 14 days, so step 15 days at a time for a year
+    for (let d = 0; d < 365; d += 15) total += (await runDaily(env, new Date(NOW.getTime() + d * 86400000))).sent.length;
+    expect(total).toBe(2);
+    expect(db.raw.prepare("SELECT COUNT(*) n FROM outreach_sends WHERE contact_email = 'privacy@parent.example'").get().n).toBe(2);
+  });
+  it("case differences in the address do not reset the count", async () => {
+    addContact(db.raw, { tool_slug: "t1.example", tool_name: "T1", contact_email: "Privacy@Parent.example", contact_source_url: "https://parent.example/privacy" }); gate(db.raw, "t1.example", 1);
+    addContact(db.raw, { tool_slug: "t2.example", tool_name: "T2", contact_email: "privacy@parent.example", contact_source_url: "https://parent.example/privacy" }); gate(db.raw, "t2.example", 1);
+    addContact(db.raw, { tool_slug: "t3.example", tool_name: "T3", contact_email: "PRIVACY@parent.example", contact_source_url: "https://parent.example/privacy" }); gate(db.raw, "t3.example", 1);
+    const env = live(db);
+    let total = 0;
+    for (let d = 0; d < 120; d += 15) total += (await runDaily(env, new Date(NOW.getTime() + d * 86400000))).sent.length;
+    expect(total).toBe(2);
+  });
+});

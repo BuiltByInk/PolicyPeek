@@ -87,7 +87,11 @@ export async function checkContact(db: D1Database, c: ContactRow, kind: "initial
   if (!gate.open) return { ok: false, reason: `card_gate ${gate.reason}` };
   if (await isSuppressed(db, c.contact_email, v.recipientDomain)) return { ok: false, reason: "suppressed" };
   const sends = (await db.prepare("SELECT kind, status, claimed_at FROM outreach_sends WHERE tool_slug = ? AND contact_email = ?").bind(c.tool_slug, c.contact_email).all<{ kind: string; status: string; claimed_at: string }>()).results;
-  if (sends.length >= LIFETIME_MAX_PER_CONTACT) return { ok: false, reason: "lifetime_max" };
+  // MF2: <= 2 emails per contact ADDRESS for life, across every tool (a parent-
+  // company address such as privacy@quora.com can serve several tools).
+  // Every claim counts, including failed/unknown ones (never retried).
+  const lifetime = (await db.prepare("SELECT COUNT(*) AS n FROM outreach_sends WHERE contact_email = ?").bind(c.contact_email.toLowerCase()).first<number>("n")) ?? 0;
+  if (lifetime >= LIFETIME_MAX_PER_CONTACT || sends.length >= LIFETIME_MAX_PER_CONTACT) return { ok: false, reason: "lifetime_max" };
   const initial = sends.find((s) => s.kind === "initial");
   if (kind === "initial" && initial) return { ok: false, reason: "initial_already_claimed" };
   if (kind === "followup") {
