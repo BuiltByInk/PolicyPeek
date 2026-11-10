@@ -261,6 +261,11 @@ export async function runDaily(env: SendEnv, now = new Date()): Promise<RunResul
       // The claim row stays: a failed or unknown send is never retried automatically.
       const code = (err as { code?: string }).code ?? "send_error";
       await env.DB.prepare("UPDATE outreach_sends SET status = 'failed', error_code = ? WHERE tool_slug = ? AND contact_email = ? AND kind = ?").bind(String(code).slice(0, 60), c.contact.tool_slug, c.contact.contact_email.toLowerCase(), c.kind).run();
+      // SF3: async bounces go to cf-bounce.mail.* (Cloudflare), not privacy@, so
+      // the reply Worker rarely sees them. A synchronous rejection that names a
+      // bounced/suppressed/invalid recipient suppresses the address here.
+      if (/bounce|suppress|invalid.?recipient|recipient.?(?:rejected|invalid|not.?found)|mailbox/i.test(`${code} ${(err as Error).message ?? ""}`))
+        await env.DB.prepare("INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('address', ?, 'bounce')").bind(c.contact.contact_email.toLowerCase()).run();
       log({ event: "send_failed", tool_slug: c.contact.tool_slug, recipient_domain: c.recipientDomain });
     }
   }
