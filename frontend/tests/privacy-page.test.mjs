@@ -31,20 +31,30 @@ test("/privacy/ is built, indexable and in the sitemap", () => {
 test("/privacy/ covers blocker 1: who, purpose, lawful basis, retention, recipients, rights, ICO, objection, outreach and watcher data, IPs", () => {
   const t = text(read("privacy/index.html"));
   for (const needle of [
-    "Elliot Inkley", "controller", "hello@getpolicypeek.com", "privacy@getpolicypeek.com",
+    "Elliot Inkley", "controller", "hello@getpolicypeek.com", "privacy@example.com",
     "legitimate interests", "Article 6(1)(f)",
     "12 months after", "24 months after our first email", "whichever comes first",
+    "deleted automatically early the next day (UTC)", "Our own application logs don't record IP addresses",
+    "add your address and your company's domain", "only Elliot", "No AI service processes them",
+    "name, job title and signature", "compliance", "UK Extension to the EU-US Data Privacy Framework",
+    "UK International Data Transfer Addendum", "Switzerland (UK adequacy)", "When we start",
     "Cloudflare", "Proton", "Anthropic",
     "SPF, DKIM and DMARC", "256 KB",
     "PolicyPeek-PolicyWatch/1.0", "robots.txt", "latest 10 versions",
-    "IP address", "deleted every day",
+    "IP address",
     "Information Commissioner's Office", "ico.org.uk/make-a-complaint",
     "Reply \"stop\"", "object",
   ]) assert.ok(t.includes(needle), `missing: ${needle}`);
 });
 
-test("/privacy/ makes no ICO-registration, InkLLM, sales or paid claims", () => {
+test("/privacy/ makes no ICO-registration, InkLLM, sales or paid claims, and no 'already live' claims for unshipped parts", () => {
   const t = text(read("privacy/index.html")).toLowerCase();
+  for (const bad of ["this is done automatically", "if you ask, your company", "we may use ai tools", "company.com", "fee"])
+    assert.ok(!t.includes(bad), `must not contain: ${bad}`);
+  // The only ICO mentions allowed are the complaint route.
+  const icoMentions = t.match(/\bico\b/g) ?? [];
+  assert.ok(icoMentions.length <= 2, `unexpected ICO mentions: ${icoMentions.length}`);
+  assert.ok(!t.includes("regist"));
   for (const bad of ["registered with the ico", "ico registration", "registration number", "inkllm", "gumroad", "pricing", "buy ", "paid plan", "premium", "subscribe"])
     assert.ok(!t.includes(bad), `must not contain: ${bad}`);
 });

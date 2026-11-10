@@ -1,12 +1,13 @@
 ---
-// /privacy notice (2026-11-10, Security review blocker 1, UK GDPR Art 13/14).
-// Every statement mirrors what the code does or is built to do; keep it in
-// step with backend/src/rateLimit.ts (daily IP purge), backend/wrangler.toml
+// /privacy notice (2026-11-10, Security review blocker 1, UK GDPR Art 13/14;
+// wording fixes from Security's 11:20 branch review applied).
+// Every statement mirrors what the code does today, or is worded as a future
+// plan ("When we start ...") where the code hasn't shipped. Keep it in step
+// with backend/src/rateLimit.ts (IP purge at 03:30 UTC), backend/wrangler.toml
 // (invocation_logs = false), the Cloudflare Web Analytics beacon in
-// layouts/Layout.astro, and, once merged, workers/outreach (emails, replies,
+// layouts/Layout.astro, and, once they ship, workers/outreach (emails, replies,
 // suppression, retention purge) and workers/policy-watcher (policy snapshots).
-// Do NOT add a claim that PolicyPeek is registered with the ICO: the data
-// protection fee has not been paid (Elliot, 2026-11-10).
+// Do not claim ICO registration unless confirmed.
 import Layout from "../layouts/Layout.astro";
 const title = "Privacy notice";
 const description = "What personal data PolicyPeek handles (site, extension, emails to companies' privacy teams and policy-page snapshots), why, how long it's kept, and your rights.";
@@ -30,8 +31,6 @@ const updated = "10 November 2026";
   <p>
     Contact for anything on this page, including requests and objections:
     <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>.
-    If we have emailed you from privacy@getpolicypeek.com, you can also simply
-    reply to that email.
   </p>
 
   <h2 id="site">Using the website and browser extension</h2>
@@ -51,42 +50,47 @@ const updated = "10 November 2026";
     <li>
       When you ask us to check a new tool (on the site or in the extension), we
       record your IP address (for IPv6, its network part) and the date, so we can
-      allow one free check per day. These records are deleted every day; nothing
-      older than the current day is kept. The check itself (the tool's domain,
-      its policy address and what we found) isn't linked to you.
+      allow one free check per day. These records are deleted automatically early
+      the next day (UTC); we never keep them longer than about a day. The check
+      itself (the tool's domain, its policy address and what we found) isn't
+      linked to you.
     </li>
     <li>
-      Our server is set not to store per-request logs, so request details such as
-      IP addresses aren't kept in our logs.
+      Our own application logs don't record IP addresses. Cloudflare, which hosts
+      and protects the site, processes IP addresses to deliver it and block abuse,
+      and may keep them briefly in its security logs.
     </li>
   </ul>
 
-  <h2 id="outreach">Emails to companies' privacy teams</h2>
+  <h2 id="outreach">Emails to companies' privacy teams (planned)</h2>
   <p>
-    When a tool's published policy doesn't say clearly whether customer data
-    trains AI models, we may email the privacy, data protection, legal or press
-    contact that the company publishes in that policy, from
-    privacy@getpolicypeek.com, to ask. We send one email and, if there is no
-    reply, at most one follow-up 14 days later. Then we stop.
+    When we start these emails: when a tool's published policy doesn't say
+    clearly whether customer data trains AI models, we'll email the privacy,
+    data protection, compliance, legal or press contact that the company
+    publishes in that policy to ask. We'll only use a role address (such as
+    privacy@example.com), never a named person's own address. We'll send one
+    email and, if there is no reply, at most one follow-up 14 days later. Then
+    we stop.
   </p>
-  <p><strong>What we hold:</strong></p>
+  <p><strong>What we'll hold:</strong></p>
   <ul>
     <li>
-      the contact address the company published (for example privacy@company.com),
-      the page we found it on, the company and tool name, and the policy we reviewed;
+      the contact address the company published, the page we found it on, the
+      company and tool name, and the policy we reviewed;
     </li>
     <li>
       a record of each email we sent: the date, whether it was the first email or
       the follow-up, and the message reference our email provider gives it;
     </li>
     <li>
-      any reply: the full message as received (up to about 256 KB; for attachments
-      we keep only their names, types and sizes), the sender's address, the date,
-      and the email authentication results (SPF, DKIM and DMARC);
+      any reply: the message as received (up to about 256 KB; for attachments we
+      keep only their names, types and sizes), the sender's address, the name, job
+      title and signature of the person who replied (if included), the date, and
+      the email authentication results (SPF, DKIM and DMARC);
     </li>
     <li>
-      if you ask us not to email again, or an email bounces: the address or domain,
-      the reason and the date (see "How to object" below).
+      if you ask us not to email again, or an email bounces: the address and
+      domain, the reason and the date (see "How to object" below).
     </li>
   </ul>
   <p>
@@ -98,10 +102,14 @@ const updated = "10 November 2026";
     <strong>Why, and our lawful basis:</strong> we rely on legitimate interests
     (UK GDPR Article 6(1)(f)). Our interest is publishing an accurate, sourced
     description of whether a company uses customer data to train AI models,
-    instead of guessing. We write only to an address the company published for
-    privacy, data protection, legal or press questions, we send at most two
-    emails, and we stop as soon as you ask. These emails are enquiries, not
-    marketing.
+    instead of guessing. We'll write only to a role address the company
+    published for privacy, data protection, compliance, legal or press
+    questions, send at most two emails, and stop as soon as you ask. These
+    emails are enquiries, not marketing.
+  </p>
+  <p>
+    <strong>Who reads replies:</strong> only Elliot. Replies are forwarded to his
+    mailbox. No AI service processes them.
   </p>
   <p>
     <strong>What we publish:</strong> we may quote a company's written answer
@@ -109,17 +117,18 @@ const updated = "10 November 2026";
     of the person who replied.
   </p>
 
-  <h2 id="watcher">Snapshots of published policy pages</h2>
+  <h2 id="watcher">Snapshots of published policy pages (planned)</h2>
   <p>
-    To notice when a listed tool changes its policy, we regularly fetch the public
-    policy pages linked on each tool's PolicyPeek page. Our fetcher identifies
-    itself as <code>PolicyPeek-PolicyWatch/1.0</code>, follows each site's
-    robots.txt, and fetches one page at a time per site. We store the page text,
-    a fingerprint of it, and a record of what changed. These are companies'
+    When we start checking for policy changes: to notice when a listed tool
+    changes its policy, we'll regularly fetch the public policy pages linked on
+    each tool's PolicyPeek page. Our fetcher will identify itself as
+    <code>PolicyPeek-PolicyWatch/1.0</code>, respect each site's robots.txt,
+    and fetch one page at a time per site. We'll store the page text, a
+    fingerprint of it, and a record of what changed. These are companies'
     published documents. If one names a person (for example a data protection
-    officer), that name is in our copy too. We keep the latest 10 versions of each
-    page, and change records for up to 24 months. A change is reviewed by a
-    person; it never changes a rating by itself.
+    officer), that name will be in our copy too. We plan to keep the latest 10
+    versions of each page, and change records for up to 24 months. A change
+    will be reviewed by a person; it will never change a rating by itself.
   </p>
 
   <h2 id="recipients">Who else handles this data</h2>
@@ -130,40 +139,38 @@ const updated = "10 November 2026";
       preview of a sent message for about seven days for delivery checks.
     </li>
     <li>
-      <strong>Proton</strong> provides the mailbox that replies to
-      privacy@getpolicypeek.com and hello@getpolicypeek.com are forwarded to.
+      <strong>Proton</strong> provides Elliot's mailbox, which mail to
+      hello@getpolicypeek.com (and, once the emails above start, replies to them)
+      is forwarded to.
     </li>
     <li>
-      <strong>Anthropic</strong> receives the text of public policy pages we check,
-      so that facts can be extracted from it. It doesn't receive your IP address.
+      <strong>Anthropic</strong> receives the text of public policy pages that are
+      checked through the site or extension, so that facts can be extracted from
+      it. It doesn't receive your IP address, and it doesn't receive replies to
+      our emails. The policy-change checks above don't use an AI service.
     </li>
   </ul>
-  <p>
-    We may use AI tools to help us read a company's reply when we review its
-    answer. A person decides what, if anything, changes on PolicyPeek; nothing
-    is published automatically from a reply.
-  </p>
   <p>We don't sell personal data, and we don't share it with advertisers or data brokers.</p>
   <p>
-    Some of these providers may process data outside the UK. Where they do, they
-    rely on the safeguards UK law requires, such as the UK International Data
-    Transfer Addendum or an adequacy decision.
+    Cloudflare and Anthropic are US companies; transfers rely on the UK
+    Extension to the EU-US Data Privacy Framework or the UK International Data
+    Transfer Addendum. Proton is in Switzerland (UK adequacy).
   </p>
 
   <h2 id="retention">How long we keep it</h2>
   <ul>
-    <li>IP addresses for the free daily check: deleted every day.</li>
+    <li>IP addresses for the free daily check: deleted automatically early the next day (UTC).</li>
     <li>
-      Emails we sent and replies we received: deleted 12 months after the tool's
-      listing is no longer on hold, or 24 months after our first email,
-      whichever comes first. This is done automatically.
+      Emails we send and replies we receive (once these emails start): we'll
+      delete them 12 months after the tool's listing is no longer on hold, or
+      24 months after our first email, whichever comes first.
     </li>
     <li>
       "Don't email us" and bounce records: kept for as long as we send these
       emails, so that we never email that address or company again. They hold only
-      the address or domain, the reason and the date.
+      the address and domain, the reason and the date.
     </li>
-    <li>Policy page snapshots: the latest 10 versions of each page; change records up to 24 months.</li>
+    <li>Policy page snapshots (once these checks start): the latest 10 versions of each page; change records up to 24 months.</li>
   </ul>
 
   <h2 id="rights">Your rights</h2>
@@ -174,7 +181,7 @@ const updated = "10 November 2026";
     <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>. We'll
     reply within one month. Because the site and extension don't use accounts or
     identifiers, we may not be able to find records about you there, and IP
-    records are gone within a day anyway.
+    records are gone within about a day anyway.
   </p>
   <p>
     If you're unhappy with how we've handled your data, please tell us first.
@@ -186,11 +193,11 @@ const updated = "10 November 2026";
 
   <h2 id="object">How to object or stop our emails</h2>
   <p>
-    Reply "stop" to any email from privacy@getpolicypeek.com, or write to
+    Reply "stop" to any email from us, or write to
     <a href="mailto:hello@getpolicypeek.com">hello@getpolicypeek.com</a>. We'll
-    add your address (and, if you ask, your company's domain) to a do-not-contact
-    list, cancel any follow-up, and never email it again. If we're unsure whether
-    a reply is an objection, we treat it as one.
+    add your address and your company's domain to a do-not-contact list, cancel
+    any follow-up, and never email that address or company again. If we're
+    unsure whether a reply is an objection, we treat it as one.
   </p>
 
   <h2 id="changes">Changes</h2>
