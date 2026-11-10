@@ -138,7 +138,7 @@ export function handSentFor(toolSlug: string, email: string, list = HAND_SENT) {
 export interface ContactOut {
   tool_slug: string; tool_name: string; tool_domain: string; kind: "held" | "ambiguous_live";
   contact_email: string; role: Role; contact_source_url: string; policy_url: string; policy_label: string;
-  question_text: string; status: "eligible" | "sent_by_hand" | "paused"; paused_reason: string | null; vetted_by: string | null; vetted_at: string | null; domain_match_exception: string | null; hand_sent_at: string | null; hand_sent_source: string | null;
+  question_text: string; on_held_tracker: 0 | 1; status: "eligible" | "sent_by_hand" | "paused"; paused_reason: string | null; vetted_by: string | null; vetted_at: string | null; domain_match_exception: string | null; hand_sent_at: string | null; hand_sent_source: string | null;
 }
 export interface Skipped { tool: string; contact: string; kind: string; reason: string }
 export interface CardGateOut { tool_slug: string; flagged: 0 | 1; passes: 0 | 1; gate_reason: string; flag_source: string; basis: "steward_held" | "held_tracker" | "unclear_live" | "blocked"; verdict_at_load: string | null; live_verdict: string | null; verdict_as_of: string | null }
@@ -181,6 +181,14 @@ export function buildLoad(input: {
   for (const t of input.liveTools) perDomain.set(t.domain, (perDomain.get(t.domain) ?? 0) + 1);
   const multi = [...perDomain].filter(([, n]) => n > 1).map(([d]) => d);
   const keyOf = (domain: string, name: string) => toolKey(domain, name, multi);
+  // MF10: every tool on the held tracker (including "form only" rows such as
+  // Mailchimp and Canva), keyed per tool.
+  const trackerKey = (r: Record<string, string>) => {
+    const lt = liveByName.get(r.tool.toLowerCase());
+    if (lt) return keyOf(lt.domain, lt.name);
+    try { return keyOf(registrable(new URL(r.contact_source_url).hostname) ?? "", r.tool); } catch { return ""; }
+  };
+  const trackerKeys = new Set(input.tracker.map(trackerKey).filter(Boolean));
 
   const consider = (kind: "held" | "ambiguous_live", toolName: string, contact: string, sourceUrl: string, slugHint: string | null, policyUrl: string, label: string, context: string, hand: "sent" | "not_sent" | "unclear") => {
     if (!contact || /^(form only|none found)/i.test(contact)) {
@@ -217,14 +225,17 @@ export function buildLoad(input: {
     // 11:57 UK (Elliot's 11:39 rule): unclear tools are emailed automatically
     // without per-card approval. They still go through the card gate, vetting,
     // suppression, caps and the neutral-wording check.
+    // MF10: a tool that is ALSO on the held tracker may have been contacted by
+    // hand (e.g. Mailchimp's form), so it waits for the hand-sent list.
+    else if (kind === "ambiguous_live" && trackerKeys.has(slug)) { status = "paused"; paused_reason = "on held tracker: awaiting hand-sent list"; }
     else if (kind === "ambiguous_live") { status = "eligible"; }
     // 11:37 UK: every held contact stays out of the live queue until the list
     // of held tools Elliot emailed by hand arrives.
     else { status = "paused"; paused_reason = "awaiting hand-sent list"; }
     if (kind === "held") { if (status === "sent_by_hand") counts.alreadySentByHand++; else counts.heldLoadedPaused++; }
-    else counts.ambiguousLoadedEligible++;
+    else if (status === "eligible") counts.ambiguousLoadedEligible++;
     if (v.domainMatchException) counts.domainMatchExceptions++;
-    contacts.push({ tool_slug: slug, tool_name: toolName, tool_domain: toolDomain, kind, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, vetted_by: v.domainMatchException ? v.domainMatchException.vettedBy : null, vetted_at: v.domainMatchException ? v.domainMatchException.vettedAt : null, domain_match_exception: v.domainMatchException ? v.domainMatchException.reason : null, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
+    contacts.push({ tool_slug: slug, tool_name: toolName, tool_domain: toolDomain, kind, on_held_tracker: trackerKeys.has(slug) ? 1 : 0, contact_email: contact, role: v.role, contact_source_url: sourceUrl, policy_url: policyUrl, policy_label: label, question_text: context, status, paused_reason, vetted_by: v.domainMatchException ? v.domainMatchException.vettedBy : null, vetted_at: v.domainMatchException ? v.domainMatchException.vettedAt : null, domain_match_exception: v.domainMatchException ? v.domainMatchException.reason : null, hand_sent_at: hs ? hs.date : hand === "sent" ? "unknown" : null, hand_sent_source: hs ? hs.source : hand === "sent" ? "tracker status" : null });
   };
 
   for (const r of input.tracker) {
@@ -256,12 +267,7 @@ export function buildLoad(input: {
   const cardGate: CardGateOut[] = [];
   const failClosed = !input.flagCsv || !input.steward;
   const flaggedNames = new Set((input.flagCsv ?? []).map((r) => r.tool.toLowerCase()));
-  const trackerKey = (r: Record<string, string>) => {
-    const lt = liveByName.get(r.tool.toLowerCase());
-    if (lt) return keyOf(lt.domain, lt.name);
-    try { return keyOf(registrable(new URL(r.contact_source_url).hostname) ?? "", r.tool); } catch { return ""; }
-  };
-  const heldSlugs = new Set([...contacts.filter((c) => c.kind === "held").map((c) => c.tool_slug), ...input.tracker.map(trackerKey)].filter(Boolean));
+  const heldSlugs = new Set([...contacts.filter((c) => c.kind === "held").map((c) => c.tool_slug), ...trackerKeys]);
   // steward names -> slugs via the recheck summary ("Name (slug)") or live names
   const stewardBySlug = new Map<string, StewardRuling>();
   for (const [name, ruling] of input.steward ?? []) {
@@ -316,7 +322,7 @@ const q = (v: string | number | null) => (v === null ? "NULL" : typeof v === "nu
 export function toSql(r: LoadResult, vettedBy: string, vettedAt: string): string {
   const lines = ["-- Generated by scripts/build-contacts-sql.ts. Review before applying. Never sets card_confirmed."];
   for (const c of r.contacts)
-    lines.push(`INSERT OR IGNORE INTO outreach_contacts (tool_slug, tool_name, tool_domain, kind, contact_email, role, contact_source_url, policy_url, policy_label, question_text, vetted_by, vetted_at, domain_match_exception, status, paused_reason, hand_sent_at, hand_sent_source) VALUES (${[c.tool_slug, c.tool_name, c.tool_domain, c.kind, c.contact_email, c.role, c.contact_source_url, c.policy_url, c.policy_label, c.question_text, c.vetted_by ?? vettedBy, c.vetted_at ?? vettedAt, c.domain_match_exception, c.status, c.paused_reason, c.hand_sent_at, c.hand_sent_source].map(q).join(", ")});`);
+    lines.push(`INSERT OR IGNORE INTO outreach_contacts (tool_slug, tool_name, tool_domain, kind, contact_email, role, contact_source_url, policy_url, policy_label, question_text, vetted_by, vetted_at, domain_match_exception, on_held_tracker, status, paused_reason, hand_sent_at, hand_sent_source) VALUES (${[c.tool_slug, c.tool_name, c.tool_domain, c.kind, c.contact_email, c.role, c.contact_source_url, c.policy_url, c.policy_label, c.question_text, c.vetted_by ?? vettedBy, c.vetted_at ?? vettedAt, c.domain_match_exception, c.on_held_tracker, c.status, c.paused_reason, c.hand_sent_at, c.hand_sent_source].map(q).join(", ")});`);
   for (const h of HAND_SENT) for (const d of h.domains)
     lines.push(`INSERT OR IGNORE INTO suppressions (kind, value, reason) VALUES ('domain', ${q(d)}, 'manual');`);
   for (const g of r.cardGate)

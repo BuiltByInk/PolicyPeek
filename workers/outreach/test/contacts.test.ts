@@ -184,3 +184,17 @@ describe("MF9: Mailchimp follows its stored verdict, not the static steward file
     expect(sql).not.toMatch(/passes|basis|verdict_at_load|card_confirmed/);
   });
 });
+
+describe("MF10: hand-sent check applies to any tool on the held tracker", () => {
+  it("Mailchimp (form-only on the tracker) loads PAUSED with on_held_tracker=1 even as an ambiguous_live row", () => {
+    const tracker = parseCsv("tool,contact,contact_source_url,date_drafted,status,follow_up_due,reply\nMailchimp,form only: https://mailchimp.com/privacy-rights/,https://mailchimp.com/privacy-rights/,2026-11-10,drafted,2026-11-24,\n");
+    const live = [{ domain: "mailchimp.com", name: "Mailchimp", source_urls: '["https://mailchimp.com/legal/terms/"]', compliance_status: "unrated" }, { domain: "buffer.com", name: "Buffer", source_urls: "[]", compliance_status: "unrated" }];
+    const flags = parseCsv("tool,contact,contact_source_url\nMailchimp,privacy@intuit.com,https://mailchimp.com/about/privacy-rights/\nBuffer,privacy@buffer.com,https://buffer.com/legal\n");
+    const rc = parseRecheck("| 1 | Mailchimp (mailchimp.com) | x | y | Yes |\n| 2 | Buffer (buffer.com) | x | y | Yes |\n### 1. Mailchimp (mailchimp.com)\n> We may use Inputs.\nSource: https://mailchimp.com/legal/terms/ — x\n### 2. Buffer (buffer.com)\n> We may use data.\nSource: https://buffer.com/legal — x\n");
+    const r = buildLoad({ tracker, heldPack: new Map(), liveTools: live, flagCsv: flags, recheck: rc, steward: parseSteward(""), vettedBy: "t", verdictAsOf: "2026-11-10T12:00:00Z" });
+    const mc = r.contacts.find((c) => c.tool_slug === "mailchimp.com")!;
+    expect(mc).toMatchObject({ kind: "ambiguous_live", on_held_tracker: 1, status: "paused", paused_reason: "on held tracker: awaiting hand-sent list" });
+    expect(r.contacts.find((c) => c.tool_slug === "buffer.com")).toMatchObject({ on_held_tracker: 0 });
+    expect(toSql(r, "t", "now")).toMatch(/'mailchimp\.com', 'Mailchimp', 'mailchimp\.com', 'ambiguous_live', 'privacy@intuit\.com'.*, 1, 'paused', 'on held tracker: awaiting hand-sent list'/);
+  });
+});

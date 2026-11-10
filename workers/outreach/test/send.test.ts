@@ -398,3 +398,18 @@ describe("MF7/MF9: the gate reads the mirrored LIVE verdict, not the static stew
     expect((await cardGate(db.d1, "c.example", T)).open).toBe(true);
   });
 });
+
+describe("MF10: sender blocks any on-tracker tool until the hand-sent list arrives", () => {
+  it("an ambiguous_live row with on_held_tracker=1 is never queued or claimed while held_hand_list_received='0', even if someone sets it eligible", async () => {
+    const id = addContact(db.raw, { tool_slug: "mailchimp.com", tool_name: "Mailchimp", contact_email: "privacy@intuit.com", contact_source_url: "https://mailchimp.com/about/privacy-rights/", domain_match_exception: "parent company" });
+    db.raw.prepare("UPDATE outreach_contacts SET on_held_tracker = 1 WHERE id = ?").run(id);
+    gate(db.raw, "mailchimp.com", 1);
+    const env = live(db);
+    db.raw.prepare("UPDATE outreach_settings SET value = '0' WHERE key = 'held_hand_list_received'").run();
+    const r = await runDaily(env, NOW);
+    expect(r.skipped).toContainEqual({ tool_slug: "mailchimp.com", reason: "held_awaiting_hand_sent_list" });
+    const contact = db.raw.prepare("SELECT * FROM outreach_contacts WHERE id = ?").get(id);
+    expect(await claimSend(db.d1, { contact, kind: "initial", recipientDomain: "intuit.com" }, NOW)).toBe(false);
+    expect(env.EMAIL.send).not.toHaveBeenCalled();
+  });
+});

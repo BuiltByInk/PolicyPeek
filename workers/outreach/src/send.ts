@@ -101,7 +101,8 @@ export interface Skip { tool_slug: string; reason: string }
 export async function checkContact(db: D1Database, c: ContactRow, kind: "initial" | "followup", now: Date): Promise<{ ok: true; recipientDomain: string; initialSentAt?: string; gateReason: string } | { ok: false; reason: string }> {
   if (c.status === "sent_by_hand" || c.hand_sent_at) return { ok: false, reason: "sent_by_hand" };
   if (c.status !== "eligible") return { ok: false, reason: `status_${c.status}` };
-  if (c.kind === "held" && (await setting(db, "held_hand_list_received")) !== "1") return { ok: false, reason: "held_awaiting_hand_sent_list" };
+  // MF10: the hand-sent check covers every tool on the held tracker, not only kind='held'.
+  if ((c.kind === "held" || c.on_held_tracker === 1) && (await setting(db, "held_hand_list_received")) !== "1") return { ok: false, reason: "held_awaiting_hand_sent_list" };
   const v = vetContact({ contactEmail: c.contact_email, toolDomain: c.tool_domain, contactSourceUrl: c.contact_source_url });
   if (!v.ok) return { ok: false, reason: `vet_${v.reason}` };
   // A parent-company address needs BOTH the code exception and the recorded reason on the row.
@@ -185,7 +186,7 @@ SELECT c.id, c.tool_slug, lower(c.contact_email), ?1, ?2, 'claimed', ?3
 FROM outreach_contacts c
 WHERE c.id = ?4
   AND c.status = 'eligible' AND c.hand_sent_at IS NULL
-  AND (c.kind <> 'held' OR (SELECT value FROM outreach_settings WHERE key = 'held_hand_list_received') = '1')
+  AND ((c.kind <> 'held' AND c.on_held_tracker = 0) OR (SELECT value FROM outreach_settings WHERE key = 'held_hand_list_received') = '1')
   AND (SELECT value FROM outreach_settings WHERE key = 'paused') = '0'
   AND (SELECT COUNT(*) FROM outreach_sends WHERE claimed_at >= ?5 AND status IN ('claimed','sent'))
       < MIN(${HARD_DAILY_MAX}, MAX(0, CAST(COALESCE((SELECT value FROM outreach_settings WHERE key = 'daily_cap'), '0') AS INTEGER)))

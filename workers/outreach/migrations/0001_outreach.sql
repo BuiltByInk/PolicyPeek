@@ -28,6 +28,11 @@ CREATE TABLE IF NOT EXISTS outreach_contacts (
   domain_match_exception TEXT,
   -- sent_by_hand: Elliot emailed them himself; that email isn't in our system,
   -- so neither an initial nor a follow-up is ever sent automatically.
+  -- MF10: 1 if this TOOL is on the held-outreach tracker (any row, including
+  -- "form only" rows that never become contacts). Such a tool may have been
+  -- contacted by hand, so it is blocked until the hand-sent list is received,
+  -- whatever its kind (held or ambiguous_live).
+  on_held_tracker INTEGER NOT NULL DEFAULT 0 CHECK (on_held_tracker IN (0, 1)),
   status TEXT NOT NULL DEFAULT 'paused' CHECK (status IN ('eligible', 'sent_by_hand', 'paused', 'resolved')),
   paused_reason TEXT,
   hand_sent_at TEXT,

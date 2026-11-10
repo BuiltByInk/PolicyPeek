@@ -123,6 +123,7 @@ export interface ContactRow {
   vetted_by: string;
   vetted_at: string;
   domain_match_exception: string | null;
+  on_held_tracker?: number;
   status: "eligible" | "sent_by_hand" | "paused" | "resolved";
   paused_reason: string | null;
   hand_sent_at: string | null;
