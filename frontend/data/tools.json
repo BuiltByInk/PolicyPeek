@@ -179,6 +179,24 @@
     "last_checked_at": "2026-10-24T09:49:33.351Z"
   },
   {
+    "name": "Duck.ai (DuckDuckGo AI Chat)",
+    "domain": "duckduckgo.com",
+    "compliance_status": "compliant",
+    "summary": "\"we have agreements in place with all model providers that further limit how they can use data from these anonymous requests, including not using Prompts and Outputs to develop or improve their models\" \"your conversations are not used to train chat models by DuckDuckGo or the underlying model providers (for example, Open AI and Anthropic).\" \"All of our AI features are designed with privacy first\u2014they don't track how you use them or train on your data.\" \"You can choose to share a conversation with us when providing feedback, in which case we store and review it to improve our products.\" DuckDuckGo states the no-training rule company-wide for its AI features, so this badge on duckduckgo.com does not overclaim for those other AI features. If you choose to share a chat as feedback, DuckDuckGo says it will store and review it to improve its products; that is not stated as training. Listed as Duck.ai (DuckDuckGo AI Chat); product URL https://duck.ai/. Sources: Duck.ai Privacy Policy and Terms of Service, last updated 1 October 2026; the Duck.ai help page and the Optional AI help page have no page date and were fetched 10 November 2026.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://duckduckgo.com/duckai/privacy-terms",
+      "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy",
+      "https://duckduckgo.com/duckduckgo-help-pages/optional-ai"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-10T09:24:00.000Z"
+  },
+  {
     "name": "ElevenLabs",
     "domain": "elevenlabs.io",
     "compliance_status": "compliant_with_caveats",
@@ -1023,6 +1041,23 @@
     "auto_published": false,
     "shared_domain": false,
     "last_checked_at": "2026-10-24T07:25:50.915Z"
+  },
+  {
+    "name": "Zendesk AI",
+    "domain": "zendesk.com",
+    "compliance_status": "compliant_with_caveats",
+    "summary": "\"While most customers instruct Zendesk to train such functionality in order to improve the Services, Customer may opt out of research and model training by contacting Zendesk customer support and identifying the Zendesk subdomains that Customer wishes to be opted out.\" \"we take additional measures to sanitize your data before using it to train any of our models that could be used by other customers.\" \"these features are not trained on Zendesk customer data.\" The opt-out is for the Zendesk account holder (the business), per subdomain, via Zendesk customer support. People who email a company's Zendesk helpdesk can't opt out themselves. Training is on Zendesk's own non-generative models; third-party generative LLMs don't train on the data. Sources: Supplemental Terms (effective 23 June 2026 for new customers and 23 July 2026 for existing customers; article updated 9 November 2026) and Zendesk AI Data Use Information (updated 27 May 2026).",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://support.zendesk.com/hc/en-us/articles/4408831944730-Supplemental-terms-Zendesk-s-service-specific-terms",
+      "https://support.zendesk.com/hc/en-us/articles/5729714731290-Zendesk-AI-Data-Use-Information"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-10T09:24:00.000Z"
   },
   {
     "name": "Zoom AI Companion",

@@ -33,6 +33,15 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Intercom Fin training on my data?", a: "Yes. An admin can request an opt-out in Settings > Workspace > Security > AI model training and fine-tuning. Intercom says it processes opt-out requests within 30 days. Until then, Fin CX models train by default on de-identified Fin conversation logs (with listed exclusions such as EU/AU regional hosting and trial accounts)." },
     ],
   },
+  // Steward card wording, 10 Nov 2026 factcheck: opt-out is account holder
+  // (the business) only, per subdomain, via support. End users who email a
+  // company's Zendesk helpdesk cannot opt out themselves. Backed by the
+  // Supplemental Terms and AI Data Use quotes in the catalog row.
+  "zendesk.com": {
+    faq: [
+      { q: "Can I stop Zendesk AI training on my data?", a: "Yes, but only the Zendesk account holder (the business) can, per subdomain, by contacting Zendesk customer support. People who email a company's Zendesk helpdesk can't opt out themselves. Training is on Zendesk's own non-generative models by default; Zendesk says third-party generative LLMs don't train on the data." },
+    ],
+  },
 };
 
 export const overrideFor = (domain: string): ToolOverride | undefined => TOOL_OVERRIDES[domain];
