@@ -22,9 +22,9 @@ export interface Env {
   DB: D1Database;
   ANTHROPIC_API_KEY?: string;
   ADMIN_TOKEN?: string;
-  // Optional: enable Telegram push alerts (stuck pending, overdue rechecks, held-for-review). See alert.ts.
-  ALERT_BOT_TOKEN?: string;
-  ALERT_CHAT_ID?: string;
+  // Optional: Cloudflare Email Sending binding, pinned to elliotink@pm.me.
+  // Used for held-check, digest, stuck-pending and overdue-recheck alerts. See alert.ts.
+  ALERT_EMAIL?: SendEmail;
 }
 
 

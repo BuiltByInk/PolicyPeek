@@ -85,7 +85,7 @@ describe("overdue alert", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const { env } = makeEnv([], []);
-    await alertOverdueTools({ ...env, ALERT_BOT_TOKEN: "t", ALERT_CHAT_ID: "1" } as Env);
+    await alertOverdueTools({ ...env, ALERT_EMAIL: { send: async () => ({ messageId: "<m@test>" }) } } as Env);
     vi.unstubAllGlobals();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
