@@ -87,6 +87,7 @@ export async function evaluateChanged(
     oldDirection: card.oldDirection,
     newDirection: first.direction,
     reliedOnQuotes: first.quotes,
+    secondQuotes: second.quotes,
     firstOpinion: first.direction,
     secondOpinion: second.direction,
   });

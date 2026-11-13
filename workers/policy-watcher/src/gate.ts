@@ -1,5 +1,5 @@
 // Task 3 auto-publish gate (pure). A card change may auto-publish only if
-// every relied-on quote is word-for-word in this run's fetched text, the
+// there is at least one quote, every first- and second-opinion quote is word-for-word in this run's fetched text, the
 // verdict direction is unchanged, an independent second opinion agrees, and
 // the tool is not on the held, recheck or medium-flag lists in file 02.
 import { listHit, type ListHit } from "./heldLists";
@@ -49,6 +49,7 @@ export function directionFromStatus(status: string): VerdictDirection {
 }
 
 export type GateFailReason =
+  | "no_quotes"
   | "quote_not_verbatim"
   | "direction_changed"
   | "second_opinion_disagree"
@@ -62,6 +63,8 @@ export interface GateInput {
   oldDirection: VerdictDirection;
   newDirection: VerdictDirection;
   reliedOnQuotes: string[];
+  /** Quotes from the independent second opinion; each must also appear verbatim. */
+  secondQuotes?: string[];
   firstOpinion: VerdictDirection;
   secondOpinion: VerdictDirection;
 }
@@ -92,13 +95,16 @@ export function missingQuotes(quotes: string[], fetchedText: string): string[] {
 }
 
 export function evaluateChangeGate(input: GateInput): GateResult {
-  const missing = missingQuotes(input.reliedOnQuotes, input.fetchedText);
+  const firstQuotes = (input.reliedOnQuotes ?? []).map((q) => q.trim()).filter(Boolean);
+  const secondQuotes = (input.secondQuotes ?? []).map((q) => q.trim()).filter(Boolean);
+  const missing = missingQuotes([...firstQuotes, ...secondQuotes], input.fetchedText);
   const directionChanged = input.oldDirection !== input.newDirection;
   const opinionsDisagree =
     input.firstOpinion !== input.secondOpinion || input.firstOpinion !== input.newDirection;
   const hit = listHit(input.toolSlug);
 
   const reasons: GateFailReason[] = [];
+  if (firstQuotes.length === 0) reasons.push("no_quotes");
   if (missing.length) reasons.push("quote_not_verbatim");
   if (directionChanged) reasons.push("direction_changed");
   if (opinionsDisagree) reasons.push("second_opinion_disagree");

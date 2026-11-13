@@ -53,6 +53,34 @@ describe("evaluateChangeGate paths", () => {
     expect(r.missingQuotes).toEqual(["You may opt out in Settings."]);
   });
 
+  it("fails with no_quotes when there are zero first-opinion quotes (not eligible)", () => {
+    for (const quotes of [[], [""], ["  "]]) {
+      const r = evaluateChangeGate(base({ reliedOnQuotes: quotes, secondQuotes: [] }));
+      expect(r.publish).toBe(false);
+      expect(r.reasons).toEqual(["no_quotes"]);
+      expect(r.missingQuotes).toEqual([]);
+    }
+  });
+
+  it("fails when one first-opinion quote among several is not verbatim", () => {
+    const r = evaluateChangeGate(base({
+      reliedOnQuotes: [quote, "You may opt out in Settings.", "You can also read the terms."],
+    }));
+    expect(r.publish).toBe(false);
+    expect(r.reasons).toEqual(["quote_not_verbatim"]);
+    expect(r.missingQuotes).toEqual(["You may opt out in Settings."]);
+  });
+
+  it("fails when a second-opinion quote is not verbatim, even if every first-opinion quote is", () => {
+    const r = evaluateChangeGate(base({
+      reliedOnQuotes: [quote],
+      secondQuotes: [quote, "Customers may opt out in account settings."],
+    }));
+    expect(r.publish).toBe(false);
+    expect(r.reasons).toEqual(["quote_not_verbatim"]);
+    expect(r.missingQuotes).toEqual(["Customers may opt out in account settings."]);
+  });
+
   it("fails when the verdict direction changes, even if wording is clear and opinions agree", () => {
     const r = evaluateChangeGate(base({ newDirection: "trains_opt_out", firstOpinion: "trains_opt_out", secondOpinion: "trains_opt_out" }));
     expect(r.publish).toBe(false);
@@ -145,6 +173,40 @@ describe("independent second opinion + evaluateChange", () => {
     expect(seen[1].join("\n")).not.toContain("notes");
     expect(env.raw.prepare("SELECT COUNT(*) n FROM proposed_publishes").get().n).toBe(1);
     expect(env.raw.prepare("SELECT publishable, verdict_direction_changed FROM change_log").get()).toMatchObject({ publishable: 1, verdict_direction_changed: 0 });
+  });
+
+  it("queues with no_quotes when the first opinion returns zero quotes", async () => {
+    const r = await evaluateChanged(
+      env,
+      card,
+      text,
+      undefined,
+      model("doesnt_train", []),
+      model("doesnt_train", [quote]),
+      new Date("2026-11-13T12:00:00Z")
+    );
+    expect(r.publish).toBe(false);
+    expect(r.queued).toBe(true);
+    expect(r.reasons).toEqual(["no_quotes"]);
+    expect(env.raw.prepare("SELECT failed_reason FROM elliot_queue").get().failed_reason).toBe("no_quotes");
+    expect(env.raw.prepare("SELECT COUNT(*) n FROM proposed_publishes").get().n).toBe(0);
+  });
+
+  it("queues when a second-opinion quote is not verbatim", async () => {
+    const r = await evaluateChanged(
+      env,
+      card,
+      text,
+      undefined,
+      model("doesnt_train", [quote]),
+      model("doesnt_train", ["Customers may opt out in account settings."]),
+      new Date("2026-11-13T12:00:00Z")
+    );
+    expect(r.publish).toBe(false);
+    expect(r.queued).toBe(true);
+    expect(r.reasons).toEqual(["quote_not_verbatim"]);
+    expect(env.raw.prepare("SELECT failed_reason FROM elliot_queue").get().failed_reason).toBe("quote_not_verbatim");
+    expect(env.raw.prepare("SELECT COUNT(*) n FROM proposed_publishes").get().n).toBe(0);
   });
 
   it("queues when the second opinion disagrees, and records old/new quotes", async () => {
