@@ -13,7 +13,7 @@ let plain, beacon;
 const build = (env) => {
   const dir = mkdtempSync(join(tmpdir(), "pp-pages-test-"));
   const e = { ...process.env, ...env };
-  if (!("PUBLIC_CF_BEACON_TOKEN" in env)) delete e.PUBLIC_CF_BEACON_TOKEN;
+  if (!("PUBLIC_CF_BEACON_TOKEN" in env)) e.PUBLIC_CF_BEACON_TOKEN = "";
   execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env: e, stdio: "pipe" });
   return dir;
 };
@@ -79,8 +79,9 @@ test("SEO: tool page title/description from the verdict, related links, every to
     assert.ok(list.includes(`href="/tools/${t.domain}/"`), `/tools/ links ${t.domain}`);
   }
   const h = read(plain, "tools/claude.com/index.html");
-  assert.match(h, /<title>Does Claude train on your data\? · PolicyPeek<\/title>/);
-  assert.match(h, /name="description" content="Does Claude train on my data\? Opt-out available: /);
+  assert.match(h, /<title>Does Claude train on your data\? \(checked [A-Z][a-z]+ 20\d{2}\) · PolicyPeek<\/title>/);
+  assert.match(h, /name="description" content="Yes, by default. Claude/);
+  assert.match(h, /may train on your data, but you can opt out/);
   assert.match(h, /id="rel-h"[^>]*>Related tools</);
   assert.ok((h.match(/class="related"[\s\S]*?<\/section>/)[0].match(/href="\/tools\/[^"]+\/"/g) || []).length >= 3);
   assert.doesNotMatch(h, /href="\/tools\/claude\.com\/"[^>]*>Does Claude/);
