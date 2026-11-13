@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { ALERT_FROM_EMAIL, ALERT_TO, sendAlert, subjectFrom } from "./alert";
+import { ALERT_FROM_EMAIL, ALERT_REPLY_TO, ALERT_TO, sendAlert, subjectFrom } from "./alert";
 import type { Env } from "./index";
 
 afterEach(() => {
@@ -27,8 +27,10 @@ describe("sendAlert", () => {
     const ok = await sendAlert({ ALERT_EMAIL: { send } } as unknown as Env, "PolicyPeek: hello\n#1 example.com");
     expect(ok).toBe(true);
     expect(send).toHaveBeenCalledTimes(1);
-    const msg = send.mock.calls[0][0] as { from: { email: string; name: string }; to: string; subject: string; text: string };
+    const msg = send.mock.calls[0][0] as { from: { email: string; name: string }; to: string; replyTo: string; subject: string; text: string };
     expect(msg.to).toBe(ALERT_TO);
+    expect(msg.replyTo).toBe(ALERT_REPLY_TO);
+    expect(msg.replyTo).toBe("elliotink@pm.me");
     expect(msg.from.email).toBe(ALERT_FROM_EMAIL);
     expect(msg.subject).toBe("PolicyPeek: hello");
     expect(msg.text).toBe("PolicyPeek: hello\n#1 example.com");
@@ -49,6 +51,7 @@ describe("sendAlert", () => {
 describe("alert destination", () => {
   it("targets the pinned Proton address from the existing outreach sender", () => {
     expect(ALERT_TO).toBe("elliotink@pm.me");
+    expect(ALERT_REPLY_TO).toBe("elliotink@pm.me");
     expect(ALERT_FROM_EMAIL).toBe("privacy@mail.getpolicypeek.com");
   });
 });

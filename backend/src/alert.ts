@@ -12,6 +12,7 @@ import type { Env } from "./index";
 export const ALERT_FROM_EMAIL = "privacy@mail.getpolicypeek.com";
 export const ALERT_FROM_NAME = "PolicyPeek";
 export const ALERT_TO = "elliotink@pm.me";
+export const ALERT_REPLY_TO = ALERT_TO; // replies go to Elliot, not privacy@
 export const ALERT_TIMEOUT_MS = 5_000;
 const MAX_TEXT = 3500;
 const MAX_SUBJECT = 200;
@@ -33,6 +34,7 @@ export async function sendAlert(env: Env, text: string): Promise<boolean> {
       env.ALERT_EMAIL.send({
         from: { email: ALERT_FROM_EMAIL, name: ALERT_FROM_NAME },
         to: ALERT_TO,
+        replyTo: ALERT_REPLY_TO,
         subject,
         text: body,
       }),
