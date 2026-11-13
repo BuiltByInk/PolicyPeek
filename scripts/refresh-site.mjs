@@ -19,6 +19,9 @@
 //      pages absent from the sitemap. If the build or any check fails,
 //      tools.json is restored from the backup and nothing is deployed.
 //   5. Deploy only with --deploy, and only after its own confirm.
+//      After a successful deploy, ping IndexNow (changed card URLs plus
+//      sitemap-index.xml and sitemap.xml). Fire-and-forget: a ping failure
+//      does not fail the deploy.
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -121,4 +124,12 @@ if (!DEPLOY) {
 if (!(await confirm("\nDeploy to the live site now?", { requireTTY: true }))) bail("Not deployed. The build in frontend/dist is ready when you are.", 0);
 if (!run("npx", ["wrangler", "pages", "deploy", "dist", "--project-name=policypeek-frontend"], FRONTEND)) bail("Deploy command failed.");
 console.log("\nDeployed. Load a changed page on the live site to confirm.");
+// IndexNow is fire-and-forget: a ping failure must not fail the deploy.
+console.log("Pinging IndexNow for changed card URLs plus sitemap-index.xml and sitemap.xml.");
+try {
+  const { pingAfterDeploy } = await import(new URL("./indexnow-ping.mjs", import.meta.url));
+  await pingAfterDeploy({ dist: DIST, failOpen: true });
+} catch (e) {
+  console.error(`IndexNow ping failed (deploy still succeeded): ${e.message}`);
+}
 rl.close();
