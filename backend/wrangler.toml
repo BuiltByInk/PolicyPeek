@@ -35,3 +35,16 @@ enabled = true
 
 [observability.logs]
 invocation_logs = false
+
+# Alert emails (held-check instant alert + daily digest, also stuck-pending
+# and overdue-recheck). NOT active until this Worker is redeployed with
+# Email Sending enabled for the account and this destination verified.
+# Sender must already be allowed (privacy@mail.getpolicypeek.com, same as
+# outreach). Destination elliotink@pm.me must be a verified Email Routing
+# destination (it already is, from outreach). Security review required
+# before deploy. Binding is pinned to that one destination so a bug cannot
+# mail anyone else.
+[[send_email]]
+name = "ALERT_EMAIL"
+destination_address = "elliotink@pm.me"
+allowed_sender_addresses = ["privacy@mail.getpolicypeek.com"]
