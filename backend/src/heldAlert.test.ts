@@ -14,7 +14,7 @@ type StatusRow = { status: string } | null;
 
 function mockEmail(opts: { reject?: boolean; timeout?: boolean } = {}) {
   return {
-    send: vi.fn(async (msg: unknown) => {
+    send: vi.fn(async (_msg: unknown) => {
       if (opts.reject) throw new Error("send rejected");
       if (opts.timeout) await new Promise((r) => setTimeout(r, 20_000));
       return { messageId: "<test@mail.getpolicypeek.com>" };
