@@ -6,9 +6,10 @@ import { VERDICTS, reasonFor, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
 import { toolSummary } from "../../toolSummary";
-import { toolFaq, toolTitle, clamp } from "../../toolFaq";
+import { toolFaq, cardTitle, clamp } from "../../toolFaq";
 import { qaForDomain } from "../../qa";
 import { answerLine, asOfText, checkedDate, primarySource, quoteParts, optOut, ICO_AI_GUIDANCE } from "../../toolAnswer";
+import { categoryFor, relatedTools } from "../../categories";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -99,9 +100,7 @@ const sources = tool.source_urls
 // the SEO follow-up wording (toolTitle, <= 60 chars). Both keep self-canonicals
 // and link to each other.
 const qa = qaForDomain(tool.domain);
-const pageTitle = isNotAi
-  ? `${tool.name}: not an AI tool`
-  : toolTitle(tool.name); // <= 60 chars incl. " · PolicyPeek" (SEO follow-up 2026-11-04)
+const pageTitle = cardTitle(tool);
 // Meta description (SEO pass, 2026-09-18): a fixed template -- the question
 // people search, then the verdict in plain words -- rather than the raw
 // policy quote in tool.summary, which got cut off mid-sentence in results and
@@ -109,31 +108,17 @@ const pageTitle = isNotAi
 // line). The summary itself still shows on the page, next to the badge. The
 // sourcing tail is dropped when it would push the line past ~160 characters,
 // where search engines start truncating.
-const verdictInfo = VERDICTS.find((v) => v.status === tool.compliance_status);
-const templated = `Does ${tool.name} train on my data? ${verdictInfo ? `${verdictInfo.short}: ${verdictInfo.meaning}` : "See PolicyPeek's sourced rating."}`;
-const sourcingTail = " Sourced from its own privacy policy.";
 const pageDescription = isNotAi
   ? `PolicyPeek's data-training check doesn't apply to ${tool.name}: the policy we found shows no sign it's an AI product.`
-  : templated.length + sourcingTail.length <= 160 ? templated + sourcingTail : clamp(templated, 160);
+  : clamp(plainAnswer, 160);
 
 const siteUrl = Astro.site!.href;
 
 // Related tools (crawlable links): same verdict first, then others, never this
 // tool and never not-an-AI-tool pages (they're noindex).
 const allTools = toolsData as Tool[];
-const byName = (a: Tool, b: Tool) => a.name.localeCompare(b.name);
-const others = allTools.filter((t) => t.domain !== tool.domain && t.compliance_status !== "not_ai_tool");
-// Same verdict first, starting from the next tool alphabetically (wrapping
-// round) so pages with the same verdict don't all link the same five; then
-// other verdicts if fewer than 5 share this one. 3-5 links per page.
-const rotate = (list: Tool[]) => {
-  const i = list.findIndex((t) => t.name.localeCompare(tool.name) > 0);
-  return i <= 0 ? list : [...list.slice(i), ...list.slice(0, i)];
-};
-const related = [
-  ...rotate(others.filter((t) => t.compliance_status === tool.compliance_status).sort(byName)),
-  ...rotate(others.filter((t) => t.compliance_status !== tool.compliance_status).sort(byName)),
-].slice(0, 5);
+const related = relatedTools(tool, allTools, 5);
+const category = categoryFor(tool.domain);
 const guides = guidesForDomain(tool.domain);
 const faq = toolFaq(tool, allTools);
 const breadcrumbs = {
@@ -158,6 +143,7 @@ const jsonLd = [
     ...(lastCheckedValid ? { dateModified: lastCheckedDate!.toISOString() } : {}),
     publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
     about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
+    ...(!isNotAi && plainAnswer ? { mainEntity: { "@type": "Question", name: h1, acceptedAnswer: { "@type": "Answer", text: asOf ? `${plainAnswer} ${asOf}` : plainAnswer } } } : {}),
   },
   ...(!isNotAi && plainAnswer && !qa
     ? [{
@@ -320,6 +306,7 @@ const jsonLd = [
           <li><a href={`/tools/${t.domain}/`}>Does {t.name} train on my data?</a></li>
         ))}
       </ul>
+      {category && <p class="hub"><a href={`/categories/${category.slug}/`}>{category.title}</a></p>}
       <p><a href="/tools/">Browse all tools</a></p>
     </section>
   )}

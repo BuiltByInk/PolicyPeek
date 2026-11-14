@@ -67,4 +67,5 @@ test("robots.txt blocks the block list", () => {
 
 test("robots.txt keeps Sitemap", () => {
   assert.match(robots, /^Sitemap:\s+https:\/\/getpolicypeek\.com\/sitemap-index\.xml$/m);
+  assert.match(robots, /^Sitemap:\s+https:\/\/getpolicypeek\.com\/sitemap\.xml$/m);
 });

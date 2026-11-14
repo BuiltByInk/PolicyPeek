@@ -1,0 +1,44 @@
+# TEMPLATE: copy this file to .github/workflows/indexnow-after-deploy.yml
+# (creating a workflow file needs the GitHub `workflow` scope).
+#
+# After a production Pages deploy from main, tell IndexNow about changed
+# card URLs plus sitemap-index.xml and sitemap.xml. Preview/PR branches never
+# run this, and it is fire-and-forget (--fail-open). It does not deploy.
+#
+# Pages builds from main typically finish shortly after the push; we wait
+# until the live sitemap-index lastmod is at least the commit time (with a
+# timeout) so IndexNow fetches the new pages, not the previous deploy.
+name: IndexNow after production deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "scripts/indexnow-ping.mjs"
+      - ".github/workflows/indexnow-after-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/cache@v4
+        with:
+          path: scripts/.indexnow-state.json
+          key: indexnow-state-${{ github.sha }}
+          restore-keys: |
+            indexnow-state-
+      - name: Wait for the live sitemap, then ping IndexNow
+        run: >
+          node scripts/indexnow-ping.mjs
+          --wait-live
+          --since "${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}"
+          --sitemap https://getpolicypeek.com/sitemap-index.xml
+          --fail-open
