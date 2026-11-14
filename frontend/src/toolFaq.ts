@@ -62,3 +62,27 @@ export function toolTitle(name: string, max = 60 - TITLE_SUFFIX.length): string 
   for (const t of [`Does ${name} train on your data?`, `Does ${name} train on data?`, `${name}: AI training policy`, `${name}: AI training`]) if (t.length <= max) return t;
   return clamp(name, max);
 }
+
+
+/** Card <title> without the layout suffix: "Does {Tool} train on your data? (checked {Mon YYYY})". */
+export function checkedMonthYear(tool: Tool): string | null {
+  const d = tool.last_checked_at ? new Date(tool.last_checked_at) : null;
+  if (!d || Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+export function cardTitle(tool: Tool, suffixLen = " · PolicyPeek".length, max = 90): string {
+  if (tool.compliance_status === "not_ai_tool") return `${tool.name}: not an AI tool`;
+  const mon = checkedMonthYear(tool);
+  const checked = mon ? ` (checked ${mon})` : "";
+  const short = tool.name.includes(" (") ? tool.name.slice(0, tool.name.indexOf(" (")) : tool.name;
+  for (const n of [tool.name, short]) {
+    for (const t of [
+      `Does ${n} train on your data?${checked}`,
+      `Does ${n} train on data?${checked}`,
+      `${n}: AI training policy${checked}`,
+    ]) if (t.length + suffixLen <= max) return t;
+  }
+  return `Does ${short} train on data?${checked}`;
+}
+

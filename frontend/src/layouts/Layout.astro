@@ -13,7 +13,15 @@ export interface Props {
 }
 
 const { title, description, noindex = false, ogImage = "/og-image.png", jsonLd, markdownAlt } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const siteOrigin = "https://getpolicypeek.com";
+const pathWithSlash = (() => {
+  const raw = Astro.url.pathname || "/";
+  const p = raw.startsWith("/") ? raw : `/${raw}`;
+  // File-like paths (rss.xml, llms.txt, .md) keep no trailing slash.
+  if (/\.[a-z0-9]+$/i.test(p)) return p;
+  return p.endsWith("/") ? p : `${p}/`;
+})();
+const canonicalURL = new URL(pathWithSlash, siteOrigin);
 const ogImageURL = new URL(ogImage, Astro.site);
 const path = Astro.url.pathname;
 // Cloudflare Web Analytics: cookieless, no personal data, and the token is a
@@ -323,6 +331,8 @@ const jsonLdString = jsonLd
         <nav class="site" aria-label="Main">
           <a href="/tools"{...(path.startsWith("/tools") ? { "aria-current": "page" } : {})}>Tools</a>
           <a href="/guides/"{...(path.startsWith("/guides") ? { "aria-current": "page" } : {})}>Guides</a>
+          <a href="/categories/"{...(path.startsWith("/categories") ? { "aria-current": "page" } : {})}>Categories</a>
+          <a href="/changes/"{...(path.startsWith("/changes") ? { "aria-current": "page" } : {})}>Changes</a>
           <a href="/about"{...(path.startsWith("/about") ? { "aria-current": "page" } : {})}>Methodology</a>
         </nav>
       </div>
@@ -332,7 +342,7 @@ const jsonLdString = jsonLd
     </main>
     <footer class="site">
       <div class="wrap">
-        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>, the <a href="/methodology/">methodology</a>, or read the <a href="/guides/">guides</a>. <a href="/privacy/">Privacy notice</a>.
+        PolicyPeek checks whether tools train on your data, from their own published policies. See <a href="/about">how it works</a>, the <a href="/methodology/">methodology</a>, <a href="/categories/">categories</a>, or read the <a href="/guides/">guides</a>. <a href="/changes/">Policy changes</a>. <a href="/privacy/">Privacy notice</a>.
       </div>
     </footer>
   </body>
