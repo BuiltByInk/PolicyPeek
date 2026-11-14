@@ -12,17 +12,16 @@ export const TEST_ALERT_TEXT =
 export interface HeldCheckRow {
   id: number;
   domain: string;
+  // Accepted for call-site compatibility, but never included in the email.
+  // Content is check IDs and domains only (no source URLs, no requester or reply text).
   source_url?: string | null;
 }
 
 export function formatHeldCheckAlert(row: HeldCheckRow): string {
   const domain = cleanText(row.domain, 200) ?? "(unknown domain)";
-  const source = cleanText(row.source_url, 500) ?? "(no source URL)";
   return [
     "PolicyPeek: new check held for review.",
     `#${row.id} ${domain}`,
-    `Source: ${source}`,
-    `Queue: GET ${ADMIN_QUEUE_URL}`,
   ].join("\n");
 }
 
@@ -32,7 +31,7 @@ export function formatHeldDigest(rows: Array<{ id: number; domain: string }>): s
     return `#${r.id} ${domain}`;
   });
   const more = rows.length > HELD_DIGEST_LIMIT ? `\n...and ${rows.length - HELD_DIGEST_LIMIT} more` : "";
-  return `PolicyPeek: ${rows.length} check(s) still waiting for review.\n${shown.join("\n")}${more}\nQueue: GET ${ADMIN_QUEUE_URL}`;
+  return `PolicyPeek: ${rows.length} check(s) still waiting for review.\n${shown.join("\n")}${more}`;
 }
 
 // Never throws: an alert failure must not fail extraction or the /v1/check
