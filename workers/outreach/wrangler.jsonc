@@ -35,10 +35,10 @@
         { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       ],
       // Steps (d)+(e): crons on, still DRY RUN. 30 3 = purge (03:30 UTC);
-      // 0 9 = daily sender run (09:00 UTC), which logs mode=dry_run and sends
-      // nothing while OUTREACH_MODE=dry_run, OUTREACH_ENABLED is unset, there is
-      // no live EMAIL binding and D1 paused='1'.
-      "triggers": { "crons": ["0 9 * * *", "30 3 * * *"] }
+      // 0 9 * * 1-5 = weekday sender run (09:00 UTC Mon-Fri; Elliot 15 Nov),
+      // which logs mode=dry_run and sends nothing while OUTREACH_MODE=dry_run,
+      // OUTREACH_ENABLED is unset, and D1 paused='1'.
+      "triggers": { "crons": ["0 9 * * 1-5", "30 3 * * *"] }
     }
   }
 }

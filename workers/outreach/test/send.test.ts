@@ -492,7 +492,7 @@ describe("SF4 + step (f): bindings", () => {
     const j = JSON.parse(cfg.split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n"));
     const prod = j.env.production;
     expect(j.triggers).toBeUndefined(); // dev has no cron
-    expect(prod.triggers).toEqual({ crons: ["0 9 * * *", "30 3 * * *"] });
+    expect(prod.triggers).toEqual({ crons: ["0 9 * * 1-5", "30 3 * * *"] });
     expect(prod.vars).toEqual({ OUTREACH_MODE: "dry_run" });
     expect(prod.d1_databases.map((d: any) => [d.binding, d.database_name])).toEqual([["DB", "policypeek-outreach"]]);
     // go-live: live EMAIL in PROD only, sender pinned; EMAIL_TEST kept. Dev has no live EMAIL.
