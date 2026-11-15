@@ -35,10 +35,10 @@
         { "name": "EMAIL_TEST", "destination_address": "elliotink@pm.me", "allowed_sender_addresses": ["privacy@mail.getpolicypeek.com"] }
       ],
       // Steps (d)+(e): crons on, still DRY RUN. 30 3 = purge (03:30 UTC);
-      // 0 9 * * 1-5 = weekday sender run (09:00 UTC Mon-Fri; Elliot 15 Nov),
+      // 0 9 * * MON-FRI = weekday sender run (09:00 UTC Mon-Fri; Elliot 15 Nov). Cloudflare numbers days 1=Sun..7=Sat, so use names, never 1-5.
       // which logs mode=dry_run and sends nothing while OUTREACH_MODE=dry_run,
       // OUTREACH_ENABLED is unset, and D1 paused='1'.
-      "triggers": { "crons": ["0 9 * * 1-5", "30 3 * * *"] }
+      "triggers": { "crons": ["0 9 * * MON-FRI", "30 3 * * *"] }
     }
   }
 }
