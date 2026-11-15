@@ -38,12 +38,27 @@ for (const m of guidesSrc.matchAll(/\{ slug: "([a-z0-9-]+)"([^\n]*)\}/g)) {
 // /guides/ itself changes whenever a guide does.
 const latestGuide = [...guideLastmod.values()].sort().at(-1);
 if (latestGuide) guideLastmod.set(`${SITE}/guides/`, latestGuide);
+const categorySrc = readFileSync(new URL("./src/categories.ts", import.meta.url), "utf8");
+const categoryLastmod = new Map();
+for (const block of categorySrc.split("{").slice(1)) {
+  const slug = block.match(/slug: "([a-z0-9-]+)"/)?.[1];
+  const domains = [...block.split("]")[0].matchAll(/"([^"]+)"/g)].map((m) => m[1]).filter((d) => d.includes("."));
+  if (!slug || !domains.length) continue;
+  const dates = domains.map((d) => tools.find((t) => t.domain === d)?.last_checked_at).filter(Boolean).map((d) => new Date(d).toISOString());
+  dates.sort();
+  const latest = dates.at(-1);
+  if (latest) categoryLastmod.set(`${SITE}/categories/${slug}/`, latest);
+}
+const latestCat = [...categoryLastmod.values()].sort().at(-1);
+if (latestCat) categoryLastmod.set(`${SITE}/categories/`, latestCat);
+// /changes/ stays at the build date until a real change record is published.
 const buildDate = new Date().toISOString();
-const lastmodFor = (url) => toolLastmod.get(url) ?? guideLastmod.get(url) ?? buildDate;
+const lastmodFor = (url) => toolLastmod.get(url) ?? guideLastmod.get(url) ?? categoryLastmod.get(url) ?? buildDate;
 
 export default defineConfig({
   output: "static",
   site: SITE,
+  trailingSlash: "always",
   integrations: [pageMarkdown(), csp(), sitemap({
       filter: (page) => !noindexUrls.has(page),
       serialize: (item) => ({ ...item, lastmod: lastmodFor(item.url) }),

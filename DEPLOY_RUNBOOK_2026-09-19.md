@@ -247,11 +247,23 @@ its own confirm. Then open the live site: `/tools/hancocyber.com/` shows
 **Way back:** Cloudflare dashboard -> Pages -> Deployments -> roll back to the
 previous one.
 
-## 5a. Tell Bing and other IndexNow engines what changed (by hand, after the deploy is live)
+## 5a. Tell Bing and other IndexNow engines what changed (after the deploy is live)
 
-Added 2026-11-09. Run this yourself once `wrangler pages deploy` (or
-`refresh-site.mjs --deploy`) has finished and the live site shows the change.
-Nothing runs it automatically.
+Added 2026-11-09; wired to run automatically on 2026-11-13. After a successful
+production Pages deploy, IndexNow is pinged fire-and-forget (a ping failure
+does not fail the deploy) from:
+
+- `refresh-site.mjs --deploy` (manual deploys)
+- the workflow in `scripts/indexnow-after-deploy.workflow.yml`, copied to
+  `.github/workflows/indexnow-after-deploy.yml` (GitHub's OAuth app used to
+  open this PR cannot create workflow files). Once that file is on `main`,
+  pushes that change the frontend trigger it. The Action waits until
+  the live `sitemap-index.xml` lastmod is at least the commit time, then
+  submits changed card URLs plus `https://getpolicypeek.com/sitemap-index.xml`
+  and `https://getpolicypeek.com/sitemap.xml`. It does not submit the Astro
+  chunk `sitemap-0.xml` as the sitemap.
+
+You can still run it by hand once the live site shows the change:
 
 ```bash
 cd ~/policypeek
@@ -259,9 +271,10 @@ cd frontend && npm run build && cd ..          # skip if dist/ is the build you 
 node scripts/indexnow-ping.mjs --dry-run      # lists the URLs it would send; sends nothing
 node scripts/indexnow-ping.mjs                # sends new/changed URLs to https://api.indexnow.org/indexnow
 ```
-- First run (no `scripts/.indexnow-state.json` yet) sends every sitemap URL.
-  After that it sends only URLs whose built page changed since the last
-  accepted send. `--all` sends everything again.
+- First run (no `scripts/.indexnow-state.json` yet) sends every page URL plus
+  the two canonical sitemap URLs. After that it sends only URLs whose built
+  page changed since the last accepted send, still plus the sitemap URLs.
+  `--all` sends everything again.
 - Expect `HTTP 200` or `HTTP 202`. A `403` means the key file isn't live yet:
   check `https://getpolicypeek.com/0ef0c0018c782942987f6e6bc3ab2af0.txt` returns
   the key. The state file is only saved after a 200/202, so a failed run can

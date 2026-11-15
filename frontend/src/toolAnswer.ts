@@ -13,8 +13,21 @@ import { overrideFor } from "./toolOverrides";
 
 export const ICO_AI_GUIDANCE = "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/";
 
+
 const hasQuote = (t: Tool) => Boolean(t.summary && t.summary.trim());
 const label = (t: Tool) => VERDICTS.find((v) => v.status === t.compliance_status)?.label ?? t.compliance_status;
+
+/** True when the stored policy wording uses "may" about training or use of content. Keep that wording on the page. */
+export function vendorUsesMay(tool: Tool): boolean {
+  const s = tool.summary ?? "";
+  return /\bmay\b[\s\S]{0,100}\b(train|use|process|analyse|analyze|include|be used)\b/i.test(s)
+    || /\b(train|use your|use (the )?(input|content|user))[\s\S]{0,100}\bmay\b/i.test(s);
+}
+
+function trainsPhrase(tool: Tool): string {
+  return vendorUsesMay(tool) ? "it may train on your data" : "it trains on your data";
+}
+
 
 /** The direct answer under the H1: a steward-approved per-tool override
  *  (toolOverrides.ts) when one exists, else the fixed wording per status. */
@@ -28,8 +41,8 @@ export function fixedAnswerLine(tool: Tool): string {
   if (hasQuote(tool)) {
     switch (tool.compliance_status) {
       case "compliant": return `No. ${n}'s published policy says it doesn't train on your data by default.`;
-      case "compliant_with_caveats": return `Yes, by default. ${n}'s published policy says it may train on your data, but you can opt out.`;
-      case "not_compliant": return `Yes. ${n}'s published policy says it may train on your data, and we found no way to opt out.`;
+      case "compliant_with_caveats": return `Yes, by default. ${n}'s published policy says ${trainsPhrase(tool)}, but you can opt out.`;
+      case "not_compliant": return `Yes. ${n}'s published policy says ${trainsPhrase(tool)}, and we found no way to opt out.`;
       default: break;
     }
   } else {

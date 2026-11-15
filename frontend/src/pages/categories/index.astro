@@ -1,0 +1,31 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { CATEGORIES, toolsInCategory } from "../../categories";
+import toolsData from "../../../data/tools.json";
+import type { Tool } from "../../types";
+
+const tools = toolsData as Tool[];
+const hubs = CATEGORIES.map((c) => ({ ...c, count: toolsInCategory(c, tools).length })).filter((c) => c.count > 0);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "AI tool categories",
+  url: "https://getpolicypeek.com/categories/",
+  description: "PolicyPeek category hubs, each listing catalog tools and their existing badges.",
+};
+---
+<Layout title="AI tool categories" description="Browse PolicyPeek's catalog by category. Each hub lists the existing badges, sourced from each tool's own published policy." jsonLd={jsonLd}>
+  <a class="back" href="/tools/">← All tools</a>
+  <h1>AI tool categories</h1>
+  <p>Each hub lists the tools already in the catalog and the badge already published for each one. No new claims.</p>
+  <ul class="hubs">
+    {hubs.map((c) => (
+      <li><a href={`/categories/${c.slug}/`}>{c.title}</a> <span>({c.count})</span></li>
+    ))}
+  </ul>
+</Layout>
+<style>
+  .back { display: inline-block; margin-bottom: 1rem; }
+  .hubs { list-style: none; padding: 0; }
+  .hubs li { margin: 0.6rem 0; }
+</style>

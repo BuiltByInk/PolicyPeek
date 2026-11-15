@@ -96,6 +96,9 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
   if (url.hostname === "archive.org") {
     return Promise.resolve(Response.json({ archived_snapshots: {} }));
   }
+  if (url.hostname === "api.telegram.org") {
+    return Promise.resolve(new Response("{}", { status: 200 }));
+  }
   const page = pages[url.href];
   if (!page) return Promise.reject(new TypeError("fetch failed: connection refused"));
   return Promise.resolve(page());
@@ -515,5 +518,33 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(row.extraction_error).toContain("no facts registered");
     expect((await w.approve(row.id)).body.error).toBe("not_yet_extracted");
     expect((await w.lookup("acme-ai.com")).status).toBe(404);
+  });
+
+  it("a held check sends one review alert; an auto-publish does not; extraction failure does not", async () => {
+    const w = makeWorld();
+    const email = { send: vi.fn(async () => ({ messageId: "<m@test>" })) };
+    w.env.ALERT_EMAIL = email as unknown as SendEmail;
+
+    sitePolicy("held-tool.com", "https://held-tool.com/privacy", COMPLIANT);
+    expect((await w.submit({ domain: "held-tool.com", source_url: "https://held-tool.com/privacy" }, "203.0.113.20")).status).toBe(202);
+    expect(w.pendingRows()[0].status).toBe("extracted");
+
+    expect(email.send).toHaveBeenCalledTimes(1);
+    const heldBody = (email.send.mock.calls as unknown as Array<[{ text: string; to: string }]>)[0][0];
+    expect(heldBody.to).toBe("elliotink@pm.me");
+    expect(heldBody.text).toContain("#1 held-tool.com");
+    expect(heldBody.text).not.toContain("https://held-tool.com/privacy");
+    expect(heldBody.text).not.toContain("203.0.113.20");
+
+    sitePolicy("auto-tool.com", "https://auto-tool.com/privacy", NOT_COMPLIANT);
+    expect((await w.submit({ domain: "auto-tool.com", source_url: "https://auto-tool.com/privacy" }, "203.0.113.21")).status).toBe(202);
+    expect(w.pendingRows()[1].status).toBe("approved");
+    expect(email.send).toHaveBeenCalledTimes(1); // still only the held alert
+
+    dns["fail-tool.com"] = ["93.184.216.34"];
+    pages["https://fail-tool.com/privacy"] = () => new Response(policyHtml("[unregistered] policy text"), { status: 200 });
+    expect((await w.submit({ domain: "fail-tool.com", source_url: "https://fail-tool.com/privacy" }, "203.0.113.22")).status).toBe(202);
+    expect(w.pendingRows()[2].status).toBe("pending");
+    expect(email.send).toHaveBeenCalledTimes(1);
   });
 });

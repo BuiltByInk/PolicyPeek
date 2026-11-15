@@ -1,0 +1,66 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Badge from "../../components/Badge.astro";
+import { CATEGORIES, toolsInCategory } from "../../categories";
+import { VERDICTS } from "../../verdicts";
+import toolsData from "../../../data/tools.json";
+import type { Tool } from "../../types";
+
+export async function getStaticPaths() {
+  const tools = toolsData as Tool[];
+  return CATEGORIES.map((category) => ({
+    params: { slug: category.slug },
+    props: { category, tools: toolsInCategory(category, tools) },
+  }));
+}
+
+const { category, tools } = Astro.props as { category: (typeof CATEGORIES)[number]; tools: Tool[] };
+const siteUrl = Astro.site!.href;
+const pageUrl = `${siteUrl}categories/${category.slug}/`;
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: category.title,
+    description: category.description,
+    url: pageUrl,
+    inLanguage: "en-GB",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: tools.map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: t.name,
+      url: `${siteUrl}tools/${t.domain}/`,
+    })),
+  },
+];
+---
+<Layout title={category.pageTitle ?? category.title} description={category.description} jsonLd={jsonLd}>
+  <a class="back" href="/categories/">← All categories</a>
+  <h1>{category.title}</h1>
+  <p>These are the {category.name.toLowerCase()} already in PolicyPeek's catalog, with the badge already published for each one, sourced from that tool's own policy. This page adds no new claims.</p>
+  {tools.length === 0 ? <p>No catalog tools in this category yet.</p> : (
+    <ul class="cat-list">
+      {tools.map((t) => {
+        const label = VERDICTS.find((v) => v.status === t.compliance_status)?.label ?? t.compliance_status;
+        return (
+          <li>
+            <a href={`/tools/${t.domain}/`}>{t.name}</a>
+            <Badge status={t.compliance_status} />
+            <span class="label">{label}</span>
+          </li>
+        );
+      })}
+    </ul>
+  )}
+  <p><a href="/tools/">Browse all tools</a></p>
+</Layout>
+<style>
+  .back { display: inline-block; margin-bottom: 1rem; }
+  .cat-list { list-style: none; padding: 0; margin: 1.2rem 0; }
+  .cat-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.8rem; margin: 0.7rem 0; }
+  .label { color: #444; }
+</style>

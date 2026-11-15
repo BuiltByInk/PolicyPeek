@@ -102,11 +102,15 @@ test("no plan table on tool pages (the catalog has no per-plan fields)", () => {
   for (const t of tools) assert.doesNotMatch(read(`tools/${t.domain}/index.html`), /<table/, t.domain);
 });
 
-test("tool titles stay <= 60 chars and ask the question", () => {
+test("tool titles ask the question and include the last-checked month", () => {
   for (const t of tools) {
     const title = decode(read(`tools/${t.domain}/index.html`).match(/<title>([^<]*)<\/title>/)[1]);
-    assert.ok(title.length <= 60, `${t.domain}: ${title.length}`);
-    if (t.compliance_status !== "not_ai_tool") assert.match(title, /\?|AI training/, t.domain);
+    assert.ok(title.endsWith(" · PolicyPeek"), t.domain);
+    if (t.compliance_status === "not_ai_tool") {
+      assert.match(title, /not an AI tool/, t.domain);
+    } else {
+      assert.match(title, /Does .+\? \(checked [A-Z][a-z]+ 20\d{2}\) · PolicyPeek/, t.domain);
+    }
   }
 });
 
@@ -144,7 +148,10 @@ test("indexnow-ping --dry-run: payload shape, first run = all sitemap URLs, chan
     assert.equal(body.keyLocation, `https://getpolicypeek.com/${key}.txt`);
     const sitemap = readFileSync(join(dist, "sitemap-0.xml"), "utf8");
     const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    assert.deepEqual([...body.urlList].sort(), [...locs].sort());
+    const sitemapPing = ["https://getpolicypeek.com/sitemap-index.xml", "https://getpolicypeek.com/sitemap.xml"];
+    assert.deepEqual([...body.urlList].sort(), [...locs, ...sitemapPing].sort());
+    assert.ok(sitemapPing.every((u) => body.urlList.includes(u)), "canonical sitemap URLs are always submitted with a ping");
+    assert.ok(!body.urlList.includes("https://getpolicypeek.com/sitemap-0.xml"), "do not submit the Astro chunk as the sitemap");
     assert.ok(!body.urlList.some((u) => /hancocyber/.test(u)), "noindex pages are not sent");
     assert.equal(existsSync(state), false, "dry run writes no state");
     // Simulate a previous send where one page differed and one page is new.
@@ -156,10 +163,10 @@ test("indexnow-ping --dry-run: payload shape, first run = all sitemap URLs, chan
     prev[changed] = "sha256:old"; delete prev[added];
     writeFileSync(state, JSON.stringify(prev));
     const out2 = run();
-    assert.match(out2, /2 of \d+ sitemap URLs to send \(new or changed/);
-    assert.deepEqual(JSON.parse(out2.slice(out2.indexOf("{"))).urlList.sort(), [changed, added].sort());
+    assert.match(out2, /2 of \d+ page URLs to send \(new or changed/);
+    assert.deepEqual(JSON.parse(out2.slice(out2.indexOf("{"))).urlList.sort(), [changed, added, ...sitemapPing].sort());
     const out3 = run("--all");
-    assert.equal(JSON.parse(out3.slice(out3.indexOf("{"))).urlList.length, locs.length);
+    assert.equal(JSON.parse(out3.slice(out3.indexOf("{"))).urlList.length, locs.length + sitemapPing.length);
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 });
 

@@ -11,18 +11,22 @@ const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if
 const unesc = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
 test("built pages exist", () => { assert.ok(existsSync(dist), "run npm run build first"); walk(dist); assert.ok(pages.length > 50); });
-test("every <title> is 60 characters or fewer", () => {
-  const bad = pages.map((p) => [p, unesc(readFileSync(p, "utf8").match(/<title>([^<]*)<\/title>/)?.[1] ?? "")]).filter(([, t]) => t.length > 60);
+test("every <title> is 60 characters or fewer, except tool pages which include (checked Mon YYYY)", () => {
+  const bad = pages.map((p) => [p, unesc(readFileSync(p, "utf8").match(/<title>([^<]*)<\/title>/)?.[1] ?? "")]).filter(([p, t]) => {
+    const isTool = p.includes("/tools/") && !p.endsWith("/tools/index.html");
+    if (isTool) return false;
+    return t.length > 60;
+  });
   assert.deepEqual(bad, []);
 });
 test("every meta description is 160 characters or fewer", () => {
   const bad = pages.map((p) => [p, unesc(readFileSync(p, "utf8").match(/<meta name="description" content="([^"]*)"/)?.[1] ?? "")]).filter(([, d]) => d.length > 160);
   assert.deepEqual(bad, []);
 });
-test("openai and claude titles are short and ask the question", () => {
+test("openai and claude titles ask the question and include the last-checked month", () => {
   for (const [d, n] of [["openai.com", "ChatGPT"], ["claude.com", "Claude"]]) {
     const t = unesc(readFileSync(join(dist, "tools", d, "index.html"), "utf8").match(/<title>([^<]*)<\/title>/)[1]);
-    assert.equal(t, `Does ${n} train on your data? · PolicyPeek`);
+    assert.match(t, new RegExp(`^Does ${n} train on your data\\? \\(checked [A-Z][a-z]+ 20\\d{2}\\) · PolicyPeek$`));
   }
 });
 test("thin tool pages have the catalog Q&A section", () => {

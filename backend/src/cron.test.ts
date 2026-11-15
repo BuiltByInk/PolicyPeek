@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { Env } from "./index";
 import { checkStuckPending, formatStuckAlert } from "./cron";
+import { ALERT_FROM_EMAIL, ALERT_TO } from "./alert";
 
 type Row = { id: number; domain: string; created_at: string; extraction_error: string | null };
 
-function makeEnv(opts: { allStuck: Row[]; newlyStuck: Row[]; token?: string; chat?: string }): Env {
+function mockEmail(opts: { reject?: boolean } = {}) {
   return {
-    ALERT_BOT_TOKEN: opts.token,
-    ALERT_CHAT_ID: opts.chat,
+    send: vi.fn(async () => {
+      if (opts.reject) throw new Error("send rejected");
+      return { messageId: "<test@mail.getpolicypeek.com>" };
+    }),
+  };
+}
+
+function makeEnv(opts: { allStuck: Row[]; newlyStuck: Row[]; email?: ReturnType<typeof mockEmail> }): Env {
+  return {
+    ALERT_EMAIL: opts.email,
     DB: {
       prepare(sql: string) {
         const st = {
@@ -38,60 +47,46 @@ afterEach(() => {
 
 describe("checkStuckPending alerting", () => {
   it("does nothing when nothing is stuck", async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-    await checkStuckPending(makeEnv({ allStuck: [], newlyStuck: [], token: "t", chat: "1" }));
-    expect(fetchSpy).not.toHaveBeenCalled();
+    const email = mockEmail();
+    await checkStuckPending(makeEnv({ allStuck: [], newlyStuck: [], email }));
+    expect(email.send).not.toHaveBeenCalled();
   });
 
   it("logs but does not alert for rows that were already stuck in an earlier run", async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
+    const email = mockEmail();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    await checkStuckPending(makeEnv({ allStuck: [row(1)], newlyStuck: [], token: "t", chat: "1" }));
+    await checkStuckPending(makeEnv({ allStuck: [row(1)], newlyStuck: [], email }));
     expect(warn).toHaveBeenCalled();
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
   });
 
-  it("sends one plain-text Telegram message for newly stuck rows, including the failure reason", async () => {
-    const fetchSpy = vi.fn(async () => new Response("{}", { status: 200 }));
-    vi.stubGlobal("fetch", fetchSpy);
+  it("sends one plain-text email for newly stuck rows, including the failure reason", async () => {
+    const email = mockEmail();
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const stuck = [row(7, "ANTHROPIC_API_KEY not configured")];
-    await checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck, token: "SECRET-TOKEN", chat: "999" }));
+    await checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck, email }));
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("https://api.telegram.org/botSECRET-TOKEN/sendMessage");
-    const body = JSON.parse(init.body as string);
-    expect(body.chat_id).toBe("999");
-    expect(body.parse_mode).toBeUndefined();
-    expect(body.text).toContain("tool7.com");
-    expect(body.text).toContain("ANTHROPIC_API_KEY not configured");
+    expect(email.send).toHaveBeenCalledTimes(1);
+    const msg = (email.send.mock.calls as unknown as Array<[{ from: { email: string }; to: string; text: string }]>)[0][0];
+    expect(msg.to).toBe(ALERT_TO);
+    expect(msg.from.email).toBe(ALERT_FROM_EMAIL);
+    expect(msg.text).toContain("tool7.com");
+    expect(msg.text).toContain("ANTHROPIC_API_KEY not configured");
   });
 
-  it("is a silent no-op when the alert secrets aren't set", async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
+  it("is a silent no-op when the email binding isn't set", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const stuck = [row(1)];
     await expect(checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck }))).resolves.toBeUndefined();
-    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("never throws or leaks the bot token when Telegram is unreachable or rejects", async () => {
+  it("never throws when email send fails", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const stuck = [row(1)];
-
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("connect failed https://api.telegram.org/botSECRET-TOKEN/sendMessage"); }));
-    await expect(checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck, token: "SECRET-TOKEN", chat: "1" }))).resolves.toBeUndefined();
-
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
-    await expect(checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck, token: "SECRET-TOKEN", chat: "1" }))).resolves.toBeUndefined();
-
-    for (const call of warn.mock.calls) {
-      expect(JSON.stringify(call)).not.toContain("SECRET-TOKEN");
-    }
+    const email = mockEmail({ reject: true });
+    await expect(checkStuckPending(makeEnv({ allStuck: stuck, newlyStuck: stuck, email }))).resolves.toBeUndefined();
+    expect(email.send).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalled();
   });
 });
 

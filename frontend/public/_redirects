@@ -15,3 +15,45 @@
 # Legacy /reports path never shipped a page; /tools/ is the closest equivalent.
 /reports /tools/ 301
 /reports/ /tools/ 301
+
+# Common aliases for existing catalog cards (13 Nov 2026).
+# chatgpt.com and chat.openai.com are product hostnames; the card is openai.com.
+/tools/chatgpt.com /tools/openai.com/ 301
+/tools/chatgpt.com/ /tools/openai.com/ 301
+/tools/chat.openai.com /tools/openai.com/ 301
+/tools/chat.openai.com/ /tools/openai.com/ 301
+/tools/chatgpt.ai /tools/openai.com/ 301
+/tools/chatgpt.ai/ /tools/openai.com/ 301
+
+# claude.ai is the product hostname; the card is claude.com.
+/tools/claude.ai /tools/claude.com/ 301
+/tools/claude.ai/ /tools/claude.com/ 301
+/tools/anthropic.com /tools/claude.com/ 301
+/tools/anthropic.com/ /tools/claude.com/ 301
+
+# Gemini / Bard aliases; the card is google.com.
+/tools/gemini /tools/google.com/ 301
+/tools/gemini/ /tools/google.com/ 301
+/tools/gemini.com /tools/google.com/ 301
+/tools/gemini.com/ /tools/google.com/ 301
+/tools/gemini.google.com /tools/google.com/ 301
+/tools/gemini.google.com/ /tools/google.com/ 301
+/tools/bard.google.com /tools/google.com/ 301
+/tools/bard.google.com/ /tools/google.com/ 301
+
+# Other obvious product-host aliases that map to an existing card.
+/tools/copilot.microsoft.com /tools/microsoft.com/ 301
+/tools/copilot.microsoft.com/ /tools/microsoft.com/ 301
+/tools/copilot.com /tools/microsoft.com/ 301
+/tools/copilot.com/ /tools/microsoft.com/ 301
+/tools/duck.ai /tools/duckduckgo.com/ 301
+/tools/duck.ai/ /tools/duckduckgo.com/ 301
+/tools/lechat.mistral.ai /tools/mistral.ai/ 301
+/tools/lechat.mistral.ai/ /tools/mistral.ai/ 301
+/tools/chat.mistral.ai /tools/mistral.ai/ 301
+/tools/chat.mistral.ai/ /tools/mistral.ai/ 301
+/tools/cody.sourcegraph.com /tools/sourcegraph.com/ 301
+/tools/cody.sourcegraph.com/ /tools/sourcegraph.com/ 301
+
+# Astro emits sitemap-index.xml; keep /sitemap.xml working for submissions.
+/sitemap.xml /sitemap-index.xml 301

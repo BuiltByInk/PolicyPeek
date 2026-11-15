@@ -1,0 +1,41 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import rows from "../../../data/policy-changes.json";
+import { publishedChanges, type PolicyChange } from "../../policyChanges";
+
+const changes = publishedChanges(rows as PolicyChange[]);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Policy changes",
+  url: "https://getpolicypeek.com/changes/",
+  description: "A dated log of policy-text changes found when PolicyPeek re-reads a vendor's own published page.",
+};
+---
+<Layout title="Policy changes" description="A dated log of real policy-text changes found when PolicyPeek re-reads a vendor's own published page." jsonLd={jsonLd}>
+  <a class="back" href="/tools/">← All tools</a>
+  <h1>Policy changes</h1>
+  <p>When PolicyPeek re-reads a vendor's published policy and the wording has changed, the change can appear here. Entries are written in neutral terms. A change that would move a badge needs a manual OK before it is listed.</p>
+  <p><a href="/changes/rss.xml">RSS feed</a></p>
+  {changes.length === 0 ? (
+    <p>No published policy changes yet.</p>
+  ) : (
+    <ol class="log">
+      {changes.map((c) => (
+        <li>
+          <time datetime={c.date}>{c.date}</time>
+          <a href={`/tools/${c.toolDomain}/`}>{c.toolName}</a>
+          <p>{c.summary}</p>
+          <p class="src"><a href={c.sourceUrl} rel="nofollow noopener noreferrer">Vendor source</a></p>
+        </li>
+      ))}
+    </ol>
+  )}
+</Layout>
+<style>
+  .back { display: inline-block; margin-bottom: 1rem; }
+  .log { list-style: none; padding: 0; }
+  .log li { margin: 1.2rem 0; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }
+  .log time { display: block; color: #555; }
+  .src { font-size: 0.95rem; }
+</style>

@@ -42,6 +42,20 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Zendesk AI training on my data?", a: "Yes, but only the Zendesk account holder (the business) can, per subdomain, by contacting Zendesk customer support. People who email a company's Zendesk helpdesk can't opt out themselves. Training is on Zendesk's own non-generative models by default; Zendesk says third-party generative LLMs don't train on the data." },
     ],
   },
+  // Steward-approved Research card wording, 10 Nov 2026: support-only
+  // opt-out for Free/Pro; Enterprise is carved out.
+  "meshy.ai": {
+    faq: [
+      { q: "Can I stop Meshy training on my data?", a: "Yes, by emailing support@meshy.ai. Training is on for Free/Pro unless you email support. Enterprise is not trained on under this clause, unless otherwise agreed in the Order. The opt-out is by email, not an in-product setting." },
+    ],
+  },
+  // Steward 10 Nov 2026: clause 4.7.4 is a support-only revocation on a
+  // default-on licence; it may not reach usage or aggregated data.
+  "kling.ai": {
+    faq: [
+      { q: "Can I stop Kling AI training on my data?", a: "Yes, by emailing support@kling.ai to revoke the authorization. That is a support-only revocation on a default-on licence. The revocation may not reach usage or aggregated data." },
+    ],
+  },
 };
 
 export const overrideFor = (domain: string): ToolOverride | undefined => TOOL_OVERRIDES[domain];

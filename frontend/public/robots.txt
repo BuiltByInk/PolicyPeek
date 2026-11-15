@@ -115,3 +115,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://getpolicypeek.com/sitemap-index.xml
+Sitemap: https://getpolicypeek.com/sitemap.xml
