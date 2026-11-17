@@ -1,6 +1,6 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (November 2026)
 
-Of the 61 AI tools PolicyPeek has checked, 15 have published policies that say they don't train AI on your data, including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine and Kagi. ChatGPT trains by default and Claude trains on consumer plans by default; both let you opt out. DeepL's free tier trains with no opt-out found.
+Of the 61 AI tools PolicyPeek has checked, 15 have published policies that say they don't train AI on your data, including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine and Kagi. [Monday.com AI](https://getpolicypeek.com/tools/monday.com/) and [Duck.ai](https://getpolicypeek.com/tools/duckduckgo.com/) also carry that badge; see each tool page for the quoted policy and source. ChatGPT trains by default and Claude trains on consumer plans by default; both let you opt out. DeepL's free tier trains with no opt-out found.
 
 *Last checked: 4 November 2026 (latest check across the tools below; each row shows its own date). Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 

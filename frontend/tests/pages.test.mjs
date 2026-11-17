@@ -1,5 +1,5 @@
 // Static checks on the built HTML for the homepage/tool-page audit changes,
-// the badge wording and the optional Cloudflare Web Analytics beacon.
+// the badge wording, and confirmation that no manual Cloudflare beacon is emitted.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -9,21 +9,20 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
-let plain, beacon;
-const build = (env) => {
+let plain;
+const build = (env = {}) => {
   const dir = mkdtempSync(join(tmpdir(), "pp-pages-test-"));
   const e = { ...process.env, ...env };
-  if (!("PUBLIC_CF_BEACON_TOKEN" in env)) e.PUBLIC_CF_BEACON_TOKEN = "";
+  delete e.PUBLIC_CF_BEACON_TOKEN;
   execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env: e, stdio: "pipe" });
   return dir;
 };
 const read = (dir, p) => readFileSync(join(dir, p), "utf8");
 
 before(() => {
-  plain = build({});
-  beacon = build({ PUBLIC_CF_BEACON_TOKEN: "test-token-123" });
+  plain = build();
 });
-after(() => [plain, beacon].forEach((d) => d && rmSync(d, { recursive: true, force: true })));
+after(() => plain && rmSync(plain, { recursive: true, force: true }));
 
 test("homepage: new eyebrow, label, quick picks, sample card, no jargon eyebrow", () => {
   const h = read(plain, "index.html");
@@ -57,11 +56,11 @@ test("tool page: plain answer, check another, share button", () => {
   assert.match(h, /data-share-url="https:\/\/[^"]+\/tools\/openai\.com\/"/);
 });
 
-test("Cloudflare beacon only renders when a token is configured", () => {
-  assert.doesNotMatch(read(plain, "index.html"), /cloudflareinsights/);
-  const h = read(beacon, "index.html");
-  assert.match(h, /static\.cloudflareinsights\.com\/beacon\.min\.js/);
-  assert.match(h, /test-token-123/);
+test("no manual Cloudflare Web Analytics beacon is emitted (auto-insert only)", () => {
+  const h = read(plain, "index.html");
+  assert.doesNotMatch(h, /cloudflareinsights/);
+  assert.doesNotMatch(h, /data-cf-beacon/);
+  assert.doesNotMatch(h, /PUBLIC_CF_BEACON_TOKEN|0c9b62df/);
 });
 
 test("tool page verdict card label reads 'What the policy says' (no 'Data Practices Disclosure')", () => {
@@ -79,7 +78,7 @@ test("SEO: tool page title/description from the verdict, related links, every to
     assert.ok(list.includes(`href="/tools/${t.domain}/"`), `/tools/ links ${t.domain}`);
   }
   const h = read(plain, "tools/claude.com/index.html");
-  assert.match(h, /<title>Does Claude train on your data\? \(checked [A-Z][a-z]+ 20\d{2}\) · PolicyPeek<\/title>/);
+  assert.match(h, /<title>Does Claude train on your data\? · PolicyPeek<\/title>/);
   assert.match(h, /name="description" content="Yes, by default. Claude/);
   assert.match(h, /may train on your data, but you can opt out/);
   assert.match(h, /id="rel-h"[^>]*>Related tools</);
@@ -92,9 +91,9 @@ test("SEO: tool page title/description from the verdict, related links, every to
 test("nav is Tools, Guides and Methodology, with no business link", () => {
   for (const p of ["index.html", "guides/index.html", "tools/openai.com/index.html", "about/index.html"]) {
     const nav = read(plain, p).match(/<nav class="site"[\s\S]*?<\/nav>/)[0];
-    assert.match(nav, /href="\/tools"/, p);
+    assert.match(nav, /href="\/tools\/"/, p);
     assert.match(nav, /href="\/guides\/"/, p);
-    assert.match(nav, /href="\/about"/, p);
+    assert.match(nav, /href="\/about\/"/, p);
     assert.doesNotMatch(nav, /For businesses|policy-pack|InkLLM/, p);
   }
 });

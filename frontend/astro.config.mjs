@@ -2,7 +2,23 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import csp from "./integrations/csp.mjs";
 import pageMarkdown from "./integrations/page-markdown.mjs";
+import { applyCounts } from "./integrations/catalog-counts.mjs";
 import { readFileSync } from "node:fs";
+
+// Replace {{TOOL_COUNT}} etc. in guide Markdown before Astro compiles it,
+// so the HTML guide pages match the substituted Markdown twins.
+function catalogCountsPlugin() {
+  return {
+    name: "catalog-counts",
+    enforce: "pre",
+    transform(code, id) {
+      const path = id.split("?")[0];
+      if (!path.endsWith(".md") || !path.includes("/src/guides/")) return null;
+      if (!code.includes("{{")) return null;
+      return { code: applyCounts(code), map: null };
+    },
+  };
+}
 
 const SITE = "https://getpolicypeek.com";
 
@@ -59,6 +75,7 @@ export default defineConfig({
   output: "static",
   site: SITE,
   trailingSlash: "always",
+  vite: { plugins: [catalogCountsPlugin()] },
   integrations: [pageMarkdown(), csp(), sitemap({
       filter: (page) => !noindexUrls.has(page),
       serialize: (item) => ({ ...item, lastmod: lastmodFor(item.url) }),

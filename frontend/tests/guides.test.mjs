@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, readdirSync, existsSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { applyCounts, COUNT_TOKENS } from "../integrations/catalog-counts.mjs";
 
 const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
 const SRC = join(FRONTEND, "src/guides");
@@ -46,10 +47,26 @@ test("every guide: one H1, canonical on the apex, Markdown alternate, Article + 
   }
 });
 
-test("Markdown copies are served at /guides/<slug>.md, identical to the source", () => {
+test("Markdown copies are served at /guides/<slug>.md, with catalog-count tokens applied", () => {
   for (const s of slugs) {
-    assert.equal(read(`guides/${s}.md`), readFileSync(join(SRC, `${s}.md`), "utf8"), s);
+    const src = readFileSync(join(SRC, `${s}.md`), "utf8");
+    const served = read(`guides/${s}.md`);
+    assert.equal(served, applyCounts(src), s);
+    assert.doesNotMatch(served, /\{\{[A-Za-z0-9_]+\}\}/, s);
   }
+});
+
+test("free-checker guide HTML and Markdown use live tools.json counts, not stale 61 or leftover tokens", () => {
+  const html = read("guides/free-ai-privacy-policy-checker/index.html");
+  const md = read("guides/free-ai-privacy-policy-checker.md");
+  const llms = read("llms.txt");
+  for (const doc of [html, md]) {
+    assert.doesNotMatch(doc, /\{\{[A-Za-z0-9_]+\}\}/);
+    assert.match(doc, new RegExp(`covers ${COUNT_TOKENS.TOOL_COUNT} tools`));
+    assert.match(doc, new RegExp(`plain verdict for ${COUNT_TOKENS.RATED_COUNT} AI tools`));
+    assert.doesNotMatch(doc, /covers 61 tools|for 61 AI tools/);
+  }
+  assert.match(llms, new RegExp(`${COUNT_TOKENS.TOOL_COUNT} tools checked`));
 });
 
 test("guide content: no unlabelled Mailchimp inference, no www links", () => {

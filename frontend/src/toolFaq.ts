@@ -64,25 +64,29 @@ export function toolTitle(name: string, max = 60 - TITLE_SUFFIX.length): string 
 }
 
 
-/** Card <title> without the layout suffix: "Does {Tool} train on your data? (checked {Mon YYYY})". */
+/** Last-checked month and year from the catalog, e.g. "Nov 2026". Shown on the page, not in <title>. */
 export function checkedMonthYear(tool: Tool): string | null {
   const d = tool.last_checked_at ? new Date(tool.last_checked_at) : null;
   if (!d || Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
-export function cardTitle(tool: Tool, suffixLen = " · PolicyPeek".length, max = 90): string {
+/**
+ * Tool page <title> without the layout suffix. Marketing should sign off this
+ * pattern (SEO report, 17 Nov 2026): "Does {name} train on your data?" when
+ * the document title including " · PolicyPeek" is 60 characters or fewer.
+ * "(checked Mon YYYY)" is kept out of <title> — the page already shows the
+ * date next to the answer. If the official name is too long, use the form
+ * before a parenthetical, then the shorter toolTitle() fallbacks.
+ */
+export function cardTitle(tool: Tool, suffixLen = TITLE_SUFFIX.length, max = 60): string {
   if (tool.compliance_status === "not_ai_tool") return `${tool.name}: not an AI tool`;
-  const mon = checkedMonthYear(tool);
-  const checked = mon ? ` (checked ${mon})` : "";
+  const budget = max - suffixLen;
   const short = tool.name.includes(" (") ? tool.name.slice(0, tool.name.indexOf(" (")) : tool.name;
   for (const n of [tool.name, short]) {
-    for (const t of [
-      `Does ${n} train on your data?${checked}`,
-      `Does ${n} train on data?${checked}`,
-      `${n}: AI training policy${checked}`,
-    ]) if (t.length + suffixLen <= max) return t;
+    const question = `Does ${n} train on your data?`;
+    if (question.length <= budget) return question;
   }
-  return `Does ${short} train on data?${checked}`;
+  return toolTitle(short, budget);
 }
 
