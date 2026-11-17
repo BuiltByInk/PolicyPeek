@@ -1,20 +1,22 @@
 # Free AI Privacy Policy Checker: Does This Tool Train on My Data?
 
-[PolicyPeek](https://getpolicypeek.com/) is a free AI privacy policy checker. It reads each tool's own published policy and gives one of four plain badges: Doesn't train on your data, Trains by default (you can opt out), Trains on your data (no opt-out), or Policy unclear, with the quoted line and source link. As of 5 November 2026 it covers 61 tools.
+[PolicyPeek](https://getpolicypeek.com/) is a free AI privacy policy checker. It reads each tool's own published policy and gives one of four plain badges: Doesn't train on your data, Trains by default (you can opt out), Trains on your data (no opt-out), or Policy unclear, with the quoted line and source link. As of 17 November 2026 it covers {{TOOL_COUNT}} tools.
 
-*Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 17 November 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## What does the checker tell you?
 
-| Badge | Meaning | Tools on 5 November 2026 |
+| Badge | Meaning | Tools on 17 November 2026 |
 |---|---|---|
-| Doesn't train on your data | The policy says your data isn't used for training, or only if you opt in | 15 |
-| Trains by default, you can opt out | Training happens unless you switch it off | 21 |
-| Trains on your data, no opt-out | Training allowed and no opt-out found | 15 |
-| Policy unclear | The policy doesn't clearly say | 5 |
-| Company-wide policy only | Only a parent-company policy exists | 4 |
+| Doesn't train on your data | The policy says your data isn't used for training, or only if you opt in | {{COUNT_compliant}} |
+| Trains by default, you can opt out | Training happens unless you switch it off | {{COUNT_compliant_with_caveats}} |
+| Trains on your data, no opt-out | Training allowed and no opt-out found | {{COUNT_not_compliant}} |
+| Policy unclear | The policy doesn't clearly say | {{COUNT_unrated}} |
+| Company-wide policy only | Only a parent-company policy exists | {{COUNT_shared_domain_unverified}} |
 
 (One more listed site isn't an AI tool.) ([All tools](https://getpolicypeek.com/tools/))
+
+Workplace and support examples include [Zendesk AI](https://getpolicypeek.com/tools/zendesk.com/), [Intercom Fin](https://getpolicypeek.com/tools/intercom.com/) and [Slack AI](https://getpolicypeek.com/tools/slack.com/). [Microsoft Copilot](https://getpolicypeek.com/tools/microsoft.com/) is listed under the company-wide policy badge.
 
 ## How is it different from reading the policy yourself?
 
@@ -34,13 +36,14 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 17 November 2026: tool counts refreshed from the live catalog ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools). Badge-bucket figures on this page are filled at build time from the catalog, so they stay in step with [all tools](https://getpolicypeek.com/tools/).
 - 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ
 
 ### Is there a free tool to check if an AI app trains on my data?
 
-Yes. PolicyPeek (getpolicypeek.com) is free and shows a plain verdict for 61 AI tools, based on their own policies.
+Yes. PolicyPeek (getpolicypeek.com) is free and shows a plain verdict for {{RATED_COUNT}} AI tools, based on their own policies.
 
 ### Where does PolicyPeek get its information?
 

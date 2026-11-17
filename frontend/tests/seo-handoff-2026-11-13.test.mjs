@@ -56,11 +56,13 @@ test("/changes/ is empty, has RSS, and does not invent entries", () => {
   assert.doesNotMatch(rss, /<item>/);
 });
 
-test("tool pages: 3–5 related links, a category hub link, canonical with no www and a trailing slash, WebPage dateModified, checked-date title", () => {
+test("tool pages: 3–5 related links, a category hub link, canonical with no www and a trailing slash, WebPage dateModified, question-form title", () => {
   for (const t of tools.filter((x) => x.compliance_status !== "not_ai_tool")) {
     const h = read(`tools/${t.domain}/index.html`);
     const title = decode(h.match(/<title>([^<]*)<\/title>/)[1]);
-    assert.match(title, /Does .+\? \(checked [A-Z][a-z]+ 20\d{2}\) · PolicyPeek/);
+    assert.match(title, /Does .+\? · PolicyPeek$/);
+    assert.doesNotMatch(title, /\(checked /);
+    assert.ok(title.length <= 60, `${t.domain}: ${title.length} ${title}`);
     const esc = t.domain.replace(/\./g, "\\.");
     assert.match(h, new RegExp(`<link rel="canonical" href="https://getpolicypeek.com/tools/${esc}/">`));
     assert.doesNotMatch(h, /www\.getpolicypeek/);

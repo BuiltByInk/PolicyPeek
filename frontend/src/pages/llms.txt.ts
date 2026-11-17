@@ -14,7 +14,7 @@ Current counts: ${count("compliant")} doesn't train, ${count("compliant_with_cav
 
 ## Core
 - [All tools and verdicts](${SITE}/tools/): every checked AI tool with its badge
-- [Methodology](${SITE}/about/): how verdicts are made (AI extraction + fixed rules + human review)
+- [Methodology](${SITE}/methodology/): how verdicts are made (AI extraction + fixed rules + human review)
 - [Check a tool](${SITE}/): search or request a new check
 
 ## Questions

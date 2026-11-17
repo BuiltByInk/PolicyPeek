@@ -1,6 +1,6 @@
 # Do AI Coding Assistants Train on Your Code? Cursor, Copilot, Tabnine, Windsurf and App Builders
 
-It depends on the tool and plan. Tabnine and Sourcegraph Cody (Pro teams and Enterprise) say they don't train on your code. Cursor, Windsurf, GitHub Copilot (Free, Pro and Pro+), JetBrains AI (free licence), Lovable and Bolt.new train by default but let you opt out. Base44's terms allow training with no opt-out found. ([All tools](https://getpolicypeek.com/tools/))
+It depends on the tool and plan. Tabnine and Sourcegraph Cody (Pro teams and Enterprise) say they don't train on your code. Cursor, Windsurf, GitHub Copilot (Free, Pro and Pro+), JetBrains AI (free licence), Lovable and Bolt.new train by default but let you opt out. Base44's terms allow training with no opt-out found. [Replit AI](https://getpolicypeek.com/tools/replit.com/) is also in the catalog, rated **Policy unclear**, because the published policy does not clearly say whether your code is used for training. ([All tools](https://getpolicypeek.com/tools/))
 
 *Last checked: 28 October 2026. Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 

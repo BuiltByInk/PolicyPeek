@@ -102,14 +102,16 @@ test("no plan table on tool pages (the catalog has no per-plan fields)", () => {
   for (const t of tools) assert.doesNotMatch(read(`tools/${t.domain}/index.html`), /<table/, t.domain);
 });
 
-test("tool titles ask the question and include the last-checked month", () => {
+test("tool titles ask the question, stay at or under 60 characters, and omit the checked-month", () => {
   for (const t of tools) {
     const title = decode(read(`tools/${t.domain}/index.html`).match(/<title>([^<]*)<\/title>/)[1]);
     assert.ok(title.endsWith(" · PolicyPeek"), t.domain);
+    assert.ok(title.length <= 60, `${t.domain}: ${title.length} ${title}`);
+    assert.doesNotMatch(title, /\(checked /, t.domain);
     if (t.compliance_status === "not_ai_tool") {
       assert.match(title, /not an AI tool/, t.domain);
     } else {
-      assert.match(title, /Does .+\? \(checked [A-Z][a-z]+ 20\d{2}\) · PolicyPeek/, t.domain);
+      assert.match(title, /Does .+\? · PolicyPeek$/, t.domain);
     }
   }
 });

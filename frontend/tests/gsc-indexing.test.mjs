@@ -23,6 +23,8 @@ test("_redirects maps GSC 404s to live pages", () => {
     ["/tools/surferseo.com/", "/tools/"],
     ["/reports", "/tools/"],
     ["/reports/", "/tools/"],
+    ["/tools/stackblitz.com", "/tools/bolt.new/"],
+    ["/tools/stackblitz.com/", "/tools/bolt.new/"],
   ];
   for (const [from, to] of want) {
     assert.match(redirects, new RegExp(`^${from.replace(/\./g, "\\.")}\\s+${to.replace(/\./g, "\\.")}\\s+301\\s*$`, "m"), `${from} -> ${to}`);

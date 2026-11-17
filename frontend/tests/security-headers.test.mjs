@@ -1,6 +1,6 @@
 // The built dist/_headers must carry the security headers, a real CSP (no
 // leftover placeholder) and a sha256 for every executable inline script, so
-// nothing Astro emits is blocked. Built both with and without the CF beacon.
+// nothing Astro emits is blocked. CSP still allows Cloudflare's auto-inserted beacon.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -13,12 +13,11 @@ import { inlineScriptHashes, inlineStyleHashes, buildCsp } from "../integrations
 const FRONTEND = fileURLToPath(new URL("..", import.meta.url));
 const htmlFiles = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? htmlFiles(p) : n.endsWith(".html") ? [p] : []; });
 
-for (const beacon of [false, true]) {
-  test(`dist/_headers has security headers + complete CSP (beacon=${beacon})`, () => {
+test("dist/_headers has security headers + complete CSP", () => {
     const dir = mkdtempSync(join(tmpdir(), "pp-hdr-test-"));
     try {
       const env = { ...process.env, PUBLIC_API_BASE_URL: "https://api.getpolicypeek.com" };
-      if (beacon) env.PUBLIC_CF_BEACON_TOKEN = "testtoken"; else delete env.PUBLIC_CF_BEACON_TOKEN;
+      delete env.PUBLIC_CF_BEACON_TOKEN;
       execFileSync("npx", ["astro", "build", "--outDir", dir], { cwd: FRONTEND, env, stdio: "pipe" });
       const h = readFileSync(join(dir, "_headers"), "utf8");
       assert.ok(!h.includes("__CSP__"));
@@ -39,7 +38,6 @@ for (const beacon of [false, true]) {
       for (const f of files) for (const hash of inlineStyleHashes(readFileSync(f, "utf8"))) assert.ok(csp.includes(hash), `${f} inline style not in CSP`);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
-}
 
 test("inlineScriptHashes skips JSON-LD and external scripts", () => {
   const html = `<script type="application/ld+json">{"a":1}</script><script src="/x.js"></script><script type="module">go()</script>`;

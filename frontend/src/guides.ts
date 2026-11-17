@@ -2,9 +2,16 @@
 // Markdown is rendered as HTML at /guides/<slug>/ and served as-is at
 // /guides/<slug>.md for AI agents and scrapers. Update `modified` together with
 // the "Last checked" line inside the Markdown whenever the data changes.
+import toolsData from "../data/tools.json";
+import { tokensFrom, applyCountsWith } from "../integrations/catalog-counts-core.mjs";
+
 const raw = import.meta.glob<string>("./guides/*.md", { query: "?raw", import: "default", eager: true });
 
 export const SITE = "https://getpolicypeek.com";
+const COUNT_TOKENS = tokensFrom(toolsData as { compliance_status: string }[]);
+export const catalogToolCount = Number(COUNT_TOKENS.TOOL_COUNT);
+export const catalogRatedCount = Number(COUNT_TOKENS.RATED_COUNT);
+const applyCounts = (s: string) => applyCountsWith(COUNT_TOKENS, s);
 
 // seoTitle: the <title> (before " · PolicyPeek"). The H1 in the Markdown can be
 // longer; the full <title> must stay at or under 60 characters (SEO health
@@ -17,7 +24,7 @@ const META: Meta[] = [
   { slug: "is-it-safe-to-put-customer-data-into-chatgpt-uk-gdpr", seoTitle: "Customer Data in ChatGPT: UK GDPR Guide", description: "Can a UK small business paste customer data into ChatGPT? What UK GDPR and the ICO say, how plans differ on training, and what to do if it happened." },
   { slug: "ai-acceptable-use-policy-template-small-business-uk", seoTitle: "AI Acceptable Use Policy Template (UK)", description: "A free AI acceptable use policy outline for UK small businesses: approved tools, what staff must never enter, checking output and training. Checked Oct 2026." },
   { slug: "how-to-train-staff-on-ai-30-minute-session", seoTitle: "How to Train Staff on AI in 30 Minutes", description: "A ready-to-run 30-minute AI training session for small teams, with agenda, hallucination demo and training record. Fits the EU AI Act Article 4 duty." },
-  { slug: "free-ai-privacy-policy-checker", seoTitle: "Free AI Privacy Policy Checker", description: "PolicyPeek is a free checker that reads AI tools' own privacy policies and terms and tells you, in one badge, whether they train on your data. 61 tools checked." },
+  { slug: "free-ai-privacy-policy-checker", seoTitle: "Free AI Privacy Policy Checker", description: "PolicyPeek is a free checker that reads AI tools' own privacy policies and terms and tells you, in one badge, whether they train on your data. {{TOOL_COUNT}} tools checked.", modified: "2026-11-17" },
   { slug: "how-to-check-if-an-app-trains-ai-on-your-data", seoTitle: "How to Check If an App Trains AI on Your Data", description: "Find out in two minutes whether an app uses your data to train AI: where to look in its policy, the exact phrases that matter, and a free checker." },
   { slug: "chatgpt-vs-claude-training", seoTitle: "ChatGPT vs Claude: Which Trains on Your Chats?", description: "ChatGPT vs Claude on AI training: both train on your chats by default and both let you opt out. Exact policy quotes, sources and check dates.", published: "2026-11-04", modified: "2026-11-04" },
   { slug: "does-chatgpt-train-on-your-data", seoTitle: "Does ChatGPT Train on Your Data?", description: "Does ChatGPT train on your data? Yes, by default, but OpenAI's own policy says you can opt out. Here's the exact wording, plus how other AI tools compare." },
@@ -44,8 +51,10 @@ const plain = (md: string) =>
   md.replace(/\s*\((\[[^\]]+\]\([^)]+\)(,\s*)?)+\)/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\s*\(\s*\)/g, "").replace(/\s+/g, " ").trim();
 
 function parse(m: Meta): Guide {
-  const markdown = raw[`./guides/${m.slug}.md`];
-  if (!markdown) throw new Error(`guides: missing src/guides/${m.slug}.md`);
+  const rawMd = raw[`./guides/${m.slug}.md`];
+  if (!rawMd) throw new Error(`guides: missing src/guides/${m.slug}.md`);
+  const markdown = applyCounts(rawMd);
+  m = { ...m, description: applyCounts(m.description) };
   const lines = markdown.split("\n");
   if (!lines[0].startsWith("# ")) throw new Error(`guides: ${m.slug}.md must start with an H1`);
   const title = lines[0].slice(2).trim();
