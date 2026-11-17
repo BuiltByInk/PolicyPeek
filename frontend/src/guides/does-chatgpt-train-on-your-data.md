@@ -32,7 +32,7 @@ PolicyPeek keeps "you can opt out" separate from the green badge on purpose. An 
 
 ## How does ChatGPT compare with other AI tools?
 
-On 5 Nov 2026, PolicyPeek rated 61 tools. 15 had **Doesn't train on your data**, 21 had **Trains by default, you can opt out**, 15 had **Trains on your data, no opt-out** and 5 had **Policy unclear**. 4 more had only a company-wide policy, and 1 isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
+As of 17 November 2026, PolicyPeek rates {{TOOL_COUNT}} tools. {{COUNT_compliant}} have **Doesn't train on your data**, {{COUNT_compliant_with_caveats}} have **Trains by default, you can opt out**, {{COUNT_not_compliant}} have **Trains on your data, no opt-out** and {{COUNT_unrated}} have **Policy unclear**. {{COUNT_shared_domain_unverified}} more have only a company-wide policy, and {{COUNT_not_ai_tool}} isn't an AI tool. ([All tools](https://getpolicypeek.com/tools/))
 
 Some other tools in the opt-out group: [Claude](https://getpolicypeek.com/tools/claude.com/) (consumer plans; PolicyPeek notes that commercial plans don't train by default), [GitHub Copilot](https://getpolicypeek.com/tools/github.com/), [Cursor](https://getpolicypeek.com/tools/cursor.com/), [Mistral Vibe](https://getpolicypeek.com/tools/mistral.ai/) and [Grammarly](https://getpolicypeek.com/tools/grammarly.com/). ([All tools](https://getpolicypeek.com/tools/))
 
@@ -46,6 +46,7 @@ This isn't legal advice. ([Home](https://getpolicypeek.com/))
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 28 October 2026: ChatGPT re-checked by hand against OpenAI's help article (verdict unchanged: Trains by default, you can opt out); quotes, opt-out steps and tool counts updated.
 
 ## FAQ

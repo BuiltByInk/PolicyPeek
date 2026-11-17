@@ -41,7 +41,7 @@ Often, yes. Claude's consumer plans train unless you opt out, while commercial p
 
 ## The quick way: use a free checker
 
-[PolicyPeek](https://getpolicypeek.com/) has already rated 61 tools (as of 4 November 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
+[PolicyPeek](https://getpolicypeek.com/) has already rated {{TOOL_COUNT}} tools (as of 17 November 2026) and gives each one a plain badge with the quoted source line. If a tool isn't listed, you can ask PolicyPeek to check it.
 
 ## How PolicyPeek decides
 
@@ -49,6 +49,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 4 November 2026: tool count updated to 61.
 - 28 October 2026: Kimi quote made word for word.
 - 28 October 2026: Mailchimp example rewritten with word-for-word quotes.

@@ -16,7 +16,9 @@ Article 4 has applied since 2 February 2025, and national authorities supervise 
 
 ## What is the real risk without one?
 
-The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's ratings of 61 AI tools' own policies (4 November 2026) found 21 that train by default with an opt-out and 14 that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+The everyday risk is data going somewhere you didn't expect. Many AI tools' own policies allow training on what you type unless you opt out, and some give no opt-out at all. PolicyPeek's ratings of {{RATED_COUNT}} AI tools' own policies (17 November 2026) found {{COUNT_compliant_with_caveats}} that train by default with an opt-out and {{COUNT_not_compliant}} that train with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+
+Workplace and support tools in the catalog include [Zendesk AI](https://getpolicypeek.com/tools/zendesk.com/), [Intercom Fin](https://getpolicypeek.com/tools/intercom.com/) and [Slack AI](https://getpolicypeek.com/tools/slack.com/). [Microsoft Copilot](https://getpolicypeek.com/tools/microsoft.com/) is listed under the company-wide policy badge.
 
 Without a policy, each member of staff decides alone which tool to use and what to paste in.
 
@@ -38,6 +40,7 @@ For a small team, writing a first version is an afternoon's work, especially if 
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ

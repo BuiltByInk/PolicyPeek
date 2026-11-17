@@ -16,8 +16,6 @@
 
 (One more listed site isn't an AI tool.) ([All tools](https://getpolicypeek.com/tools/))
 
-Workplace and support examples include [Zendesk AI](https://getpolicypeek.com/tools/zendesk.com/), [Intercom Fin](https://getpolicypeek.com/tools/intercom.com/) and [Slack AI](https://getpolicypeek.com/tools/slack.com/). [Microsoft Copilot](https://getpolicypeek.com/tools/microsoft.com/) is listed under the company-wide policy badge.
-
 ## How is it different from reading the policy yourself?
 
 It does the same thing, faster: finds the training clause, checks whether an opt-out is real (deleting your account, or "data preferences", doesn't count), and notes plan differences such as free versus enterprise. Every verdict links the exact page used and the date it was checked, so you can verify it.
@@ -36,7 +34,7 @@ An AI model extracts the facts from the company's own policy, then fixed rules p
 
 ## Changes
 
-- 17 November 2026: tool counts refreshed from the live catalog ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools). Badge-bucket figures on this page are filled at build time from the catalog, so they stay in step with [all tools](https://getpolicypeek.com/tools/).
+- 17 November 2026: tool counts refreshed from the live catalog ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools). Badge-bucket figures on this page are filled at build time from the catalog, so they stay in step with [all tools](https://getpolicypeek.com/tools/). Workplace and support examples (Zendesk, Intercom, Slack, Microsoft Copilot) were moved to the UK SMB and customer-data guides.
 - 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ
