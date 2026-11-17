@@ -21,7 +21,9 @@ It depends on the account:
 - **Free and personal ChatGPT:** OpenAI's help centre says "When you use our services for individuals (Free, Plus, Pro), we may use your content to train our models." and "To opt out, turn off Improve the model for everyone under Settings > Data controls in ChatGPT, or select Do not train on my content in our Privacy Portal." ([OpenAI help](https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance)) PolicyPeek's badge is **Trains by default, you can opt out**. ([ChatGPT on PolicyPeek](https://getpolicypeek.com/tools/openai.com/))
 - **ChatGPT Business, Enterprise and the API:** OpenAI says it does not train on this business data by default, and it can sign a Data Processing Addendum (DPA) for these plans to support GDPR compliance. ([OpenAI enterprise privacy](https://openai.com/enterprise-privacy/))
 
-Other tools vary a lot. Of 61 AI tools PolicyPeek rates (5 November 2026), 15 say they don't train on your data and 15 train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
+Other tools vary a lot. Of {{RATED_COUNT}} AI tools PolicyPeek rates (17 November 2026), {{COUNT_compliant}} say they don't train on your data and {{COUNT_not_compliant}} train with no opt-out found. ([Tools that don't train](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/), [Tools with no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/))
+
+Support and workplace tools such as [Zendesk AI](https://getpolicypeek.com/tools/zendesk.com/), [Intercom Fin](https://getpolicypeek.com/tools/intercom.com/), [Slack AI](https://getpolicypeek.com/tools/slack.com/) and [Microsoft Copilot](https://getpolicypeek.com/tools/microsoft.com/) are in the catalog; check each tool page before pasting customer data.
 
 ## A safer way to use ChatGPT with customer data
 
@@ -39,6 +41,7 @@ Don't panic, and don't ignore it. Record what went in, which tool and account wa
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ

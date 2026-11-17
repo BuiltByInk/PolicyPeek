@@ -12,7 +12,7 @@ Even where it doesn't, UK GDPR applies whenever staff put personal data into AI 
 
 ## The 30-minute agenda
 
-**0–5 min: Why we're doing this.** AI tools are useful, and they also send what you type to another company. Some of those companies train on it. PolicyPeek's ratings of 61 AI tools (5 November 2026) found 15 that train on your content with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
+**0–5 min: Why we're doing this.** AI tools are useful, and they also send what you type to another company. Some of those companies train on it. PolicyPeek's ratings of {{RATED_COUNT}} AI tools (17 November 2026) found {{COUNT_not_compliant}} that train on your content with no opt-out found. ([PolicyPeek](https://getpolicypeek.com/tools/))
 
 **5–10 min: Our approved tools.** Show the list from your AI policy: which tools, which plan, which account. If you don't have a policy yet, see [Do UK small businesses need an AI policy?](https://getpolicypeek.com/guides/do-uk-small-businesses-need-an-ai-policy/)
 
@@ -35,6 +35,7 @@ The Commission says training should take account of people's technical knowledge
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 4 November 2026: PolicyPeek tool counts updated to 61 rated tools. The 10 tools the 28 October audit had flagged stay on the site with their existing verdicts while PolicyPeek re-checks them.
 
 ## FAQ

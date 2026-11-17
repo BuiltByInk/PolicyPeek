@@ -111,6 +111,12 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
         {noTrain.map((t) => <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>)}
       </ul>
       <p><a href="/guides/ai-tools-that-dont-train-on-your-data-uk/">Guide: which AI tools don't train on your data (UK), with quotes and sources →</a></p>
+      <ul class="home-guides">
+        <li><a href="/guides/how-to-check-if-an-app-trains-ai-on-your-data/">How to check if an app trains on your data</a></li>
+        <li><a href="/guides/how-to-opt-out-of-ai-training-image-video-music-tools/">How to opt out of training on creative tools</a></li>
+        <li><a href="/guides/does-chatgpt-train-on-your-data/">Does ChatGPT train on your data?</a></li>
+        <li><a href="/guides/free-ai-privacy-policy-checker/">Free AI privacy policy checker</a></li>
+      </ul>
     </section>
   )}
 
@@ -131,7 +137,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
       <li>Then fixed rules, the same for every tool, decide the badge.</li>
       <li>Clear-cut results publish automatically. Anything uncertain gets a person's eyes first.</li>
     </ol>
-    <p><a href="/about">Read the full methodology →</a></p>
+    <p><a href="/about/">Read the full methodology →</a></p>
   </section>
 
   <SubmitTool />
@@ -140,6 +146,8 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
 <style>
   .no-train { margin: 0 0 2rem; }
   .no-train ul { list-style: none; padding: 0; margin: 0.5rem 0 0.8rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
+  .no-train ul.home-guides { display: block; margin: 0.4rem 0 0; }
+  .no-train ul.home-guides li { margin: 0.3rem 0; }
   .all-tools ul { list-style: none; padding: 0; margin: 0.5rem 0 2rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
   .hero { padding: 0.5rem 0 1.5rem; }
   .eyebrow {

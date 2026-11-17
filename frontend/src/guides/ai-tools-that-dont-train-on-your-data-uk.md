@@ -1,6 +1,6 @@
 # Which AI Tools Don't Train on Your Data? A UK Guide (November 2026)
 
-Of the 61 AI tools PolicyPeek has checked, 15 have published policies that say they don't train AI on your data, including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine and Kagi. [Monday.com AI](https://getpolicypeek.com/tools/monday.com/) and [Duck.ai](https://getpolicypeek.com/tools/duckduckgo.com/) also carry that badge; see each tool page for the quoted policy and source. ChatGPT trains by default and Claude trains on consumer plans by default; both let you opt out. DeepL's free tier trains with no opt-out found.
+Of the {{RATED_COUNT}} AI tools PolicyPeek has checked, {{COUNT_compliant}} have published policies that say they don't train AI on your data, including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine and Kagi. [Monday.com AI](https://getpolicypeek.com/tools/monday.com/) and [Duck.ai](https://getpolicypeek.com/tools/duckduckgo.com/) also carry that badge; see each tool page for the quoted policy and source. ChatGPT trains by default and Claude trains on consumer plans by default; both let you opt out. DeepL's free tier trains with no opt-out found.
 
 *Last checked: 4 November 2026 (latest check across the tools below; each row shows its own date). Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
@@ -56,6 +56,7 @@ An AI model extracts the facts from the policy, then fixed rules decide the badg
 
 ## Changes
 
+- 17 November 2026: catalog counts refreshed from tools.json ({{TOOL_COUNT}} tools, of which {{RATED_COUNT}} are AI tools).
 - 4 November 2026: tool count updated to 61; Abacus.AI added to the list.
 - 28 October 2026: Zoom quote replaced with the word-for-word terms text.
 - 28 October 2026: Perplexity AI re-checked and moved to **Trains by default, you can opt out**.
@@ -64,7 +65,7 @@ An AI model extracts the facts from the policy, then fixed rules decide the badg
 
 ### Which AI tools don't train on your data?
 
-Of the 61 tools PolicyPeek has checked, 15 have the badge "Doesn't train on your data", including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine, Kagi, Writesonic and You.com. Each badge comes from the tool's own published policy.
+Of the {{RATED_COUNT}} AI tools PolicyPeek has checked, {{COUNT_compliant}} have the badge "Doesn't train on your data", including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine, Kagi, Writesonic and You.com. Each badge comes from the tool's own published policy.
 
 ### Does ChatGPT train on your data?
 
@@ -90,4 +91,4 @@ Each row shows the date PolicyPeek last checked that tool's policy. Policies cha
 
 Submit its website and privacy policy link for a free check. ([Home](https://getpolicypeek.com/))
 
-[All guides](https://getpolicypeek.com/guides/) · [Browse all 61 tools](https://getpolicypeek.com/tools/)
+[All guides](https://getpolicypeek.com/guides/) · [Browse all {{TOOL_COUNT}} tools](https://getpolicypeek.com/tools/)
