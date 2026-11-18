@@ -247,6 +247,27 @@ async function recordExtractionError(env: Env, pendingId: number, message: strin
     .run();
 }
 
+export const SUPERSEDED_PREFIX = "superseded_by";
+
+export async function supersedeOlderHeldRechecks(env: Env, newerId: number, domain: string): Promise<number> {
+  try {
+    const r = await env.DB.prepare(
+      `UPDATE pending_checks
+         SET status = 'rejected',
+             extraction_error = 'superseded_by #' || ? || ': a newer recheck of this tool replaced it'
+               || COALESCE(' (was: ' || extraction_error || ')', ''),
+             updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE domain = ? AND id < ? AND is_recheck = 1 AND status = 'extracted'`
+    )
+      .bind(String(newerId), domain, newerId)
+      .run();
+    return Number(r.meta?.changes ?? 0);
+  } catch {
+    console.warn("[check] superseding older held rechecks failed; left as is");
+    return 0;
+  }
+}
+
 export async function runExtraction(
   env: Env,
   pendingId: number,
@@ -288,6 +309,15 @@ export async function runExtraction(
     await noteAttempt(`recheck failed: ${message}`);
     return;
   }
+
+  // A recheck that extracted cleanly supersedes any OLDER held recheck of the
+  // same tool (2026-11-18): the daily job used to add a new held row each run
+  // and never retire the previous one, so the queue filled with duplicates.
+  // Code-only, existing columns: the older row becomes 'rejected' with a
+  // 'superseded_by #N' note (the previous note is kept after it). Approving a
+  // rejected row still works (handleApprove has no status guard), so nothing
+  // is lost. Best-effort: a failure here never fails the extraction.
+  if (isRecheck) await supersedeOlderHeldRechecks(env, pendingId, domain);
 
   // Status is now 'extracted'. If the check stays in the review queue (is
   // not auto-published), notify once via sendAlert. The finally runs on
