@@ -33,6 +33,14 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Intercom Fin training on my data?", a: "Yes. An admin can request an opt-out in Settings > Workspace > Security > AI model training and fine-tuning. Intercom says it processes opt-out requests within 30 days. Until then, Fin CX models train by default on de-identified Fin conversation logs (with listed exclusions such as EU/AU regional hosting and trial accounts)." },
     ],
   },
+  // Steward card wording, 17 Nov 2026 factcheck: opt-out is the account
+  // holder (the business) only, by email to support@freshworks.com, at two
+  // levels (Supplemental Terms section 4(d)). The terms govern over the FAQ.
+  "freshdesk.com": {
+    faq: [
+      { q: "Can I stop Freshdesk Freddy training on my data?", a: "Yes, but only the business that holds the Freshworks account can, by emailing support@freshworks.com. Freshworks' Supplemental Terms offer two levels: opt out of Collaborative Models only (the AI Services keep working, possibly with reduced performance), or opt out of all AI Training. Training stops within seven business days of the notice. People who contact a company's Freshdesk helpdesk can't opt out themselves." },
+    ],
+  },
   // Steward card wording, 10 Nov 2026 factcheck: opt-out is account holder
   // (the business) only, per subdomain, via support. End users who email a
   // company's Zendesk helpdesk cannot opt out themselves. Backed by the
