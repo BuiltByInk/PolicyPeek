@@ -3,14 +3,14 @@
 //
 //   node scripts/predeploy-check.mjs
 //
-// Checks: backend tests + type-check, frontend build, npm audit (both packages),
+// Checks: backend tests + type-check, workers tests + type-check, frontend build, npm audit (both packages),
 // secret-looking strings in tracked files, that env/secret files are not tracked,
 // and a warning if tracked SQL dumps contain client IPs. Run it, then follow
 // DEPLOY_RUNBOOK_*.md. Dashboard-only settings (rate-limit rules, Anthropic spend
 // limit, ADMIN_TOKEN strength) can't be checked from here; the runbook lists them.
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -26,6 +26,15 @@ function run(name, cmd, args, cwd, { warnOnly = false } = {}) {
 
 run("backend tests", "npx", ["vitest", "run"], join(REPO, "backend"));
 run("backend type-check", "npx", ["tsc", "--noEmit", "--noUnusedLocals", "--noUnusedParameters", "-p", "."], join(REPO, "backend"));
+// Outreach / reply / watcher Workers (added 2026-11-18): tests + type-check.
+// CI's workflow file installs only backend + frontend deps (changing it needs a
+// token with the GitHub `workflow` scope), so install workers deps here when
+// missing. npm ci only: lockfile-exact, no scripts beyond npm's defaults.
+if (!existsSync(join(REPO, "workers", "node_modules"))) {
+  run("workers install (npm ci)", "npm", ["ci", "--no-audit", "--no-fund"], join(REPO, "workers"));
+}
+run("workers tests", "npx", ["vitest", "run"], join(REPO, "workers"));
+run("workers type-check", "npx", ["tsc", "--noEmit", "-p", "."], join(REPO, "workers"));
 run("frontend build", "npm", ["run", "build"], join(REPO, "frontend"));
 // npm audit needs the registry; a network failure is a warning, a real advisory is a failure.
 for (const dir of ["backend", "frontend"]) {

@@ -169,38 +169,67 @@ describe("MF6: quoted text is stripped before objection matching", () => {
   });
 });
 
-describe("18 Nov fix: answers to our own opt-out question are replies, not objections (Venice case)", () => {
+describe("18 Nov: objection patterns with narrow answer exceptions (Security rework)", () => {
   const ourFull = `Hello,\n\nPlease could you confirm:\n${QUESTIONS.join("\n")}\n\nThis is a one-off question about your published policy, not marketing. ${STOP_LINE}`;
-  const replies: [string, string][] = [
-    ["answer mentions opt out", "Hi, I'm Fin, Venice's AI agent. We don't train on prompts. If you want to opt out of analytics you can do so in Settings. Happy to answer more questions or share quotes."],
-    ["answer mentions opt-out", "Model training is off by default; there is an opt-out toggle under Privacy."],
-    ["GDPR right to object", "Under GDPR users have the right to object to processing; contact privacy@ for that."],
+  // Venice-style answer from Intercom's "Fin" agent (the real body is not stored;
+  // this is a representative answer to our three questions, plus the unmarked
+  // Intercom history containing our own email).
+  const FIN = `Hi there, I'm Fin, Venice's AI agent.\nVenice does not store or use your prompts or outputs to train models. Users can opt out of data sharing in Settings, and under GDPR you have the right to object to processing.\nYou're welcome to quote this answer. Is there anything else I can help with?\n\nPolicyPeek\n${ourFull}`;
+  const asReply: [string, string][] = [
+    ["Venice Fin fixture", FIN],
+    ["users can opt out of training", "Users can opt out of training in Settings."],
+    ["right to object", "Data subjects have the right to object."],
+    ["customers can opt out", "Customers can opt out at any time from the dashboard."],
+    ["opt out of model training", "You can opt out of model training under Privacy."],
+    ["may object", "Users may object to processing by writing to our DPO."],
     ["unmarked (Intercom-style) quote of our full email", `Thanks for your question, I've passed it to the team.\n\nPolicyPeek\n${ourFull}`],
     ["reflowed stop line with curly quotes", "Thanks, answered below.\nIf you\u2019d rather not hear from us, reply \u201cstop\u201d and we\nwon\u2019t email again."],
   ];
-  for (const [name, body] of replies)
+  for (const [name, body] of asReply)
     it(`${name} -> reply`, async () => {
       const m = msg({ from: "support@venice.example", body, headers: { "in-reply-to": "<s1@mail.getpolicypeek.com>" } });
       expect((await handleEmail(m, env())).classification).toBe("reply");
       expect(db.raw.prepare("SELECT COUNT(*) n FROM suppressions").get().n).toBe(0);
     });
-  const objections = [
-    "Please opt me out.",
-    "Opt us out of these emails please.",
-    "I want to opt-out of your emails.",
-    "We object to this email.",
-    "I object.",
-    "Stop.",
-    "Please do not contact us again.",
-    "unsubscribe",
+
+  const asObjection = [
+    // required by Security
+    "We'd like to opt out.",
+    "Please opt out.",
+    "I want to opt-out of this.",
+    "Opt out of your newsletter please",
+    "Opt us out from your list",
+    "We formally object",
+    // an exception phrase plus a real stop request
+    "Users can opt out of training in Settings. Separately, please opt us out of these emails.",
+    "Data subjects have the right to object. We object to this email.",
+    "Customers can opt out. We'd like to opt out too.",
+    "Opt out of data use and your emails, please.",
+    "You can opt out of training, and stop emailing us.",
+    // fail closed: answer wording NOT covered by an exception still counts
+    "If you want to opt out of analytics you can do so in Settings.",
+    "There is an opt-out toggle under Privacy.",
+    // older patterns unchanged
+    "Stop.", "Please do not contact us again.", "unsubscribe", "Please opt me out.",
+    // optional additions (18 Nov)
+    "Objection.",
+    "Please don't send any more",
+    "Leave us alone",
+    "We do not consent to further contact",
+    "Please delete our address",
   ];
-  for (const body of objections)
-    it(`"${body}" -> still an objection`, async () => {
+  for (const body of asObjection)
+    it(`"${body}" -> objection`, async () => {
       const m = msg({ body });
       expect((await handleEmail(m, env())).classification).toBe("objection");
     });
+
   it("only our own lines (nothing else) still falls back to objection", async () => {
     const m = msg({ body: ourFull.split("\n").map((l) => "> " + l).join("\n") });
+    expect((await handleEmail(m, env())).classification).toBe("objection");
+  });
+  it("an objection in the subject still counts even when the body is an exception phrase", async () => {
+    const m = msg({ body: "Users can opt out of training.", headers: { subject: "Re: PolicyPeek question - please opt out" } });
     expect((await handleEmail(m, env())).classification).toBe("objection");
   });
 });

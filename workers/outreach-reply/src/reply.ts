@@ -49,13 +49,38 @@ export function registrable(host: string): string {
 }
 
 // Objection wording (unsure => objection, per Security gate 5).
-// 18 Nov fix: bare "opt out" and "object" were dropped. Our own question 3 is
-// "How can a customer opt out?", so a genuine answer ("you can opt out of
-// training in Settings") or a quoted copy of our email in a format we don't
-// detect (Intercom) was classed as an objection (Venice, 18 Nov). Likewise
-// "the right to object" is ordinary GDPR wording. Only requests aimed at us
-// ("opt me out", "opt out of these emails", "we object to this") still count.
-const OBJECTION = [/\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i, /\bno (further|more) (contact|emails?)\b/i, /\bopt (me|us) out\b/i, /\bopt(?:-| )?out of (your|these|this|any|all|further|future|the) (e-?mails?|messages?|mailings?|contact|outreach|communications?|list)\b/i, /\bnot interested\b/i, /\bcease\b/i, /\btake (me|us) off\b/i, /\b(i|we) (strongly |hereby )?object\b/i, /\bobject to (your|these|this|being|receiving|further|any)\b/i, /\bharass/i, /\bspam\b/i];
+// The bare /opt out/ and /object/ patterns stay (Security, 18 Nov). Only the
+// narrow ANSWER phrases in OBJECTION_EXCEPTIONS are removed from the text
+// first; the patterns then run on what is left, so anything not covered by an
+// exception still counts as an objection (fail closed).
+const OBJECTION = [
+  /\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i,
+  /\bno (further|more) (contact|emails?)\b/i, /\bopt(?:-| )?out\b/i, /\bopt (me|us) out\b/i, /\bnot interested\b/i, /\bcease\b/i,
+  /\btake (me|us) off\b/i, /\bobject\b/i, /\bharass/i, /\bspam\b/i,
+  // added 18 Nov
+  /^\s*objection\s*[.!]?\s*$/im,
+  /\b(?:don'?t|do not|please do not|stop) send(?:ing)? (?:us |me )?any ?more\b/i,
+  /\bleave (me|us) alone\b/i,
+  /\bdo not consent to (?:any |further |more )?(?:contact|e-?mails?|communications?|messages?)\b/i,
+  /\bdelete (?:my|our) (?:e-?mail )?(?:address|details|contact details)\b/i,
+];
+
+// Answer wording that mentions opting out / objecting without asking us to
+// stop. Removed before OBJECTION runs. An exception never swallows a request
+// about our mail: "opt out of data use and your emails" keeps its tail.
+const CONTACT_TAIL = String.raw`(?!\s*(?:,|and|or|&|\/)\s*(?:(?:from|of)\s+)?(?:your|these|this|any|all|further|future|the)?\s*(?:e-?mails?|messages?|mailings?|newsletters?|contact|outreach|list|communications?)\b)`;
+export const OBJECTION_EXCEPTIONS = [
+  new RegExp(String.raw`\bopt(?:-| )?out\s+(?:of|from)\s+(?:(?:AI|model|data)\s+)?(?:training|sharing|use)\b` + CONTACT_TAIL, "gi"),
+  /\bright\s+to\s+object\b/gi,
+  /\b(?:can|may)\s+object\b/gi,
+  /\b(?:users?|customers?)\s+can\s+opt(?:-| )?out\b/gi,
+];
+
+export function isObjection(own: string, subject: string): boolean {
+  let rest = own;
+  for (const r of OBJECTION_EXCEPTIONS) rest = rest.replace(r, " ");
+  return OBJECTION.some((r) => r.test(rest) || r.test(subject));
+}
 
 // MF6: objection matching runs only on the sender's OWN new text. Our email
 // says 'reply "stop"', so matching the quoted original would class almost
@@ -111,7 +136,7 @@ export function classify(h: Headers, from: string, textHead: string): Classifica
   const prec = lower(h.get("precedence"));
   if ((autoSub && autoSub !== "no") || ["bulk", "junk", "list", "auto_reply"].includes(prec) || h.has("x-autoreply") || h.has("x-autorespond") || lower(h.get("x-auto-response-suppress")).includes("all") || /^(out of (the )?office|automatic reply|auto(matic)?[- ]?reply|autoreply|auto:)/.test(subject)) return "auto_reply";
   const own = stripQuoted(textHead);
-  if (OBJECTION.some((r) => r.test(own) || r.test(subject))) return "objection";
+  if (isObjection(own, subject)) return "objection";
   return "reply";
 }
 
