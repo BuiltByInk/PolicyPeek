@@ -5,6 +5,7 @@ import type { Tool } from "./types";
 import { VERDICTS } from "./verdicts";
 import { genericFaq } from "./toolAnswer";
 import { overrideFor } from "./toolOverrides";
+import { subQuestionFaq } from "./toolPageV2";
 
 export interface Faq { q: string; a: string }
 
@@ -23,6 +24,8 @@ export function toolFaq(tool: Tool, all: Tool[]): Faq[] {
   // AEO (2026-11-09): generic answer-engine questions, only where the stored
   // policy wording answers them (see genericFaq in toolAnswer.ts).
   out.push(...genericFaq(tool));
+  // D1 (template v2, 18 Nov 2026): tool-specific sub-questions, same rule.
+  out.push(...subQuestionFaq(tool));
 
   const ret = tool.data_retention?.trim().replace(/\s+/g, " ");
   out.push({
