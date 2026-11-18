@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDb } from "../../test-utils/d1shim";
 import { ACCEPTED_RECIPIENTS, authResults, FORWARD_TO, handleEmail, MAX_REPLY_ROWS_PER_DAY, registrable, stripQuoted } from "../src/reply";
-import { STOP_LINE } from "../../outreach/src/template";
+import { QUESTIONS, STOP_LINE } from "../../outreach/src/template";
 import { registrable as senderRegistrable } from "../../outreach/src/contacts";
 
 const MIG = new URL("../../outreach/migrations/0001_outreach.sql", import.meta.url).pathname;
@@ -165,6 +165,42 @@ describe("MF6: quoted text is stripped before objection matching", () => {
   });
   it("unsure (nothing but quoted text) still falls back to objection", async () => {
     const m = msg({ body: ours.split("\n").map((l) => "> " + l).join("\n") });
+    expect((await handleEmail(m, env())).classification).toBe("objection");
+  });
+});
+
+describe("18 Nov fix: answers to our own opt-out question are replies, not objections (Venice case)", () => {
+  const ourFull = `Hello,\n\nPlease could you confirm:\n${QUESTIONS.join("\n")}\n\nThis is a one-off question about your published policy, not marketing. ${STOP_LINE}`;
+  const replies: [string, string][] = [
+    ["answer mentions opt out", "Hi, I'm Fin, Venice's AI agent. We don't train on prompts. If you want to opt out of analytics you can do so in Settings. Happy to answer more questions or share quotes."],
+    ["answer mentions opt-out", "Model training is off by default; there is an opt-out toggle under Privacy."],
+    ["GDPR right to object", "Under GDPR users have the right to object to processing; contact privacy@ for that."],
+    ["unmarked (Intercom-style) quote of our full email", `Thanks for your question, I've passed it to the team.\n\nPolicyPeek\n${ourFull}`],
+    ["reflowed stop line with curly quotes", "Thanks, answered below.\nIf you\u2019d rather not hear from us, reply \u201cstop\u201d and we\nwon\u2019t email again."],
+  ];
+  for (const [name, body] of replies)
+    it(`${name} -> reply`, async () => {
+      const m = msg({ from: "support@venice.example", body, headers: { "in-reply-to": "<s1@mail.getpolicypeek.com>" } });
+      expect((await handleEmail(m, env())).classification).toBe("reply");
+      expect(db.raw.prepare("SELECT COUNT(*) n FROM suppressions").get().n).toBe(0);
+    });
+  const objections = [
+    "Please opt me out.",
+    "Opt us out of these emails please.",
+    "I want to opt-out of your emails.",
+    "We object to this email.",
+    "I object.",
+    "Stop.",
+    "Please do not contact us again.",
+    "unsubscribe",
+  ];
+  for (const body of objections)
+    it(`"${body}" -> still an objection`, async () => {
+      const m = msg({ body });
+      expect((await handleEmail(m, env())).classification).toBe("objection");
+    });
+  it("only our own lines (nothing else) still falls back to objection", async () => {
+    const m = msg({ body: ourFull.split("\n").map((l) => "> " + l).join("\n") });
     expect((await handleEmail(m, env())).classification).toBe("objection");
   });
 });

@@ -49,7 +49,13 @@ export function registrable(host: string): string {
 }
 
 // Objection wording (unsure => objection, per Security gate 5).
-const OBJECTION = [/\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i, /\bno (further|more) (contact|emails?)\b/i, /\bopt(?:-| )?out\b/i, /\bnot interested\b/i, /\bcease\b/i, /\btake (me|us) off\b/i, /\bobject\b/i, /\bharass/i, /\bspam\b/i];
+// 18 Nov fix: bare "opt out" and "object" were dropped. Our own question 3 is
+// "How can a customer opt out?", so a genuine answer ("you can opt out of
+// training in Settings") or a quoted copy of our email in a format we don't
+// detect (Intercom) was classed as an objection (Venice, 18 Nov). Likewise
+// "the right to object" is ordinary GDPR wording. Only requests aimed at us
+// ("opt me out", "opt out of these emails", "we object to this") still count.
+const OBJECTION = [/\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i, /\bno (further|more) (contact|emails?)\b/i, /\bopt (me|us) out\b/i, /\bopt(?:-| )?out of (your|these|this|any|all|further|future|the) (e-?mails?|messages?|mailings?|contact|outreach|communications?|list)\b/i, /\bnot interested\b/i, /\bcease\b/i, /\btake (me|us) off\b/i, /\b(i|we) (strongly |hereby )?object\b/i, /\bobject to (your|these|this|being|receiving|further|any)\b/i, /\bharass/i, /\bspam\b/i];
 
 // MF6: objection matching runs only on the sender's OWN new text. Our email
 // says 'reply "stop"', so matching the quoted original would class almost
@@ -65,6 +71,16 @@ const QUOTE_MARKERS = [
   /^\s*From:\s.+\n\s*(Sent|Date):\s/im, // Outlook header block
   /^\s*De\s*:\s.+\n\s*(Envoyé|Date)\s*:\s/im,
 ];
+// Whitespace- and quote-style-tolerant copies of our template's fixed lines
+// (outreach/src/template.ts STOP_LINE and QUESTIONS).
+const W = String.raw`\s+`;
+const Q = String.raw`["“”]`;
+const A = String.raw`['’]`;
+const OWN_LINES = [
+  new RegExp(`If${W}you${A}d${W}rather${W}not${W}hear${W}from${W}us,${W}reply${W}${Q}stop${Q}${W}and${W}we${W}won${A}t${W}email${W}again\\.?`, "gi"),
+  new RegExp(`(?:3\\.${W})?How${W}can${W}a${W}customer${W}opt${W}out\\??`, "gi"),
+];
+
 export function stripQuoted(text: string): string {
   let cut = text.length;
   for (const r of QUOTE_MARKERS) {
@@ -76,7 +92,11 @@ export function stripQuoted(text: string): string {
   const own = kept.join("\n");
   const removedSomething = cut < text.length || kept.length < lines.length;
   // Our own stop line, if pasted back unquoted, is never the sender's objection.
-  const cleaned = own.replace(/If you'd rather not hear from us, reply "stop" and we won't email again\./gi, " ").trim();
+  // Our own lines (stop line and the three questions), if pasted back
+  // unquoted or reflowed, are never the sender's objection.
+  let cleaned = own;
+  for (const r of OWN_LINES) cleaned = cleaned.replace(r, " ");
+  cleaned = cleaned.trim();
   return cleaned || (removedSomething ? text : "");
 }
 
