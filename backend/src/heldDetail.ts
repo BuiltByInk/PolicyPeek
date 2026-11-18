@@ -12,6 +12,11 @@ import { cleanText } from "./textUtil";
 // policypeek-outreach tables outreach_contacts / outreach_sends /
 // outreach_replies. No schema change, no writes.
 //
+// SECURITY (18 Nov): OUTREACH_DB may be referenced ONLY in this file, only
+// via fixed SELECT string literals (bound parameters only), and never from a
+// fetch/HTTP route path. Enforced by outreachDbScan.test.ts. Any change that
+// touches OUTREACH_DB goes to Security review.
+//
 // Safety: the policy URL and the quoted clause come from pages anyone can
 // submit, so they are cleaned (control/bidi chars stripped), length-capped,
 // and HTML-escaped. Policy URLs are shown as text, never as links, so a
@@ -113,7 +118,9 @@ export interface HeldItem {
   tool_name: string;
   page_url: string | null; // null when the tool has no published page yet
   policy_url: string | null;
+  policy_host: string | null;
   archived_url: string | null;
+  archived_host: string | null;
   checked_at: string;
   why_held: string;
   policy_says: string;
@@ -147,6 +154,19 @@ export function safeUrlText(u: string | null | undefined): string | null {
     return null;
   }
   return c;
+}
+
+/** Parsed hostname (punycode / ASCII form, as WHATWG URL gives it), or null. */
+export function hostOf(u: string | null | undefined): string | null {
+  const c = cleanText(u, 4000);
+  if (!c) return null;
+  try {
+    const p = new URL(c);
+    if (p.protocol !== "https:" && p.protocol !== "http:") return null;
+    return p.hostname || null;
+  } catch {
+    return null;
+  }
 }
 
 export function escapeHtml(s: string): string {
@@ -293,7 +313,9 @@ export function buildHeldItems(rows: HeldRow[], tools: ToolRow[], outreach: Outr
       tool_name: cleanText(c.tool_name ?? tool?.name ?? null, 120) ?? cleanText(c.tool_domain, 200) ?? "(unknown tool)",
       page_url: tool ? toolPageUrl(d) : null,
       policy_url: safeUrlText(c.policy_url),
+      policy_host: hostOf(c.policy_url),
       archived_url: null,
+      archived_host: null,
       checked_at: "",
       why_held: "Not in the check queue. This tool is on the held list while we wait for the company to clarify its policy.",
       policy_says: "Not recorded in the check queue.",
@@ -386,7 +408,9 @@ function buildOne(
     tool_name: name,
     page_url: tool ? toolPageUrl(row.domain) : null,
     policy_url: safeUrlText(row.source_url),
+    policy_host: hostOf(row.source_url),
     archived_url: row.sourced_from_archive === 1 ? safeUrlText(row.archived_source_url) : null,
+    archived_host: row.sourced_from_archive === 1 ? hostOf(row.archived_source_url) : null,
     checked_at: row.updated_at || row.created_at,
     why_held: plainReason(row.extraction_error, decision?.reason ?? null),
     policy_says: policySays(facts),
@@ -403,7 +427,11 @@ function buildOne(
 
 // ---------------------------------------------------------------- render
 
-function clarLines(c: Clarification | null, outreachAvailable: boolean): string[] {
+/** true = outreach data read; false = binding missing or read failed; "digest" = deliberately not read (request-triggered alert). */
+export type OutreachMode = boolean | "digest";
+
+function clarLines(c: Clarification | null, outreachAvailable: OutreachMode): string[] {
+  if (outreachAvailable === "digest") return ["Clarification email: shown in the daily digest"];
   if (!outreachAvailable) return ["Clarification email: not available (outreach data not connected)"];
   if (!c) return ["Clarification email: none on record"];
   const status = c.paused_reason ? `${c.status} (${c.paused_reason})` : c.status;
@@ -420,11 +448,13 @@ function title(it: HeldItem): string {
   return it.tool_name === it.domain ? it.tool_name : `${it.tool_name} (${it.domain})`;
 }
 
-export function renderItemText(it: HeldItem, outreachAvailable: boolean): string {
+export function renderItemText(it: HeldItem, outreachAvailable: OutreachMode): string {
   const lines = [
     `${title(it)} - ${it.check_id ? `check #${it.check_id}` : "no check in queue"}${it.duplicates ? ` (+${it.duplicates} older check${it.duplicates === 1 ? "" : "s"} of the same tool)` : ""}`,
     `PolicyPeek page: ${it.page_url ?? "none yet (not published)"}`,
-    `Policy checked: ${it.policy_url ?? NOT_RECORDED}${it.archived_url ? ` (read from snapshot ${it.archived_url})` : ""}`,
+    `Policy checked: ${it.policy_url ?? NOT_RECORDED}`,
+    `Policy host: ${it.policy_host ?? NOT_RECORDED}`,
+    ...(it.archived_url ? [`Read from snapshot: ${it.archived_url}`, `Snapshot host: ${it.archived_host ?? NOT_RECORDED}`] : []),
     `Checked: ${ukTime(it.checked_at || null)}`,
     `Why held: ${it.why_held}`,
     `What the policy says: ${it.policy_says}`,
@@ -437,7 +467,7 @@ export function renderItemText(it: HeldItem, outreachAvailable: boolean): string
   return lines.join("\n");
 }
 
-export function renderItemHtml(it: HeldItem, outreachAvailable: boolean): string {
+export function renderItemHtml(it: HeldItem, outreachAvailable: OutreachMode): string {
   const e = escapeHtml;
   const row = (k: string, v: string) => `<tr><td style="padding:2px 12px 2px 0;color:#555;vertical-align:top;white-space:nowrap">${e(k)}</td><td style="padding:2px 0">${v}</td></tr>`;
   const page = it.page_url ? `<a href="${e(it.page_url)}">${e(it.page_url)}</a>` : "none yet (not published)";
@@ -449,7 +479,9 @@ export function renderItemHtml(it: HeldItem, outreachAvailable: boolean): string
     `<table style="border-collapse:collapse;font-size:13px">`,
     row("PolicyPeek page", page),
     // Policy URL is text, never a link (it comes from a submitted page).
-    row("Policy checked", `${e(it.policy_url ?? NOT_RECORDED)}${it.archived_url ? ` (snapshot ${e(it.archived_url)})` : ""}`),
+    row("Policy checked", e(it.policy_url ?? NOT_RECORDED)),
+    row("Policy host", `<strong>${e(it.policy_host ?? NOT_RECORDED)}</strong>`),
+    ...(it.archived_url ? [row("Read from snapshot", e(it.archived_url)), row("Snapshot host", `<strong>${e(it.archived_host ?? NOT_RECORDED)}</strong>`)] : []),
     row("Checked", e(ukTime(it.checked_at || null))),
     row("Why held", e(it.why_held)),
     row("Policy says", e(it.policy_says)),
@@ -468,7 +500,7 @@ function htmlDoc(title: string, body: string): string {
 export interface RenderedEmail { subject: string; text: string; html: string }
 
 /** Instant alert for one newly held check. */
-export function renderHeldAlert(it: HeldItem, outreachAvailable: boolean): RenderedEmail {
+export function renderHeldAlert(it: HeldItem, outreachAvailable: OutreachMode): RenderedEmail {
   const subject = `PolicyPeek: ${it.tool_name} held for review`.slice(0, 200);
   const text = [subject, "", renderItemText(it, outreachAvailable), "", footerText()].join("\n");
   const html = htmlDoc(subject, `<h2 style="font-size:18px">${escapeHtml(subject)}</h2>${renderItemHtml(it, outreachAvailable)}${footerHtml()}`);
@@ -506,7 +538,7 @@ export function summarise(items: HeldItem[]): DigestSummary {
  * the sender skips the email entirely. Items needing nothing collapse to one
  * count line.
  */
-export function renderDigest(items: HeldItem[], outreachAvailable: boolean): RenderedEmail | null {
+export function renderDigest(items: HeldItem[], outreachAvailable: OutreachMode): RenderedEmail | null {
   const action = items.filter((i) => i.group !== "none");
   if (action.length === 0) return null;
   const s = summarise(items);
@@ -566,8 +598,17 @@ export async function loadOutreach(env: Env): Promise<OutreachData | null> {
   }
 }
 
-/** Loads held items, optionally for one domain only. Read-only. */
-export async function loadHeldItems(env: Env, domain?: string): Promise<{ items: HeldItem[]; outreachAvailable: boolean }> {
+/**
+ * Loads held items, optionally for one domain only. Read-only.
+ * withOutreach=false skips OUTREACH_DB entirely: used when the alert was
+ * triggered by a public HTTP request (Security, 18 Nov: no fetch/route path
+ * may touch OUTREACH_DB). Only the scheduled recheck and the digest read it.
+ */
+export async function loadHeldItems(
+  env: Env,
+  domain?: string,
+  { withOutreach = true }: { withOutreach?: boolean } = {}
+): Promise<{ items: HeldItem[]; outreachAvailable: OutreachMode }> {
   const held = domain
     ? await env.DB.prepare(`${HELD_SQL} AND domain = ?`).bind(domain).all<HeldRow>()
     : await env.DB.prepare(HELD_SQL).all<HeldRow>();
@@ -575,6 +616,7 @@ export async function loadHeldItems(env: Env, domain?: string): Promise<{ items:
     `SELECT domain, name, compliance_status, manual_override, last_checked_at FROM tools
      WHERE domain IN (SELECT domain FROM pending_checks WHERE status = 'extracted')`
   ).all<ToolRow>();
+  if (!withOutreach) return { items: buildHeldItems(held.results, tools.results, null), outreachAvailable: "digest" };
   const outreach = await loadOutreach(env);
   return { items: buildHeldItems(held.results, tools.results, outreach), outreachAvailable: outreach !== null };
 }

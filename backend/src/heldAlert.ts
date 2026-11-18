@@ -29,7 +29,9 @@ export function formatHeldCheckAlert(row: HeldCheckRow): string {
 // Never throws: an alert failure must not fail extraction or the /v1/check
 // request. Only alerts when the row is still 'extracted' (held for a person).
 // Since 2026-11-18 the email carries per-tool detail (heldDetail.ts).
-export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow): Promise<void> {
+// opts.scheduled: true only from the daily recheck job. A request-triggered
+// alert (public /v1/check) never reads OUTREACH_DB (Security, 18 Nov).
+export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow, opts: { scheduled?: boolean } = {}): Promise<void> {
   try {
     const current = await env.DB.prepare("SELECT status FROM pending_checks WHERE id = ?")
       .bind(row.id)
@@ -37,7 +39,7 @@ export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow): Promise<
     if (current?.status !== "extracted") return;
     let detail: ReturnType<typeof renderHeldAlert> | null = null;
     try {
-      const { items, outreachAvailable } = await loadHeldItems(env, row.domain);
+      const { items, outreachAvailable } = await loadHeldItems(env, row.domain, { withOutreach: opts.scheduled === true });
       const item = items.find((i) => i.check_id === row.id);
       // Same rule as the digest (Elliot, 18 Nov): a held check that needs
       // nothing from him (repeat recheck, already confirmed, waiting on a

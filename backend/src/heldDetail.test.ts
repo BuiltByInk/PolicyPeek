@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildHeldItems, renderDigest, renderHeldAlert, renderItemText, summarise, toolPageUrl, safeUrlText, escapeHtml,
-  ukTime, addDays, FOLLOWUP_AFTER_DAYS, SNIPPET_MAX, type HeldRow, type ToolRow, type OutreachData,
+  ukTime, addDays, hostOf, FOLLOWUP_AFTER_DAYS, SNIPPET_MAX, type HeldRow, type ToolRow, type OutreachData,
 } from "./heldDetail";
 
 const facts = (f: Partial<{ trains_on_user_data: boolean | null; opt_out_available: boolean | null; relevant_clauses: string[] }>) =>
@@ -27,6 +27,13 @@ describe("helpers", () => {
     expect(safeUrlText(null)).toBeNull();
     expect(safeUrlText("https://x.com/" + "a".repeat(500))!.length).toBeLessThanOrEqual(300);
     expect(safeUrlText("https://x.com/\u202epath")).not.toMatch(/\u202e/);
+  });
+  it("parses the hostname in punycode form", () => {
+    expect(hostOf("https://www.Granola.ai/privacy")).toBe("www.granola.ai");
+    expect(hostOf("https://bücher.example/p")).toBe("xn--bcher-kva.example");
+    expect(hostOf("https://аррӏе.com/privacy")).toMatch(/^xn--/);
+    expect(hostOf("javascript:alert(1)")).toBeNull();
+    expect(hostOf(null)).toBeNull();
   });
   it("escapes HTML and formats UK time", () => {
     expect(escapeHtml(`<a href="x">&'`)).toBe("&lt;a href=&quot;x&quot;&gt;&amp;&#39;");
@@ -142,10 +149,26 @@ describe("rendering safety and missing fields", () => {
     expect(a.text).toContain("Clarification email: not available (outreach data not connected)");
   });
 
+  it("shows the policy host and snapshot host on their own lines (text + html)", () => {
+    const [it] = buildHeldItems(
+      [row({ id: 11, domain: "xn--bcher-kva.example", is_recheck: 0, source_url: "https://bücher.example/privacy", sourced_from_archive: 1, archived_source_url: "http://web.archive.org/web/2026/https://bücher.example/privacy" })],
+      [], null
+    );
+    const t = renderItemText(it, true).split("\n");
+    expect(t).toContain("Policy host: xn--bcher-kva.example");
+    expect(t).toContain("Snapshot host: web.archive.org");
+    expect(t.findIndex((l) => l.startsWith("Policy host:"))).toBe(t.findIndex((l) => l.startsWith("Policy checked:")) + 1);
+    const h = renderHeldAlert(it, true).html;
+    expect(h).toContain("<strong>xn--bcher-kva.example</strong>");
+    expect(h).toContain("<strong>web.archive.org</strong>");
+  });
+
   it("says 'not recorded' for missing facts, URL and dates", () => {
     const [it] = buildHeldItems([row({ id: 10, domain: "blank.com", is_recheck: 0, source_url: null, extracted_facts: null, updated_at: "", created_at: "" })], [], { contacts: [], sends: [], replies: [] });
     const t = renderItemText(it, true);
     expect(t).toContain("Policy checked: not recorded");
+    expect(t).toContain("Policy host: not recorded");
+    expect(t).not.toContain("Snapshot host");
     expect(t).toContain("Checked: not recorded");
     expect(t).toContain("Proposed verdict: not recorded");
     expect(t).toContain("Clarification email: none on record");
