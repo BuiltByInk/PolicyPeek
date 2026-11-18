@@ -63,6 +63,9 @@ const OBJECTION = [
   /\bleave (me|us) alone\b/i,
   /\bdo not consent to (?:any |further |more )?(?:contact|e-?mails?|communications?|messages?)\b/i,
   /\bdelete (?:my|our) (?:e-?mail )?(?:address|details|contact details)\b/i,
+  // added 18 Nov (Security conditions at 49f13c7)
+  /\b(?:remove|delete|exclude)\s+(?:this|our)\s+(?:e-?mail\s+)?(?:address|mailbox|e-?mail|inbox)\b/i,
+  /\bopt\s+(?:this|the|that)\b(?:[^.!?\n]|\.(?=\S)){0,60}?\bout\b/i,
 ];
 
 // Answer wording that mentions opting out / objecting without asking us to
@@ -83,13 +86,18 @@ export const OBJECTION_EXCEPTIONS = [
 // sentence (splitting there would leave the request word in a different
 // clause from the opt-out). Applied to every exception, not just opt-out ones
 // (stricter: "we may object" also stays an objection).
-const FIRST_PERSON_OR_REQUEST = /\b(?:i|me|my|mine|we|us|our|ours|ourselves|please|pls|would like|wants?|wanted|wanting)\b/i;
+const FIRST_PERSON_OR_REQUEST = /\b(?:i|me|my|mine|we|us|our|ours|ourselves|please|pls|kindly|would like|wants?|wanted|wanting)\b/i;
+// Also guards (Security, 18 Nov): a reference to the recipient's own mailbox,
+// and the imperative "opt this/the/that ... out".
+const MAILBOX_REF = /\b(?:this|our)\s+(?:e-?mail\s+)?(?:address|mailbox|e-?mail|inbox)\b/i;
+const OPT_X_OUT = /\bopt\s+(?:this|the|that)\b(?:[^.!?\n]|\.(?=\S)){0,60}?\bout\b/i;
+const isGuarded = (sentence: string) => FIRST_PERSON_OR_REQUEST.test(sentence) || MAILBOX_REF.test(sentence) || OPT_X_OUT.test(sentence);
 
 export function stripAnswerExceptions(own: string): string {
   return own
     .split(/(?<=[.!?])\s+|\r?\n/)
     .map((sentence) => {
-      if (FIRST_PERSON_OR_REQUEST.test(sentence)) return sentence;
+      if (isGuarded(sentence)) return sentence;
       let rest = sentence;
       for (const r of OBJECTION_EXCEPTIONS) rest = rest.replace(r, " ");
       return rest;

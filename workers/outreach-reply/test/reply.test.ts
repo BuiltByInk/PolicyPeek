@@ -213,6 +213,14 @@ describe("18 Nov: objection patterns with narrow answer exceptions (Security rew
     "Opt out of data sharing: please, for us too.",
     "We can opt out of data sharing.",
     "Customers can opt out; we would like to as well.",
+    // Security conditions at 49f13c7
+    "Opt out of data sharing; kindly do so for this address.",
+    "Users can opt out of training. Opt this mailbox out too.",
+    "Remove this address from training data sharing.",
+    "Users can opt out of data sharing for this inbox.",
+    "Delete our email from your list.",
+    "Exclude this mailbox.",
+    "Opt the address privacy@example.com out.",
     // stricter side effect, kept visible: an answer sentence with "our" no longer gets the exception
     "Users may object to processing by writing to our DPO.",
     // fail closed: answer wording NOT covered by an exception still counts
