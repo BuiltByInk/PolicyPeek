@@ -113,7 +113,8 @@ const q = (parts: string[]) => parts.map((p) => `"${p.replace(/^"|"$/g, "")}"`).
 export function genericFaq(tool: Tool): { q: string; a: string }[] {
   if (tool.compliance_status === "not_ai_tool") return [];
   const n = tool.name, parts = quoteParts(tool), out: { q: string; a: string }[] = [];
-  const plan = parts.filter((p) => /\b(free|paid|enterprise|consumer|plans?|tiers?)\b/i.test(p) && TRAINING.test(p));
+  // (?<!royalty-) so "royalty-free" (a licence term, not a plan) is not read as a plan.
+  const plan = parts.filter((p) => /\b(?<!royalty-)(free|paid|enterprise|consumer|plans?|tiers?)\b/i.test(p) && TRAINING.test(p));
   if (plan.length) out.push({ q: "Do free AI tools use my data for training?", a: `It depends on the tool, and sometimes on the plan. For ${n}, the policy wording PolicyPeek recorded mentions plans: ${q(plan)}` });
   const del = parts.filter((p) => /\bdelet\w*/i.test(p) && TRAINING.test(p));
   if (del.length) out.push({ q: "Does deleting my chat history stop training?", a: `For ${n}, the policy wording PolicyPeek recorded says: ${q(del)}` });

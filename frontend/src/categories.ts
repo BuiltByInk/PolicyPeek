@@ -85,7 +85,7 @@ export const CATEGORIES: Category[] = [
     title: "AI business and support tools: which train on your data?",
     pageTitle: "Business tools: which train on your data?",
     description: "PolicyPeek badges for workplace, CRM and support tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["hubspot.com", "intercom.com", "zendesk.com", "monday.com", "slack.com"],
+    domains: ["hubspot.com", "intercom.com", "zendesk.com", "freshdesk.com", "monday.com", "slack.com"],
   },
 ];
 
