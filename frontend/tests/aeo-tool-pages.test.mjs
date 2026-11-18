@@ -222,7 +222,7 @@ test("Slack AI: the four existing quotes are kept, the two new ones match the sa
 const VEED_ANSWER = "Yes, on the Free plan. VEED's terms let it use content uploaded on a Free subscription to train its AI models. A Free user can only stop this by deleting their account or moving to a paid plan. VEED says this licence doesn't apply to its paid plans (Basic, Pro and Business) or to enterprise customers.";
 const VEED_Q1 = "Can I stop VEED training on my data?";
 const VEED_A1 = "Not while you stay on the Free plan. VEED's privacy notice lets Free users formally object, but says that after objecting you can't keep using the Free tier and must either delete your account or upgrade to a paid plan. PolicyPeek doesn't count leaving the plan as an opt-out, so the Free plan is rated 'no opt-out'. VEED also says it may keep information derived from your content after deletion if it has been de-identified, anonymised or aggregated.";
-const VEED_Q2 = "If I upload documents to VEED, can they be used for training?";
+const VEED_Q2 = "If I upload documents, are they used for training?";
 const VEED_A2 = "On the Free plan, yes. VEED's terms let it use content you upload under a Free subscription to train and develop the AI models behind its apps. Its privacy notice says this doesn't include content uploaded through VEED's mobile apps, and its terms say it doesn't apply to paid plans or enterprise customers. We found nothing else in VEED's policies about training on paid-plan uploads.";
 
 test("VEED: badge unchanged, approved answer and FAQs on the page and in the one FAQPage", () => {
