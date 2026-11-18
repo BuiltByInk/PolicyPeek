@@ -181,7 +181,8 @@ describe("18 Nov: objection patterns with narrow answer exceptions (Security rew
     ["right to object", "Data subjects have the right to object."],
     ["customers can opt out", "Customers can opt out at any time from the dashboard."],
     ["opt out of model training", "You can opt out of model training under Privacy."],
-    ["may object", "Users may object to processing by writing to our DPO."],
+    ["may object", "Users may object to processing by writing to the DPO."],
+    ["exception sentence next to a first-person sentence", "Thanks for asking. Users can opt out of training in Settings.\nWe are happy for you to quote this."],
     ["unmarked (Intercom-style) quote of our full email", `Thanks for your question, I've passed it to the team.\n\nPolicyPeek\n${ourFull}`],
     ["reflowed stop line with curly quotes", "Thanks, answered below.\nIf you\u2019d rather not hear from us, reply \u201cstop\u201d and we\nwon\u2019t email again."],
   ];
@@ -206,6 +207,14 @@ describe("18 Nov: objection patterns with narrow answer exceptions (Security rew
     "Customers can opt out. We'd like to opt out too.",
     "Opt out of data use and your emails, please.",
     "You can opt out of training, and stop emailing us.",
+    // Security condition (18 Nov): no exception inside a first-person / request sentence
+    "We want to opt out of data use by you. Thanks",
+    "Please opt out of training our address from your list",
+    "Opt out of data sharing: please, for us too.",
+    "We can opt out of data sharing.",
+    "Customers can opt out; we would like to as well.",
+    // stricter side effect, kept visible: an answer sentence with "our" no longer gets the exception
+    "Users may object to processing by writing to our DPO.",
     // fail closed: answer wording NOT covered by an exception still counts
     "If you want to opt out of analytics you can do so in Settings.",
     "There is an opt-out toggle under Privacy.",
@@ -224,6 +233,11 @@ describe("18 Nov: objection patterns with narrow answer exceptions (Security rew
       expect((await handleEmail(m, env())).classification).toBe("objection");
     });
 
+  it("the Venice Fin fixture's opt-out sentence has no first-person or request word", () => {
+    const optSentences = FIN.split(/(?<=[.!?])\s+|\r?\n/).filter((x) => /opt(?:-| )?out|object/i.test(x));
+    expect(optSentences[0]).toBe("Users can opt out of data sharing in Settings, and under GDPR you have the right to object to processing.");
+    for (const x of optSentences.slice(0, 1)) expect(x).not.toMatch(/\b(?:i|me|my|we|us|our|please|would like|want)\b/i);
+  });
   it("only our own lines (nothing else) still falls back to objection", async () => {
     const m = msg({ body: ourFull.split("\n").map((l) => "> " + l).join("\n") });
     expect((await handleEmail(m, env())).classification).toBe("objection");

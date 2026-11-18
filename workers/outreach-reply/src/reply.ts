@@ -76,9 +76,29 @@ export const OBJECTION_EXCEPTIONS = [
   /\b(?:users?|customers?)\s+can\s+opt(?:-| )?out\b/gi,
 ];
 
+// Security condition (18 Nov): an exception never applies inside a sentence
+// that has a first-person or request word, so "We want to opt out of data use"
+// stays an objection. Sentences split on . ! ? and newlines only: NOT on ; or :,
+// because "Opt out of data sharing: please, for us too." must stay one
+// sentence (splitting there would leave the request word in a different
+// clause from the opt-out). Applied to every exception, not just opt-out ones
+// (stricter: "we may object" also stays an objection).
+const FIRST_PERSON_OR_REQUEST = /\b(?:i|me|my|mine|we|us|our|ours|ourselves|please|pls|would like|wants?|wanted|wanting)\b/i;
+
+export function stripAnswerExceptions(own: string): string {
+  return own
+    .split(/(?<=[.!?])\s+|\r?\n/)
+    .map((sentence) => {
+      if (FIRST_PERSON_OR_REQUEST.test(sentence)) return sentence;
+      let rest = sentence;
+      for (const r of OBJECTION_EXCEPTIONS) rest = rest.replace(r, " ");
+      return rest;
+    })
+    .join("\n");
+}
+
 export function isObjection(own: string, subject: string): boolean {
-  let rest = own;
-  for (const r of OBJECTION_EXCEPTIONS) rest = rest.replace(r, " ");
+  const rest = stripAnswerExceptions(own);
   return OBJECTION.some((r) => r.test(rest) || r.test(subject));
 }
 
