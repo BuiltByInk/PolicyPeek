@@ -2,6 +2,8 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import csp from "./integrations/csp.mjs";
 import pageMarkdown from "./integrations/page-markdown.mjs";
+import productRedirects from "./integrations/product-redirects.mjs";
+import { toolUrl } from "./src/toolPaths.mjs";
 import { applyCounts } from "./integrations/catalog-counts.mjs";
 import { readFileSync } from "node:fs";
 
@@ -30,7 +32,7 @@ const tools = JSON.parse(readFileSync(new URL("./data/tools.json", import.meta.u
 const noindexUrls = new Set(
   tools
     .filter((t) => t.compliance_status === "not_ai_tool")
-    .map((t) => `${SITE}/tools/${t.domain}/`)
+    .map((t) => toolUrl(t.domain))
 );
 
 // <lastmod> for every sitemap URL (SEO health check, 2026-11-04), from real
@@ -39,7 +41,7 @@ const noindexUrls = new Set(
 const toolLastmod = new Map(
   tools
     .filter((t) => t.last_checked_at && !Number.isNaN(new Date(t.last_checked_at).getTime()))
-    .map((t) => [`${SITE}/tools/${t.domain}/`, new Date(t.last_checked_at).toISOString()])
+    .map((t) => [toolUrl(t.domain), new Date(t.last_checked_at).toISOString()])
 );
 // src/guides.ts uses import.meta.glob, so it can't be imported here; read its
 // META block as text instead (tests check the result against the pages).
@@ -76,7 +78,7 @@ export default defineConfig({
   site: SITE,
   trailingSlash: "always",
   vite: { plugins: [catalogCountsPlugin()] },
-  integrations: [pageMarkdown(), csp(), sitemap({
+  integrations: [pageMarkdown(), productRedirects(), csp(), sitemap({
       filter: (page) => !noindexUrls.has(page),
       serialize: (item) => ({ ...item, lastmod: lastmodFor(item.url) }),
     })],

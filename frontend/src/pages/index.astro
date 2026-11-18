@@ -5,6 +5,7 @@ import Badge from "../components/Badge.astro";
 import type { Tool } from "../types";
 import { VERDICTS, VERDICT_SLUG, sentence } from "../verdicts";
 import toolsData from "../../data/tools.json";
+import { toolPath } from "../toolPaths.mjs";
 
 const tools = toolsData as Tool[];
 const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
@@ -59,7 +60,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
     </form>
     {picks.length > 0 && (
       <ul class="picks" aria-label="Popular tools">
-        {picks.map((t) => <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>)}
+        {picks.map((t) => <li><a href={toolPath(t.domain)}>{t.name}</a></li>)}
       </ul>
     )}
     <p class="alt"><a href="/tools/">Browse all {tools.length} tool{tools.length === 1 ? "" : "s"}</a> · <a href="#submit">Don't see yours? Ask us to check it</a></p>
@@ -70,7 +71,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
         <Badge status={sample.compliance_status} />
         <p class="s-m">{sampleVerdict.meaning}</p>
         {sampleWhy && (<><p class="s-why-k">Why</p><p class="s-why">{sampleWhy}</p></>)}
-        <a href={`/tools/${sample.domain}/`}>See full verdict →</a>
+        <a href={toolPath(sample.domain)}>See full verdict →</a>
       </aside>
     )}
   </section>
@@ -108,7 +109,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
       <h2 id="nt-h">Which AI tools don't train on your data?</h2>
       <p>{noTrain.length} of the {ratedCount} AI tools PolicyPeek has checked have the badge "Doesn't train on your data": their published policies say your data isn't used to train AI models, or only if you choose to opt in.</p>
       <ul>
-        {noTrain.map((t) => <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>)}
+        {noTrain.map((t) => <li><a href={toolPath(t.domain)}>{t.name}</a></li>)}
       </ul>
       <p><a href="/guides/ai-tools-that-dont-train-on-your-data-uk/">Guide: which AI tools don't train on your data (UK), with quotes and sources →</a></p>
       <ul class="home-guides">
@@ -125,7 +126,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
     <h2 id="all-h">Every tool we've checked</h2>
     <ul>
       {[...tools].sort((a, b) => a.name.localeCompare(b.name)).map((t) => (
-        <li><a href={`/tools/${t.domain}/`}>{t.name}</a></li>
+        <li><a href={toolPath(t.domain)}>{t.name}</a></li>
       ))}
     </ul>
   </section>
