@@ -4,7 +4,7 @@ This file holds decisions and questions that are still open or waiting on Elliot
 
 ## What is open right now
 
-Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 security-audit entry, some tracked elsewhere). Rows 8-17 are the entries kept in full below (row 17 lives inside row 16's entry).
+Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 security-audit entry, some tracked elsewhere). Rows 8-17 are the entries kept in full below (row 17 lives inside row 16's entry). Row 18 is a one-line entry kept only in this table.
 
 | # | Item | Date | Status | Needed from Elliot |
 |---|---|---|---|---|
@@ -25,6 +25,7 @@ Rows 1-7 are items still waiting on Elliot (some from the archived 2026-09-19 se
 | 15 | IP-based identity for the anonymous daily check cap | 2026-08-15 | Watch item, not blocking. Details partly out of date (see its note). | Revisit when real traffic exists. |
 | 16 | Submit-flow reliability pass: questions only you can answer | 2026-10-09 | [x] **Resolved 2026-10-09.** Elliot ruled on all five; items 1, 2 and 4 built and tested, item 3 kept as is on purpose (documented in `admin.ts` `handleApprove`), item 5 moved to row 17. Branch `claude/submit-flow`, not deployed. | Nothing (deploy is row 1). |
 | 17 | Frontend `npm audit`: 4 advisories in indirect dependencies | 2026-10-09 | Open. Fails `scripts/predeploy-check.mjs`. Deliberately not touched on `claude/submit-flow` (Elliot, 2026-10-09). | Run `npm audit fix` in `frontend/` as its own change, or approve an agent doing it. |
+| 18 | Frontend `npm audit` waiver: GHSA-fc5q-39xc-vjpf (picomatch ReDoS) | 2026-11-18 | Open, time-limited. Accepted by Security 18 Nov 2026. `scripts/audit-frontend.mjs` (used by `scripts/predeploy-check.mjs`, so CI too) ignores only this advisory on picomatch and the nine named packages npm flags solely because of it; any other advisory still fails. No patched picomatch exists; npm's suggested astro 5.3.0 downgrade is not applied. **Expires 2 Dec 2026** (the check fails again by itself). Backend audit unchanged. | Nothing now. Remove the waiver as soon as a patched picomatch is released (update the frontend lockfile), or re-decide with Security before 2 Dec. |
 
 Pointer: the resolved 2026-09-19 entry "security audit decisions - 1-3 and 6 built locally, 4 is dashboard-only, 5 still unverified" is the top entry of `DECISIONS_ARCHIVE.md`; its items still awaiting Elliot are rows 1-6 above.
 

@@ -3,7 +3,8 @@
 //
 //   node scripts/predeploy-check.mjs
 //
-// Checks: backend tests + type-check, frontend build, npm audit (both packages),
+// Checks: backend tests + type-check, frontend build, npm audit (both packages;
+// frontend via scripts/audit-frontend.mjs with one expiring waiver),
 // secret-looking strings in tracked files, that env/secret files are not tracked,
 // and a warning if tracked SQL dumps contain client IPs. Run it, then follow
 // DEPLOY_RUNBOOK_*.md. Dashboard-only settings (rate-limit rules, Anthropic spend
@@ -28,7 +29,18 @@ run("backend tests", "npx", ["vitest", "run"], join(REPO, "backend"));
 run("backend type-check", "npx", ["tsc", "--noEmit", "--noUnusedLocals", "--noUnusedParameters", "-p", "."], join(REPO, "backend"));
 run("frontend build", "npm", ["run", "build"], join(REPO, "frontend"));
 // npm audit needs the registry; a network failure is a warning, a real advisory is a failure.
-for (const dir of ["backend", "frontend"]) {
+// Backend: unchanged. Frontend: scripts/audit-frontend.mjs, the same full audit
+// with one time-limited waiver (GHSA-fc5q-39xc-vjpf, expires 2 Dec 2026; remove
+// once picomatch is patched). Its self-test runs first.
+run("frontend audit waiver self-test", process.execPath, ["--test", "scripts/audit-frontend.test.mjs"], REPO);
+{
+  const r = spawnSync(process.execPath, ["scripts/audit-frontend.mjs"], { cwd: REPO, encoding: "utf8", timeout: 150_000 });
+  const text = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim();
+  if (r.status === 0) results.push({ name: "npm audit (frontend)", status: "PASS", detail: (text.match(/^waived until .*$/m) || [""])[0].slice(0, 200) });
+  else if (r.status === 2) results.push({ name: "npm audit (frontend)", status: "WARN", detail: "registry unreachable; not checked" });
+  else results.push({ name: "npm audit (frontend)", status: "FAIL", detail: text.split("\n").slice(-3).join(" | ").slice(0, 200) });
+}
+for (const dir of ["backend"]) {
   const r = spawnSync("npm", ["audit", ...(dir === "backend" ? ["--omit=dev"] : [])], { cwd: join(REPO, dir), encoding: "utf8", timeout: 120_000 });
   const text = `${r.stdout ?? ""}${r.stderr ?? ""}`;
   if (r.status === 0) results.push({ name: `npm audit (${dir})`, status: "PASS", detail: "" });
