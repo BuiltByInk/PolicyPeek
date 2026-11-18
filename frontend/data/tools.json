@@ -978,6 +978,23 @@
     "last_checked_at": "2026-09-01T19:41:05.556Z"
   },
   {
+    "name": "VEED",
+    "domain": "veed.io",
+    "compliance_status": "not_compliant",
+    "summary": "\"Where you use our Applications under a \u2018Free\u2019 subscription, you grant us a right to use any content you upload our Applications to improve those Applications and any of our related products and services (including to train and develop any AI models that power our Applications).\" \"However, if you do object and opt-out of the Development and Improvement Processing during the term of your \u2018Free\u2019 subscription, please note that you cannot continue to use our Applications under that \u2018Free\u2019 tier, and must either delete your account or upgrade to a paid-for subscription.\" Rated on the Free plan. Paid plans (Basic, Pro, Business) and enterprise content are excluded from this training licence. The privacy notice excludes mobile-app uploads. Free users can formally object, but must then delete their account or upgrade. Sources: VEED Terms of Use (last updated 28 August 2026) and Privacy Policy (last updated November, 2026), both checked 18 November 2026. De-identified or aggregated derived information may be kept after erasure.",
+    "data_retention": null,
+    "trains_on_user_data": true,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://www.veed.io/terms-of-use",
+      "https://www.veed.io/privacy"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-18T09:45:00.000Z"
+  },
+  {
     "name": "Venice AI",
     "domain": "venice.ai",
     "compliance_status": "compliant",
