@@ -38,7 +38,7 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
   // levels (Supplemental Terms section 4(d)). The terms govern over the FAQ.
   "freshdesk.com": {
     faq: [
-      { q: "Can I stop Freshdesk Freddy training on my data?", a: "Yes, but only the business that holds the Freshworks account can, by emailing support@freshworks.com. Freshworks' Supplemental Terms offer two levels: opt out of Collaborative Models only (the AI Services keep working), or opt out of all AI Training. Training stops within seven business days of the notice. People who contact a company's Freshdesk helpdesk can't opt out themselves." },
+      { q: "Can I stop Freshdesk Freddy training on my data?", a: "Yes, but only the business that holds the Freshworks account can, by emailing support@freshworks.com. Freshworks' Supplemental Terms offer two levels: opt out of Collaborative Models only (the AI Services keep working, possibly with reduced performance), or opt out of all AI Training. Training stops within seven business days of the notice. People who contact a company's Freshdesk helpdesk can't opt out themselves." },
     ],
   },
   // Steward card wording, 10 Nov 2026 factcheck: opt-out is account holder
