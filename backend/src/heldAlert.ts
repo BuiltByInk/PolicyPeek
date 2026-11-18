@@ -39,6 +39,10 @@ export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow): Promise<
     try {
       const { items, outreachAvailable } = await loadHeldItems(env, row.domain);
       const item = items.find((i) => i.check_id === row.id);
+      // Same rule as the digest (Elliot, 18 Nov): a held check that needs
+      // nothing from him (repeat recheck, already confirmed, waiting on a
+      // reply, hand-checked badge the recheck agrees with) sends no email.
+      if (item?.group === "none") return;
       if (item) detail = renderHeldAlert(item, outreachAvailable);
     } catch {
       console.warn("[alert] held-check detail lookup failed; sending short notice");

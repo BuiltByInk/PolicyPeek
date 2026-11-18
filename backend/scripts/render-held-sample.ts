@@ -12,7 +12,9 @@ const rows = held.map((r: { id: number }) => ({ ...r, raw_fetch: raw.get(r.id) ?
 const items = buildHeldItems(rows, load("tools"), { contacts: load("oc"), sends: load("os"), replies: load("or") });
 
 const today = items.filter((i) => i.checked_at.startsWith("2026-11-18"));
-const alerts = today.map((i) => renderHeldAlert(i, true));
+// Instant alerts are suppressed for items needing nothing (same as the digest).
+const alerts = today.filter((i) => i.group !== "none").map((i) => renderHeldAlert(i, true));
+console.error(`suppressed instant alerts: ${today.filter((i) => i.group === "none").map((i) => `#${i.check_id} ${i.domain}`).join(", ")}`);
 writeFileSync(`${out}/held-alert-sample-2026-11-18.txt`, alerts.map((a) => a.text).join("\n\n----- next alert -----\n\n") + "\n");
 writeFileSync(`${out}/held-alert-sample-2026-11-18.html`, alerts.map((a) => a.html).join("\n<hr>\n"));
 const d = renderDigest(items, true);

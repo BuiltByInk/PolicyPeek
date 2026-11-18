@@ -113,6 +113,27 @@ describe("maybeAlertHeldCheck", () => {
     expect(msg.html).not.toContain('href="https://www.zerodeposit.com');
   });
 
+  it("sends nothing for a held check that needs no action (same rule as the digest)", async () => {
+    const email = mockEmail();
+    const curated = {
+      ...HELD_ROW, id: 161, domain: "elevenlabs.io", is_recheck: 1,
+      extracted_facts: JSON.stringify({ trains_on_user_data: true, data_retention: null, gdpr_mentioned: true, opt_out_available: true, relevant_clauses: [] }),
+    };
+    const tools = [{ domain: "elevenlabs.io", name: "ElevenLabs", compliance_status: "compliant_with_caveats", manual_override: 1, last_checked_at: "2026-10-15T16:02:55.792Z" }];
+    await maybeAlertHeldCheck(sqlEnv({ status: "extracted", held: [curated], tools, email }), { id: 161, domain: "elevenlabs.io" });
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing for an older duplicate or an unchanged repeat of the same tool", async () => {
+    const email = mockEmail();
+    const older = { ...HELD_ROW, id: 150, domain: "copy.ai", is_recheck: 1, created_at: "2026-11-14T04:00:00.000Z", raw_fetch: "same" };
+    const newer = { ...older, id: 151, created_at: "2026-11-15T04:00:00.000Z" };
+    const tools = [{ domain: "copy.ai", name: "Copy.ai", compliance_status: "unrated", manual_override: 0, last_checked_at: "2026-09-03T10:43:26.255Z" }];
+    await maybeAlertHeldCheck(sqlEnv({ status: "extracted", held: [older, newer], tools, email }), { id: 151, domain: "copy.ai" });
+    await maybeAlertHeldCheck(sqlEnv({ status: "extracted", held: [older, newer], tools, email }), { id: 150, domain: "copy.ai" });
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
   it("falls back to the short notice when the detail lookup fails", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const email = mockEmail();
