@@ -532,8 +532,10 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(email.send).toHaveBeenCalledTimes(1);
     const heldBody = (email.send.mock.calls as unknown as Array<[{ text: string; to: string }]>)[0][0];
     expect(heldBody.to).toBe("elliotink@pm.me");
-    expect(heldBody.text).toContain("#1 held-tool.com");
-    expect(heldBody.text).not.toContain("https://held-tool.com/privacy");
+    // Since 2026-11-18 held alerts carry per-tool detail, including the policy URL (as text).
+    expect(heldBody.text).toContain("held-tool.com - check #1");
+    expect(heldBody.text).toContain("Policy checked: https://held-tool.com/privacy");
+    expect(heldBody.text).toContain("Proposed verdict: Doesn't train on your data");
     expect(heldBody.text).not.toContain("203.0.113.20");
 
     sitePolicy("auto-tool.com", "https://auto-tool.com/privacy", NOT_COMPLIANT);
