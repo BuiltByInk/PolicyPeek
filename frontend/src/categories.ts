@@ -47,7 +47,7 @@ export const CATEGORIES: Category[] = [
     name: "AI video tools",
     title: "AI video tools: which train on your data?",
     description: "PolicyPeek badges for AI video tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["runway.com", "pika.art", "kling.ai", "invideo.io", "lumalabs.ai", "pictory.ai", "heygen.com"],
+    domains: ["runway.com", "pika.art", "kling.ai", "invideo.io", "lumalabs.ai", "pictory.ai", "heygen.com", "veed.io"],
   },
   {
     slug: "voice",
