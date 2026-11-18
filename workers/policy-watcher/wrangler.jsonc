@@ -1,0 +1,32 @@
+// Policy watcher. NOT DEPLOYED. No cron at top level; the nightly cron sits in
+// the production block, commented out. No send_email binding, no AI binding.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "policypeek-policy-watcher-dev",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "limits": { "cpu_ms": 60000 },
+  "d1_databases": [{ "binding": "DB", "database_name": "policypeek-watcher-dev", "database_id": "e29f6c61-7823-4dd9-9a63-dd6c6b11e14a", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "policypeek-policy-snapshots-dev" }],
+  "queues": {
+    "producers": [{ "binding": "WATCH_QUEUE", "queue": "policypeek-watch-dev" }],
+    "consumers": [{ "queue": "policypeek-watch-dev", "max_batch_size": 1, "max_concurrency": 6, "max_retries": 1 }]
+  },
+  // Secret: WATCHER_ADMIN_TOKEN (>= 32 chars), wrangler secret put; never here.
+  "env": {
+    "production": {
+      "name": "policypeek-policy-watcher",
+      "workers_dev": false,
+      "d1_databases": [{ "binding": "DB", "database_name": "policypeek-watcher", "database_id": "REPLACE_WITH_PROD_DB_ID", "migrations_dir": "migrations" }],
+      "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "policypeek-policy-snapshots" }],
+      "queues": {
+        "producers": [{ "binding": "WATCH_QUEUE", "queue": "policypeek-watch" }],
+        "consumers": [{ "queue": "policypeek-watch", "max_batch_size": 1, "max_concurrency": 6, "max_retries": 1 }]
+      }
+      // Enable only after Security approves the watcher:
+      // "triggers": { "crons": ["0 2 * * *"] }   // 02:00 UTC nightly
+    }
+  }
+}
