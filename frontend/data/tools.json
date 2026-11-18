@@ -978,6 +978,25 @@
     "last_checked_at": "2026-09-01T19:41:05.556Z"
   },
   {
+    "name": "Venice AI",
+    "domain": "venice.ai",
+    "compliance_status": "compliant",
+    "summary": "\"Notwithstanding anything to the contrary, Venice.ai agrees that it shall not use, and shall require that third-party large language model providers (\u201cThird-Party LLM Providers\u201d) do not use, any User Content to train any machine learning, deep learning, or statistical learning algorithms, LLMs, neural networks, or models.\" Venice's Terms of Service call themselves a legally binding contract and define User Content as your inputs together with the outputs, so both your prompts and the responses are covered. The promise about outside providers covers third-party LLM (text model) providers only; the Terms don't say it covers image or video model providers. If you choose to submit feedback, the Terms (\u00a77.4) give Venice a separate unrestricted, perpetual licence to use that feedback for any purpose, including to improve the service; that is not stated as training, and the no-training promise above does not cover feedback. Storage, not training: Venice's Privacy Policy says it won't access or store the content of your prompts or outputs, but it stores videos you generate temporarily until you download them. In Anonymous mode, Venice's privacy page says you should assume the model provider is storing your content. Venice's API docs say the prompt cache keeps processed inputs for between a few minutes and about an hour. Sources: Venice Terms of Service, last updated 8 June 2026; Privacy Policy, effective 2 June 2026; the privacy page and API docs have no page date. All were checked 18 November 2026.",
+    "data_retention": null,
+    "trains_on_user_data": false,
+    "gdpr_mentioned": null,
+    "source_urls": [
+      "https://venice.ai/legal/tos",
+      "https://venice.ai/legal/privacy-policy",
+      "https://venice.ai/privacy",
+      "https://docs.venice.ai/guides/features/prompt-caching"
+    ],
+    "verified": true,
+    "auto_published": false,
+    "shared_domain": false,
+    "last_checked_at": "2026-11-18T09:12:00.000Z"
+  },
+  {
     "name": "Windsurf",
     "domain": "windsurf.com",
     "compliance_status": "compliant_with_caveats",

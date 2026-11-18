@@ -19,7 +19,7 @@ export const CATEGORIES: Category[] = [
     name: "AI chat tools",
     title: "AI chat tools: which train on your data?",
     description: "PolicyPeek badges for AI chat tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["openai.com", "claude.com", "google.com", "microsoft.com", "poe.com", "you.com", "perplexity.ai", "deepseek.com", "kimi.com", "duckduckgo.com", "kagi.com", "mistral.ai"],
+    domains: ["openai.com", "claude.com", "google.com", "microsoft.com", "poe.com", "you.com", "perplexity.ai", "deepseek.com", "kimi.com", "duckduckgo.com", "kagi.com", "mistral.ai", "venice.ai"],
   },
   {
     slug: "coding",
