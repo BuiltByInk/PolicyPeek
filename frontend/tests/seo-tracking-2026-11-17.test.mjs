@@ -43,13 +43,13 @@ test("the nine tool pages that had no guide links now have at least one", () => 
   assert.deepEqual(missing, []);
 });
 
-test("free-checker source tokens are known catalog keys, and current counts are 66/65", () => {
+test("free-checker source tokens are known catalog keys, and current counts are 67/66", () => {
   const md = read("src/guides/free-ai-privacy-policy-checker.md");
   const keys = [...md.matchAll(/\{\{([A-Za-z0-9_]+)\}\}/g)].map((m) => m[1]);
   assert.ok(keys.length >= 5, "expected count tokens in the free-checker guide");
   for (const k of keys) assert.ok(k in COUNT_TOKENS, k);
-  assert.equal(COUNT_TOKENS.TOOL_COUNT, "66");
-  assert.equal(COUNT_TOKENS.RATED_COUNT, "65");
-  assert.match(applyCounts(md), /covers 66 tools/);
+  assert.equal(COUNT_TOKENS.TOOL_COUNT, "67");
+  assert.equal(COUNT_TOKENS.RATED_COUNT, "66");
+  assert.match(applyCounts(md), /covers 67 tools/);
   assert.doesNotMatch(applyCounts(md), /\{\{/);
 });
