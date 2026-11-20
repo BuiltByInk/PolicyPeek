@@ -90,7 +90,7 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
   },
   // Steward notes paragraph, 18 Nov 2026 factcheck (card notes / FAQ).
   // Our own words; not in quotation marks. Badge unchanged.
-  // Answer line: NOT steward-approved. The policy uses "may" with an
+  // Answer line: steward-approved 20 Nov 2026. The policy uses "may" with an
   // account-settings opt-out and does not state a default, so this one-line
   // alternative only restates the Privacy Policy sentence (kept in its own
   // commit so it can be approved separately).

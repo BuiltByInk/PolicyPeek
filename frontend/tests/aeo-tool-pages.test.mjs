@@ -300,7 +300,7 @@ test("Claude: badge unchanged, verbatim quotes replace our own words, notes FAQ 
 
 const CLAUDE_ANSWER = "Anthropic's Privacy Policy says it may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.";
 
-test("Claude: alternative answer line does not state a default (NOT steward-approved)", () => {
+test("Claude: alternative answer line does not state a default (steward-approved 20 Nov 2026)", () => {
   const h = read("tools/claude.com/index.html");
   const a = text(h.match(/<p class="answer"[^>]*>([\s\S]*?)<\/p>/)[1]);
   assert.ok(a.startsWith(CLAUDE_ANSWER), a);
