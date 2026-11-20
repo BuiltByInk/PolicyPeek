@@ -19,7 +19,7 @@ export const CATEGORIES: Category[] = [
     name: "AI chat tools",
     title: "AI chat tools: which train on your data?",
     description: "PolicyPeek badges for AI chat tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["openai.com", "claude.com", "google.com", "microsoft.com", "poe.com", "you.com", "perplexity.ai", "deepseek.com", "kimi.com", "duckduckgo.com", "kagi.com", "mistral.ai"],
+    domains: ["openai.com", "claude.com", "google.com", "microsoft.com", "poe.com", "you.com", "perplexity.ai", "deepseek.com", "kimi.com", "duckduckgo.com", "kagi.com", "mistral.ai", "venice.ai"],
   },
   {
     slug: "coding",
@@ -47,7 +47,7 @@ export const CATEGORIES: Category[] = [
     name: "AI video tools",
     title: "AI video tools: which train on your data?",
     description: "PolicyPeek badges for AI video tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["runway.com", "pika.art", "kling.ai", "invideo.io", "lumalabs.ai", "pictory.ai", "heygen.com"],
+    domains: ["runway.com", "pika.art", "kling.ai", "invideo.io", "lumalabs.ai", "pictory.ai", "heygen.com", "veed.io"],
   },
   {
     slug: "voice",
@@ -85,7 +85,7 @@ export const CATEGORIES: Category[] = [
     title: "AI business and support tools: which train on your data?",
     pageTitle: "Business tools: which train on your data?",
     description: "PolicyPeek badges for workplace, CRM and support tools in the catalog, sourced from each tool's own published policy.",
-    domains: ["hubspot.com", "intercom.com", "zendesk.com", "monday.com", "slack.com"],
+    domains: ["hubspot.com", "intercom.com", "zendesk.com", "freshdesk.com", "monday.com", "slack.com"],
   },
 ];
 

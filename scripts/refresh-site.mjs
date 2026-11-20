@@ -28,6 +28,7 @@ import { spawnSync } from "node:child_process";
 import { createPrompter } from "./lib/confirm.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { toolPath } from "../frontend/src/toolPaths.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FRONTEND = join(REPO, "frontend");
@@ -97,7 +98,7 @@ if (!run("npm", ["run", "build"], FRONTEND)) restore("Build failed.");
 const problems = [];
 const sitemap = existsSync(join(DIST, "sitemap-0.xml")) ? readFileSync(join(DIST, "sitemap-0.xml"), "utf8") : "";
 for (const t of gen) {
-  const file = join(DIST, "tools", t.domain, "index.html");
+  const file = join(DIST, toolPath(t.domain), "index.html");
   if (!existsSync(file)) {
     problems.push(`no page built for ${t.domain}`);
     continue;
@@ -108,7 +109,7 @@ for (const t of gen) {
   if (!head.includes('property="og:image"')) problems.push(`${t.domain}: missing og:image`);
   if (notAi && !head.includes('name="robots" content="noindex')) problems.push(`${t.domain}: not_ai_tool but not noindex`);
   if (!notAi && head.includes('name="robots" content="noindex')) problems.push(`${t.domain}: noindex on an indexable tool`);
-  const inSitemap = sitemap.includes(`/tools/${t.domain}/`);
+  const inSitemap = sitemap.includes(toolPath(t.domain));
   if (notAi && inSitemap) problems.push(`${t.domain}: noindex page is in the sitemap`);
   if (!notAi && !inSitemap) problems.push(`${t.domain}: missing from the sitemap`);
 }
