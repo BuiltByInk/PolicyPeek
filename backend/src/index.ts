@@ -25,6 +25,9 @@ export interface Env {
   // Optional: Cloudflare Email Sending binding, pinned to elliotink@pm.me.
   // Used for held-check, digest, stuck-pending and overdue-recheck alerts. See alert.ts.
   ALERT_EMAIL?: SendEmail;
+  // Optional, read-only use: policypeek-outreach D1, so held alerts can show
+  // clarification-email status. Only SELECTs are issued (heldDetail.ts).
+  OUTREACH_DB?: D1Database;
 }
 
 

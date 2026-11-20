@@ -1,67 +1,70 @@
 import type { Env } from "./index";
-import { sendAlert } from "./alert";
+import { sendAlert, MAX_DETAIL_TEXT } from "./alert";
 import { cleanText } from "./textUtil";
+import { loadHeldItems, renderDigest, renderHeldAlert } from "./heldDetail";
 
 // The existing human-review listing. Included in alerts as a pointer only;
-// opening it still needs the admin token. No new secret or binding.
+// opening it still needs admin sign-in. No new secret.
 export const ADMIN_QUEUE_URL = "https://api.getpolicypeek.com/v1/admin/pending";
-export const HELD_DIGEST_LIMIT = 20;
 export const TEST_ALERT_TEXT =
   "PolicyPeek: test alert. The held-check notifier is live. No checks were changed.";
 
 export interface HeldCheckRow {
   id: number;
   domain: string;
-  // Accepted for call-site compatibility, but never included in the email.
-  // Content is check IDs and domains only (no source URLs, no requester or reply text).
   source_url?: string | null;
 }
 
+// Fallback text used only if the detail lookup fails, so a held check still
+// produces a notice.
 export function formatHeldCheckAlert(row: HeldCheckRow): string {
   const domain = cleanText(row.domain, 200) ?? "(unknown domain)";
   return [
     "PolicyPeek: new check held for review.",
     `#${row.id} ${domain}`,
+    "(Details could not be loaded for this alert; see the review queue.)",
   ].join("\n");
 }
 
-export function formatHeldDigest(rows: Array<{ id: number; domain: string }>): string {
-  const shown = rows.slice(0, HELD_DIGEST_LIMIT).map((r) => {
-    const domain = cleanText(r.domain, 200) ?? "(unknown domain)";
-    return `#${r.id} ${domain}`;
-  });
-  const more = rows.length > HELD_DIGEST_LIMIT ? `\n...and ${rows.length - HELD_DIGEST_LIMIT} more` : "";
-  return `PolicyPeek: ${rows.length} check(s) still waiting for review.\n${shown.join("\n")}${more}`;
-}
-
 // Never throws: an alert failure must not fail extraction or the /v1/check
-// request (extraction already runs in ctx.waitUntil). Only alerts when the
-// row is still 'extracted' (held for a person), not when it was
-// auto-published ('approved') or never finished extraction ('pending').
-// runExtraction is invoked once per pending id, so this fires once per check.
-export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow): Promise<void> {
+// request. Only alerts when the row is still 'extracted' (held for a person).
+// Since 2026-11-18 the email carries per-tool detail (heldDetail.ts).
+// opts.scheduled: true only from the daily recheck job. A request-triggered
+// alert (public /v1/check) never reads OUTREACH_DB (Security, 18 Nov).
+export async function maybeAlertHeldCheck(env: Env, row: HeldCheckRow, opts: { scheduled?: boolean } = {}): Promise<void> {
   try {
     const current = await env.DB.prepare("SELECT status FROM pending_checks WHERE id = ?")
       .bind(row.id)
       .first<{ status: string }>();
     if (current?.status !== "extracted") return;
-    await sendAlert(env, formatHeldCheckAlert(row));
+    let detail: ReturnType<typeof renderHeldAlert> | null = null;
+    try {
+      const { items, outreachAvailable } = await loadHeldItems(env, row.domain, { withOutreach: opts.scheduled === true });
+      const item = items.find((i) => i.check_id === row.id);
+      // Same rule as the digest (Elliot, 18 Nov): a held check that needs
+      // nothing from him (repeat recheck, already confirmed, waiting on a
+      // reply, hand-checked badge the recheck agrees with) sends no email.
+      if (item?.group === "none") return;
+      if (item) detail = renderHeldAlert(item, outreachAvailable);
+    } catch {
+      console.warn("[alert] held-check detail lookup failed; sending short notice");
+    }
+    if (detail) await sendAlert(env, detail.text, { html: detail.html, maxText: MAX_DETAIL_TEXT });
+    else await sendAlert(env, formatHeldCheckAlert(row));
   } catch {
     console.warn("[alert] held-check notify failed (status read or send)");
   }
 }
 
-// Daily reminder of the review queue. Sends nothing when it is empty.
-// Read-only: never updates pending_checks or tools.
+// Daily digest, grouped by what Elliot has to do. Sends nothing when nothing
+// needs him (renderDigest returns null), including an empty queue.
+// Read-only: never updates pending_checks, tools or outreach tables.
 export async function alertHeldReviewQueue(env: Env): Promise<void> {
   try {
-    const { results } = await env.DB.prepare(
-      `SELECT id, domain FROM pending_checks
-       WHERE status = 'extracted'
-       ORDER BY created_at ASC, id ASC`
-    ).all<{ id: number; domain: string }>();
-    if (results.length === 0) return;
-    await sendAlert(env, formatHeldDigest(results));
+    const { items, outreachAvailable } = await loadHeldItems(env);
+    const digest = renderDigest(items, outreachAvailable);
+    if (!digest) return;
+    await sendAlert(env, digest.text, { html: digest.html, maxText: MAX_DETAIL_TEXT });
   } catch {
     console.warn("[alert] held-review digest failed (query or send)");
   }

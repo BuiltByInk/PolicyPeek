@@ -478,7 +478,7 @@ export async function runExtraction(
     await noteAttempt(`recheck failed: ${reason}`).catch(() => {});
   }
   } finally {
-    await maybeAlertHeldCheck(env, { id: pendingId, domain, source_url: sourceUrl });
+    await maybeAlertHeldCheck(env, { id: pendingId, domain, source_url: sourceUrl }, { scheduled: scheduledRecheck });
   }
 }
 
