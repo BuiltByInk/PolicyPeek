@@ -10,12 +10,13 @@ import { toolFaq, cardTitle, clamp } from "../../toolFaq";
 import { qaForDomain, NOT_STATED } from "../../qa";
 import { answerLine, asOfText, checkedDate, primarySource, quoteParts, optOut, ICO_AI_GUIDANCE } from "../../toolAnswer";
 import { categoryFor, relatedTools } from "../../categories";
-import { planTable, optOutSteps, policyUpdated, jsonLdV2 } from "../../toolPageV2";
+import { toolPath, toolUrl as cardUrl, toolRouteParam } from "../../toolPaths.mjs";
+import { planTable, optOutSteps, policyUpdated, jsonLdV2, REVIEWER_NAME } from "../../toolPageV2";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
   return tools.map((tool) => ({
-    params: { domain: tool.domain },
+    params: { card: toolRouteParam(tool.domain) },
     props: { tool },
   }));
 }
@@ -132,10 +133,10 @@ const breadcrumbs = {
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "PolicyPeek", item: siteUrl },
     { "@type": "ListItem", position: 2, name: "Tools", item: `${siteUrl}tools/` },
-    { "@type": "ListItem", position: 3, name: tool.name, item: `${siteUrl}tools/${tool.domain}/` },
+    { "@type": "ListItem", position: 3, name: tool.name, item: cardUrl(tool.domain) },
   ],
 };
-const toolUrl = `${siteUrl}tools/${tool.domain}/`;
+const toolUrl = cardUrl(tool.domain);
 const jsonLd = [
   breadcrumbs,
   {
@@ -304,7 +305,7 @@ const jsonLd = [
       )}
       <div>
         <dt>Reviewed by a human</dt>
-        <dd>{tool.auto_published ? "No — auto-published" : "Yes"}</dd>
+        <dd>{tool.auto_published ? "No — auto-published" : `Yes. Checked by ${REVIEWER_NAME}`}</dd>
       </div>
     </dl>
   </section>
@@ -338,7 +339,7 @@ const jsonLd = [
       <h2 id="rel-h">Related tools</h2>
       <ul>
         {related.map((t) => (
-          <li><a href={`/tools/${t.domain}/`}>Does {t.name} train on my data?</a></li>
+          <li><a href={toolPath(t.domain)}>Does {t.name} train on my data?</a></li>
         ))}
       </ul>
       {category && <p class="hub"><a href={`/categories/${category.slug}/`}>{category.title}</a></p>}
@@ -354,7 +355,7 @@ const jsonLd = [
         <button type="submit">Look it up</button>
       </div>
     </form>
-    <button type="button" class="share" data-share-url={`${siteUrl}tools/${tool.domain}/`} data-share-title={pageTitle}>Copy link / share this verdict</button>
+    <button type="button" class="share" data-share-url={toolUrl} data-share-title={pageTitle}>Copy link / share this verdict</button>
     <p class="share-msg" role="status" aria-live="polite"></p>
   </section>
   <script>

@@ -45,6 +45,14 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "Can I stop Intercom Fin training on my data?", a: "Yes. An admin can request an opt-out in Settings > Workspace > Security > AI model training and fine-tuning. Intercom says it processes opt-out requests within 30 days. Until then, Fin CX models train by default on de-identified Fin conversation logs (with listed exclusions such as EU/AU regional hosting and trial accounts)." },
     ],
   },
+  // Steward card wording, 17 Nov 2026 factcheck: opt-out is the account
+  // holder (the business) only, by email to support@freshworks.com, at two
+  // levels (Supplemental Terms section 4(d)). The terms govern over the FAQ.
+  "freshdesk.com": {
+    faq: [
+      { q: "Can I stop Freshdesk Freddy training on my data?", a: "Yes, but only the business that holds the Freshworks account can, by emailing support@freshworks.com. Freshworks' Supplemental Terms offer two levels: opt out of Collaborative Models only (the AI Services keep working, possibly with reduced performance), or opt out of all AI Training. Training stops within seven business days of the notice. People who contact a company's Freshdesk helpdesk can't opt out themselves." },
+    ],
+  },
   // Steward card wording, 10 Nov 2026 factcheck: opt-out is account holder
   // (the business) only, per subdomain, via support. End users who email a
   // company's Zendesk helpdesk cannot opt out themselves. Backed by the
@@ -66,6 +74,18 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
   "kling.ai": {
     faq: [
       { q: "Can I stop Kling AI training on my data?", a: "Yes, by emailing support@kling.ai to revoke the authorization. That is a support-only revocation on a default-on licence. The revocation may not reach usage or aggregated data." },
+    ],
+  },
+  // Steward-approved override wording, 18 Nov 2026 factcheck (PR #61).
+  // Scoped to the Free plan; no promise about paid plans beyond VEED's own exclusion.
+  // Badge stays the standard "Trains on your data, no opt-out" label (no plan-line
+  // field exists on ToolOverride; DeepL's "Rated on DeepL's free tier" comes from
+  // its tools.json summary, not an override).
+  "veed.io": {
+    answer: "Yes, on the Free plan. VEED's terms let it use content uploaded on a Free subscription to train its AI models. A Free user can only stop this by deleting their account or moving to a paid plan. VEED says this licence doesn't apply to its paid plans (Basic, Pro and Business) or to enterprise customers.",
+    faq: [
+      { q: "Can I stop VEED training on my data?", a: "Not while you stay on the Free plan. VEED's privacy notice lets Free users formally object, but says that after objecting you can't keep using the Free tier and must either delete your account or upgrade to a paid plan. PolicyPeek doesn't count leaving the plan as an opt-out, so the Free plan is rated 'no opt-out'. VEED also says it may keep information derived from your content after deletion if it has been de-identified, anonymised or aggregated." },
+      { q: "If I upload documents, are they used for training?", a: "On the Free plan, yes. VEED's terms let it use content you upload under a Free subscription to train and develop the AI models behind its apps. Its privacy notice says this doesn't include content uploaded through VEED's mobile apps, and its terms say it doesn't apply to paid plans or enterprise customers. We found nothing else in VEED's policies about training on paid-plan uploads." },
     ],
   },
 };

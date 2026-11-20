@@ -1,0 +1,4 @@
+{
+  "_comment": "Several products per domain (D4, best-answer plan 18 Nov 2026). Maps a catalog row's domain (its D1 key, e.g. a product host such as notebooklm.google.com) to a product URL /tools/<parent>/<slug>/. Empty until a product card is approved; the old /tools/<domain>/ path then 301s to the new one. See src/toolPaths.mjs.",
+  "products": {}
+}

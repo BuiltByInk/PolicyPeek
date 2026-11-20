@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import rows from "../../../data/policy-changes.json";
 import { publishedChanges, type PolicyChange } from "../../policyChanges";
+import { toolUrl } from "../../toolPaths.mjs";
 
 function xml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -9,7 +10,7 @@ function xml(s: string): string {
 export const GET: APIRoute = () => {
   const changes = publishedChanges(rows as PolicyChange[]);
   const items = changes.map((c) => {
-    const link = `https://getpolicypeek.com/tools/${c.toolDomain}/`;
+    const link = toolUrl(c.toolDomain);
     const pub = `${c.date}T00:00:00Z`;
     return `    <item>
       <title>${xml(`${c.toolName}: policy text changed`)}</title>

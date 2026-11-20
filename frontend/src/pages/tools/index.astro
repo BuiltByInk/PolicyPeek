@@ -5,6 +5,7 @@ import SubmitTool from "../../components/SubmitTool.astro";
 import type { Tool } from "../../types";
 import { VERDICTS, VERDICT_SLUG, reasonFor } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
+import { toolPath, toolUrl } from "../../toolPaths.mjs";
 
 const tools = (toolsData as Tool[]).slice().sort((a, b) => a.name.localeCompare(b.name));
 const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t) => t.compliance_status === v.status).length]));
@@ -14,7 +15,7 @@ const itemListLd = {
   "@type": "ItemList",
   name: "AI tools checked by PolicyPeek",
   numberOfItems: tools.length,
-  itemListElement: tools.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: `https://getpolicypeek.com/tools/${t.domain}/` })),
+  itemListElement: tools.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: toolUrl(t.domain) })),
 };
 const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
 ---
@@ -74,7 +75,7 @@ const rank = Object.fromEntries(VERDICTS.map((v, i) => [v.status, i]));
           data-rank={rank[tool.compliance_status]}
         >
           <div class="who">
-            <a class="tool-name" href={`/tools/${tool.domain}/`}>{tool.name}</a>
+            <a class="tool-name" href={toolPath(tool.domain)}>{tool.name}</a>
             {tool.name.toLowerCase() !== tool.domain.toLowerCase() && <span class="dom">{tool.domain}</span>}
           </div>
           <div class="verdict"><Badge status={tool.compliance_status} /></div>

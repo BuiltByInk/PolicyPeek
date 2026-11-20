@@ -94,16 +94,20 @@ test("last-checked age is filled in the browser from the same date (no stale bui
   }
 });
 
-test("JSON-LD: datePublished, isBasedOn and an Organization reviewer only for human-reviewed cards", () => {
+test("JSON-LD: datePublished, isBasedOn and the Elliot Inkley reviewer only for human-reviewed cards", () => {
   for (const t of tools) {
     const wp = ldBlocks(page(t)).find((b) => b["@type"] === "WebPage");
-    assert.equal(wp.datePublished, firstPub[t.domain], `${t.domain}: datePublished`);
+    const checkedDay = typeof t.last_checked_at === "string" ? t.last_checked_at.slice(0, 10) : null;
+    const expectPub = firstPub[t.domain] && !(checkedDay && /^\d{4}-\d{2}-\d{2}$/.test(checkedDay) && firstPub[t.domain] > checkedDay) ? firstPub[t.domain] : undefined;
+    assert.equal(wp.datePublished, expectPub, `${t.domain}: datePublished`);
     if (wp.datePublished && wp.dateModified) assert.ok(wp.datePublished <= wp.dateModified.slice(0, 10), `${t.domain}: published after modified`);
     const http = t.source_urls.filter(isHttp);
     assert.deepEqual(wp.isBasedOn, http.length === 0 ? undefined : http.length === 1 ? http[0] : http, `${t.domain}: isBasedOn`);
     if (t.auto_published) assert.equal(wp.reviewedBy, undefined, `${t.domain}: auto-published card claims a reviewer`);
-    else assert.deepEqual(wp.reviewedBy, { "@type": "Organization", name: "PolicyPeek", url: "https://getpolicypeek.com/" });
-    assert.ok(!JSON.stringify(wp.reviewedBy ?? {}).includes("Person"));
+    else assert.deepEqual(wp.reviewedBy, { "@type": "Person", name: "Elliot Inkley" });
+    const html = page(t);
+    if (t.auto_published) assert.ok(!html.includes("Checked by Elliot Inkley"), `${t.domain}: auto-published card shows the credit`);
+    else assert.ok(html.includes("Checked by Elliot Inkley"), `${t.domain}: credit line missing`);
   }
 });
 

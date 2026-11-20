@@ -26,8 +26,10 @@ test("no built page links to a /tools/ page that doesn't exist", () => {
   for (const f of files) {
     const s = readFileSync(f, "utf8");
     for (const m of s.matchAll(/(?:href="|https:\/\/getpolicypeek\.com)(\/tools\/[^"'\s)#?<]+)/g)) {
-      let p = m[1].replace(/\/?$/, "/");
       checked++;
+      // llms.txt v2 (D3) links each card's Markdown twin, /tools/<domain>.md.
+      if (m[1].endsWith(".md")) { if (!existsSync(join(dir, m[1]))) broken.push(`${relative(dir, f)} -> ${m[1]}`); continue; }
+      let p = m[1].replace(/\/?$/, "/");
       if (!existsSync(join(dir, p, "index.html"))) broken.push(`${relative(dir, f)} -> ${p}`);
     }
   }

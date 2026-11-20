@@ -9,6 +9,7 @@ import type { Tool } from "./types";
 import { qaForDomain, type QaEntry } from "./qa";
 import { overrideFor } from "./toolOverrides";
 import { quoteParts } from "./toolAnswer";
+import { toolPath } from "./toolPaths.mjs";
 import firstPublishedData from "../data/first-published.json";
 
 export interface SourcedText { text: string; href: string }
@@ -20,7 +21,7 @@ const isHttp = (u: string) => { try { const x = new URL(u); return x.protocol ==
  *  steward-approved override rows, else none (the table is hidden). */
 export function planTable(tool: Tool): { rows: PlanTableRow[]; from: "questions" | "override" } | null {
   const qa: QaEntry | undefined = qaForDomain(tool.domain);
-  const toolUrl = `/tools/${tool.domain}/`;
+  const toolUrl = toolPath(tool.domain);
   if (qa && qa.plans.length) {
     const src = (s: string) => (s === "catalog" ? toolUrl : qa.sources.find((x) => x.id === s)?.url ?? toolUrl);
     return { from: "questions", rows: qa.plans.map((p) => ({
@@ -65,15 +66,22 @@ export function firstPublished(tool: Tool): string | null {
 }
 
 /** JSON-LD additions for the tool's WebPage: datePublished, isBasedOn (the
- *  http(s) sources) and, only for human-reviewed cards, reviewedBy PolicyPeek.
- *  Never a person (the plan leaves that to Elliot). */
-export function jsonLdV2(tool: Tool, siteUrl: string): Record<string, unknown> {
+ *  http(s) sources) and, only for human-reviewed cards, reviewedBy Elliot Inkley
+ *  (Elliot approved the "Checked by Elliot Inkley" credit by email, 18 Nov 2026). */
+export const REVIEWER_NAME = "Elliot Inkley";
+const REVIEWER = { "@type": "Person", name: REVIEWER_NAME } as const;
+
+export function jsonLdV2(tool: Tool, _siteUrl: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const pub = firstPublished(tool);
-  if (pub) out.datePublished = pub;
+  // A card can land on main a day after its last check (Freshdesk: checked 17
+  // Nov, merged 18 Nov). datePublished after dateModified is invalid, so the
+  // date is left out then rather than moved (never a guess).
+  const checkedDay = typeof tool.last_checked_at === "string" && ISO_DAY.test(tool.last_checked_at.slice(0, 10)) ? tool.last_checked_at.slice(0, 10) : null;
+  if (pub && !(checkedDay && pub > checkedDay)) out.datePublished = pub;
   const based = tool.source_urls.filter(isHttp);
   if (based.length) out.isBasedOn = based.length === 1 ? based[0] : based;
-  if (!tool.auto_published) out.reviewedBy = { "@type": "Organization", name: "PolicyPeek", url: siteUrl };
+  if (!tool.auto_published) out.reviewedBy = REVIEWER;
   return out;
 }
 

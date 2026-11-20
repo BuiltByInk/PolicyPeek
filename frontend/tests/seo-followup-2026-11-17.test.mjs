@@ -40,8 +40,8 @@ test("guide Markdown present-tense catalog counts use build-time tokens, not a s
     );
     assert.deepEqual(current, [], `${f} still says "61 tools" after substitution`);
   }
-  assert.equal(COUNT_TOKENS.TOOL_COUNT, "67");
-  assert.equal(COUNT_TOKENS.RATED_COUNT, "66");
+  assert.equal(COUNT_TOKENS.TOOL_COUNT, "68");
+  assert.equal(COUNT_TOKENS.RATED_COUNT, "67");
 });
 
 test("homepage keeps the don't-train guide and adds Marketing's four anchors", () => {
@@ -64,7 +64,7 @@ test("low-risk in-page /tools and /about links use trailing slashes", () => {
     "src/pages/index.astro",
     "src/pages/about.astro",
     "src/pages/tools/index.astro",
-    "src/pages/tools/[domain].astro",
+    "src/pages/tools/[...card].astro",
   ];
   for (const f of files) {
     const src = read(f);

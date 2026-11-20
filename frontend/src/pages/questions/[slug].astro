@@ -6,6 +6,7 @@ import { VERDICTS, safeHttpUrl } from "../../verdicts";
 import toolsData from "../../../data/tools.json";
 import { PUBLISHED_QA, NOT_STATED, type QaEntry, type Quote } from "../../qa";
 import { qaAnswer, qaTitle, fmtDate } from "../../qa-text";
+import { toolPath } from "../../toolPaths.mjs";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
@@ -19,7 +20,7 @@ export async function getStaticPaths() {
 const { q, tool } = Astro.props as { q: QaEntry; tool: Tool };
 const siteUrl = Astro.site!.href;
 const url = `${siteUrl}questions/${q.slug}/`;
-const toolUrl = `/tools/${tool.domain}/`;
+const toolUrl = toolPath(tool.domain);
 const verdict = VERDICTS.find((v) => v.status === tool.compliance_status)!;
 const checkedIso = tool.last_checked_at!.slice(0, 10);
 const answer = qaAnswer(tool)!;
