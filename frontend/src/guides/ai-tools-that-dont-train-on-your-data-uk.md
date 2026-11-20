@@ -2,7 +2,7 @@
 
 Of the {{RATED_COUNT}} AI tools PolicyPeek has checked, {{COUNT_compliant}} have published policies that say they don't train AI on your data, including Notion AI, Zoom AI Companion, Fireflies.ai, tl;dv, Tabnine and Kagi. [Monday.com AI](https://getpolicypeek.com/tools/monday.com/) and [Duck.ai](https://getpolicypeek.com/tools/duckduckgo.com/) also carry that badge; see each tool page for the quoted policy and source. ChatGPT trains by default and Claude trains on consumer plans by default; both let you opt out. DeepL's free tier trains with no opt-out found.
 
-*Last checked: 4 November 2026 (latest check across the tools below; each row shows its own date). Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
+*Last checked: 18 November 2026 (latest check across the tools below; each row shows its own date). Verdicts come from each company's own published policy, read by [PolicyPeek](https://getpolicypeek.com/). Not legal advice.*
 
 ## Which AI tools don't train on your data?
 
@@ -29,7 +29,7 @@ Of the {{RATED_COUNT}} AI tools PolicyPeek has checked, {{COUNT_compliant}} have
 | Tool | PolicyPeek badge | What we recorded from the policy | Source | Last checked |
 |---|---|---|---|---|
 | [ChatGPT](https://getpolicypeek.com/tools/openai.com/) | **Trains by default, you can opt out** | We may use Content you provide us to improve our Services, for example to train the models that power ChatGPT. Read our instructions on how you can opt out of our use of your Content to train our models. | [policy](https://openai.com/policies/row-privacy-policy/) | 2026-09-01 |
-| [Claude](https://getpolicypeek.com/tools/claude.com/) | **Trains by default, you can opt out** | Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. Commercial plans don't train by default. | [policy](https://www.anthropic.com/legal/privacy) | 2026-10-15 |
+| [Claude](https://getpolicypeek.com/tools/claude.com/) | **Trains by default, you can opt out** | We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts. Anthropic's Commercial Terms say "Anthropic may not train models on Customer Content from Services." | [policy](https://www.anthropic.com/legal/privacy), [terms](https://www.anthropic.com/legal/commercial-terms) | 2026-11-18 |
 | [DeepL](https://getpolicypeek.com/tools/deepl.com/) | **Trains on your data, no opt-out** | Rated on DeepL's free tier: free-tier submissions are used to train and improve DeepL's models, with no opt-out found. For DeepL Pro, API Pro and Write Pro, DeepL says "your texts will not be used to improve the quality of our services." | [policy](https://www.deepl.com/en/privacy), [policy](https://www.deepl.com/en/terms-of-use) | 2026-10-15 |
 
 For the full list of tools that train with no opt-out, see [AI tools that train on your data, no opt-out](https://getpolicypeek.com/guides/ai-tools-that-train-on-your-data-no-opt-out/).

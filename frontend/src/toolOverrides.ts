@@ -76,6 +76,13 @@ export const TOOL_OVERRIDES: Record<string, ToolOverride> = {
       { q: "If I upload documents, are they used for training?", a: "On the Free plan, yes. VEED's terms let it use content you upload under a Free subscription to train and develop the AI models behind its apps. Its privacy notice says this doesn't include content uploaded through VEED's mobile apps, and its terms say it doesn't apply to paid plans or enterprise customers. We found nothing else in VEED's policies about training on paid-plan uploads." },
     ],
   },
+  // Steward notes paragraph, 18 Nov 2026 factcheck (card notes / FAQ).
+  // Our own words; not in quotation marks. Badge unchanged.
+  "claude.com": {
+    faq: [
+      { q: "What should I know about Claude's training policy?", a: "For Free, Pro and Max (including Claude Code from those accounts), Anthropic's Privacy Policy says it may use your chats to train its models unless you opt out in your account settings. Anthropic's help pages describe this as a choice you make, but no current policy says which option is selected by default. Feedback you send (thumbs up/down) and chats flagged for safety review can still be used even if you opt out. Incognito chats aren't used. Team, Enterprise and API customers are covered by Anthropic's Commercial Terms, which say Anthropic may not train models on customer content." },
+    ],
+  },
 };
 
 export const overrideFor = (domain: string): ToolOverride | undefined => TOOL_OVERRIDES[domain];

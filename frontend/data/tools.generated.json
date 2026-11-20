@@ -100,17 +100,18 @@
     "name": "Claude",
     "domain": "claude.com",
     "compliance_status": "compliant_with_caveats",
-    "summary": "Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. Commercial plans don't train by default.",
-    "data_retention": "Feedback data stored for up to 5 years in secured back-end",
+    "summary": "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts.",
+    "data_retention": "You also are able to delete individual conversations, which will be removed immediately from your conversation history and automatically deleted from our back-end within 30 days.",
     "trains_on_user_data": true,
     "gdpr_mentioned": null,
     "source_urls": [
-      "https://www.anthropic.com/legal/privacy"
+      "https://www.anthropic.com/legal/privacy",
+      "https://www.anthropic.com/legal/commercial-terms"
     ],
     "verified": true,
     "auto_published": false,
     "shared_domain": false,
-    "last_checked_at": "2026-10-15T16:02:55.792Z"
+    "last_checked_at": "2026-11-18T11:20:00.000Z"
   },
   {
     "name": "Copy.ai",

@@ -244,3 +244,61 @@ test("VEED: badge unchanged, approved answer and FAQs on the page and in the one
   assert.equal([...pairs.keys()].filter((q) => q === VEED_Q2).length, 1);
   assert.ok(h.includes(`badge`) && /Trains on your data, no opt-out/.test(h));
 });
+
+// Claude quote fix (18 Nov 2026 steward fact-check; see toolOverrides.ts and
+// data-updates/2026-11-20-claude-quote/). Badge unchanged. Our own prefixes
+// and the 5-year feedback paraphrase must not appear as policy text.
+const CLAUDE_SUMMARY = "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts.";
+const CLAUDE_RETENTION = "You also are able to delete individual conversations, which will be removed immediately from your conversation history and automatically deleted from our back-end within 30 days.";
+const CLAUDE_COMMERCIAL = "Anthropic may not train models on Customer Content from Services.";
+const CLAUDE_NOTES_Q = "What should I know about Claude's training policy?";
+const CLAUDE_NOTES_A = "For Free, Pro and Max (including Claude Code from those accounts), Anthropic's Privacy Policy says it may use your chats to train its models unless you opt out in your account settings. Anthropic's help pages describe this as a choice you make, but no current policy says which option is selected by default. Feedback you send (thumbs up/down) and chats flagged for safety review can still be used even if you opt out. Incognito chats aren't used. Team, Enterprise and API customers are covered by Anthropic's Commercial Terms, which say Anthropic may not train models on customer content.";
+const CLAUDE_OLD = [
+  "Consumer plans (Free, Pro, Max):",
+  "Commercial plans don't train by default.",
+  "Feedback data stored for up to 5 years in secured back-end",
+];
+
+test("Claude: badge unchanged, verbatim quotes replace our own words, notes FAQ on the page", () => {
+  const t = tools.find((x) => x.domain === "claude.com");
+  assert.equal(t.compliance_status, "compliant_with_caveats");
+  assert.equal(t.summary, CLAUDE_SUMMARY);
+  assert.equal(t.data_retention, CLAUDE_RETENTION);
+  assert.ok(t.source_urls.includes("https://www.anthropic.com/legal/privacy"));
+  assert.ok(t.source_urls.includes("https://www.anthropic.com/legal/commercial-terms"));
+  for (const old of CLAUDE_OLD) {
+    assert.ok(!t.summary.includes(old), old);
+    assert.ok(!t.data_retention.includes(old), old);
+  }
+  const h = read("tools/claude.com/index.html");
+  assert.match(h, /Trains by default, you can opt out/);
+  const page = text(h);
+  for (const q of [
+    "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.",
+    "This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts.",
+    CLAUDE_RETENTION,
+    CLAUDE_NOTES_A,
+  ]) {
+    assert.ok(page.includes(q), q.slice(0, 40));
+  }
+  for (const old of CLAUDE_OLD) assert.ok(!page.includes(old), old);
+  const sec = h.match(/<section class="tool-faq"[\s\S]*?<\/section>/)[0];
+  const pairs = new Map([...sec.matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>\s*<p[^>]*>([\s\S]*?)<\/p>/g)].map((m) => [decode(m[1]), decode(m[2])]));
+  assert.equal(pairs.get(CLAUDE_NOTES_Q), CLAUDE_NOTES_A);
+  const qt = text(read("questions/does-claude-train-on-your-data/index.html"));
+  assert.ok(qt.includes(CLAUDE_COMMERCIAL));
+  for (const old of CLAUDE_OLD) assert.ok(!qt.includes(old), `qa: ${old}`);
+});
+
+test("Claude: the Privacy Policy and Commercial Terms quotes match the saved pages word for word", () => {
+  const norm = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, " ").replace(/ ([.,:;)])/g, "$1").trim();
+  const privacy = norm(readFileSync(join(REPO, "research/qa-sources/2026-10-28/anthropic-privacy.txt"), "utf8"));
+  const commercial = norm(readFileSync(join(REPO, "research/qa-sources/2026-11-18-anthropic/commercial-terms.txt"), "utf8"));
+  for (const q of [
+    "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.",
+    "This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts.",
+    CLAUDE_RETENTION,
+  ]) assert.ok(privacy.includes(norm(q)), q);
+  const needle = norm(CLAUDE_COMMERCIAL);
+  assert.equal((commercial.split(needle).length - 1), 1);
+});
