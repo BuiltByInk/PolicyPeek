@@ -1,4 +1,5 @@
 ---
+import { tokensFrom, totalPhrase } from "../../../integrations/catalog-counts-core.mjs";
 import Layout from "../../layouts/Layout.astro";
 import Badge from "../../components/Badge.astro";
 import SubmitTool from "../../components/SubmitTool.astro";
@@ -13,7 +14,9 @@ const counts = Object.fromEntries(VERDICTS.map((v) => [v.status, tools.filter((t
 const itemListLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  name: "AI tools checked by PolicyPeek",
+  // Not "AI tools": the list includes the checked site that isn't an AI tool.
+  name: "Tools checked by PolicyPeek",
+  description: totalPhrase(tokensFrom(tools)),
   numberOfItems: tools.length,
   itemListElement: tools.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: toolUrl(t.domain) })),
 };

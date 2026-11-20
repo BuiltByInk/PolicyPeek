@@ -17,3 +17,13 @@ export function tokensFrom(tools) {
 
 export const applyCountsWith = (tokens, s) =>
   s.replace(/\{\{([A-Za-z0-9_]+)\}\}/g, (all, key) => tokens[key] ?? all);
+
+// Marketing wording (20 Nov 2026), matching llms.txt: "68 AI tools rated, plus
+// 1 checked site that isn't an AI tool (69 in total)". Every number comes from
+// tokensFrom(); the "plus …" part is left out when there are no such sites.
+export function totalPhrase(tokens) {
+  const rated = Number(tokens.RATED_COUNT), notAi = Number(tokens.COUNT_not_ai_tool), total = Number(tokens.TOOL_COUNT);
+  const head = `${rated} AI tool${rated === 1 ? "" : "s"} rated`;
+  if (!notAi) return head;
+  return `${head}, plus ${notAi} checked site${notAi === 1 ? " that isn't an AI tool" : "s that aren't AI tools"} (${total} in total)`;
+}

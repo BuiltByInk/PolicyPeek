@@ -1,4 +1,5 @@
 ---
+import { tokensFrom } from "../../integrations/catalog-counts-core.mjs";
 import Layout from "../layouts/Layout.astro";
 import SubmitTool from "../components/SubmitTool.astro";
 import Badge from "../components/Badge.astro";
@@ -23,7 +24,9 @@ const sampleWhy = sample?.summary?.trim() ? sentence(sample.summary) : null;
 // AEO (2026-11-09): answer "Which AI tools don't train on your data?" on the
 // home page from the catalog itself (the green badge), linking to the guide.
 const noTrain = tools.filter((t) => t.compliance_status === "compliant").sort((a, b) => a.name.localeCompare(b.name));
-const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").length;
+// One AI-only count for the page (same helper as the guides and llms.txt tokens):
+// the not-an-AI-tool row is not counted as an AI tool (Marketing, 20 Nov 2026).
+const ratedCount = Number(tokensFrom(tools).RATED_COUNT);
 ---
 <Layout
   title="Does it train on your data?"
@@ -88,7 +91,7 @@ const ratedCount = tools.filter((t) => t.compliance_status !== "not_ai_tool").le
   </script>
 
   <section class="register" aria-labelledby="reg-h">
-    <h2 id="reg-h">{tools.length} AI tool{tools.length === 1 ? "" : "s"} checked. Here's how they score.</h2>
+    <h2 id="reg-h">{ratedCount} AI tool{ratedCount === 1 ? "" : "s"} checked. Here's how they score.</h2>
     <p class="reg-def">Each badge says what the tool's own published policy says about training on your data. Green means it doesn't train on your data by default (or only if you opt in). It's not legal advice or a finding about any law.</p>
     <ul>
       {registerRows.map((v, i) => (
