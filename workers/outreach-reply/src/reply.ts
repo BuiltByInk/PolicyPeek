@@ -49,7 +49,66 @@ export function registrable(host: string): string {
 }
 
 // Objection wording (unsure => objection, per Security gate 5).
-const OBJECTION = [/\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i, /\bno (further|more) (contact|emails?)\b/i, /\bopt(?:-| )?out\b/i, /\bnot interested\b/i, /\bcease\b/i, /\btake (me|us) off\b/i, /\bobject\b/i, /\bharass/i, /\bspam\b/i];
+// The bare /opt out/ and /object/ patterns stay (Security, 18 Nov). Only the
+// narrow ANSWER phrases in OBJECTION_EXCEPTIONS are removed from the text
+// first; the patterns then run on what is left, so anything not covered by an
+// exception still counts as an objection (fail closed).
+const OBJECTION = [
+  /\bstop\b/i, /\bunsubscribe\b/i, /\bremove (me|us)\b/i, /\bdo not (contact|email|e-mail|write)\b/i, /\bdon'?t (contact|email|e-mail|write)\b/i,
+  /\bno (further|more) (contact|emails?)\b/i, /\bopt(?:-| )?out\b/i, /\bopt (me|us) out\b/i, /\bnot interested\b/i, /\bcease\b/i,
+  /\btake (me|us) off\b/i, /\bobject\b/i, /\bharass/i, /\bspam\b/i,
+  // added 18 Nov
+  /^\s*objection\s*[.!]?\s*$/im,
+  /\b(?:don'?t|do not|please do not|stop) send(?:ing)? (?:us |me )?any ?more\b/i,
+  /\bleave (me|us) alone\b/i,
+  /\bdo not consent to (?:any |further |more )?(?:contact|e-?mails?|communications?|messages?)\b/i,
+  /\bdelete (?:my|our) (?:e-?mail )?(?:address|details|contact details)\b/i,
+  // added 18 Nov (Security conditions at 49f13c7)
+  /\b(?:remove|delete|exclude)\s+(?:this|our)\s+(?:e-?mail\s+)?(?:address|mailbox|e-?mail|inbox)\b/i,
+  /\bopt\s+(?:this|the|that)\b(?:[^.!?\n]|\.(?=\S)){0,60}?\bout\b/i,
+];
+
+// Answer wording that mentions opting out / objecting without asking us to
+// stop. Removed before OBJECTION runs. An exception never swallows a request
+// about our mail: "opt out of data use and your emails" keeps its tail.
+const CONTACT_TAIL = String.raw`(?!\s*(?:,|and|or|&|\/)\s*(?:(?:from|of)\s+)?(?:your|these|this|any|all|further|future|the)?\s*(?:e-?mails?|messages?|mailings?|newsletters?|contact|outreach|list|communications?)\b)`;
+export const OBJECTION_EXCEPTIONS = [
+  new RegExp(String.raw`\bopt(?:-| )?out\s+(?:of|from)\s+(?:(?:AI|model|data)\s+)?(?:training|sharing|use)\b` + CONTACT_TAIL, "gi"),
+  /\bright\s+to\s+object\b/gi,
+  /\b(?:can|may)\s+object\b/gi,
+  /\b(?:users?|customers?)\s+can\s+opt(?:-| )?out\b/gi,
+];
+
+// Security condition (18 Nov): an exception never applies inside a sentence
+// that has a first-person or request word, so "We want to opt out of data use"
+// stays an objection. Sentences split on . ! ? and newlines only: NOT on ; or :,
+// because "Opt out of data sharing: please, for us too." must stay one
+// sentence (splitting there would leave the request word in a different
+// clause from the opt-out). Applied to every exception, not just opt-out ones
+// (stricter: "we may object" also stays an objection).
+const FIRST_PERSON_OR_REQUEST = /\b(?:i|me|my|mine|we|us|our|ours|ourselves|please|pls|kindly|would like|wants?|wanted|wanting)\b/i;
+// Also guards (Security, 18 Nov): a reference to the recipient's own mailbox,
+// and the imperative "opt this/the/that ... out".
+const MAILBOX_REF = /\b(?:this|our)\s+(?:e-?mail\s+)?(?:address|mailbox|e-?mail|inbox)\b/i;
+const OPT_X_OUT = /\bopt\s+(?:this|the|that)\b(?:[^.!?\n]|\.(?=\S)){0,60}?\bout\b/i;
+const isGuarded = (sentence: string) => FIRST_PERSON_OR_REQUEST.test(sentence) || MAILBOX_REF.test(sentence) || OPT_X_OUT.test(sentence);
+
+export function stripAnswerExceptions(own: string): string {
+  return own
+    .split(/(?<=[.!?])\s+|\r?\n/)
+    .map((sentence) => {
+      if (isGuarded(sentence)) return sentence;
+      let rest = sentence;
+      for (const r of OBJECTION_EXCEPTIONS) rest = rest.replace(r, " ");
+      return rest;
+    })
+    .join("\n");
+}
+
+export function isObjection(own: string, subject: string): boolean {
+  const rest = stripAnswerExceptions(own);
+  return OBJECTION.some((r) => r.test(rest) || r.test(subject));
+}
 
 // MF6: objection matching runs only on the sender's OWN new text. Our email
 // says 'reply "stop"', so matching the quoted original would class almost
@@ -65,6 +124,16 @@ const QUOTE_MARKERS = [
   /^\s*From:\s.+\n\s*(Sent|Date):\s/im, // Outlook header block
   /^\s*De\s*:\s.+\n\s*(Envoyé|Date)\s*:\s/im,
 ];
+// Whitespace- and quote-style-tolerant copies of our template's fixed lines
+// (outreach/src/template.ts STOP_LINE and QUESTIONS).
+const W = String.raw`\s+`;
+const Q = String.raw`["“”]`;
+const A = String.raw`['’]`;
+const OWN_LINES = [
+  new RegExp(`If${W}you${A}d${W}rather${W}not${W}hear${W}from${W}us,${W}reply${W}${Q}stop${Q}${W}and${W}we${W}won${A}t${W}email${W}again\\.?`, "gi"),
+  new RegExp(`(?:3\\.${W})?How${W}can${W}a${W}customer${W}opt${W}out\\??`, "gi"),
+];
+
 export function stripQuoted(text: string): string {
   let cut = text.length;
   for (const r of QUOTE_MARKERS) {
@@ -76,7 +145,11 @@ export function stripQuoted(text: string): string {
   const own = kept.join("\n");
   const removedSomething = cut < text.length || kept.length < lines.length;
   // Our own stop line, if pasted back unquoted, is never the sender's objection.
-  const cleaned = own.replace(/If you'd rather not hear from us, reply "stop" and we won't email again\./gi, " ").trim();
+  // Our own lines (stop line and the three questions), if pasted back
+  // unquoted or reflowed, are never the sender's objection.
+  let cleaned = own;
+  for (const r of OWN_LINES) cleaned = cleaned.replace(r, " ");
+  cleaned = cleaned.trim();
   return cleaned || (removedSomething ? text : "");
 }
 
@@ -91,7 +164,7 @@ export function classify(h: Headers, from: string, textHead: string): Classifica
   const prec = lower(h.get("precedence"));
   if ((autoSub && autoSub !== "no") || ["bulk", "junk", "list", "auto_reply"].includes(prec) || h.has("x-autoreply") || h.has("x-autorespond") || lower(h.get("x-auto-response-suppress")).includes("all") || /^(out of (the )?office|automatic reply|auto(matic)?[- ]?reply|autoreply|auto:)/.test(subject)) return "auto_reply";
   const own = stripQuoted(textHead);
-  if (OBJECTION.some((r) => r.test(own) || r.test(subject))) return "objection";
+  if (isObjection(own, subject)) return "objection";
   return "reply";
 }
 
