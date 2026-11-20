@@ -38,19 +38,20 @@ export const QA_PAGES: QaEntry[] = [
   {
     slug: "does-claude-train-on-your-data",
     domain: "claude.com",
-    reviewed: "2026-10-28",
+    reviewed: "2026-11-18",
     sources: [
       { id: "anthropic-privacy", url: "https://www.anthropic.com/legal/privacy", title: "Anthropic Privacy Policy (shown as effective Sep 10, 2026)", fetched: "2026-10-28", snapshot: `${SNAP}/anthropic-privacy.txt` },
+      { id: "anthropic-commercial", url: "https://www.anthropic.com/legal/commercial-terms", title: "Anthropic Commercial Terms (Effective Jun 17, 2025)", fetched: "2026-11-18", snapshot: "research/qa-sources/2026-11-18-anthropic/commercial-terms.txt" },
     ],
     plans: [
       {
         plan: "Free, Pro, Max (consumer)",
-        training: { text: "Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.", src: "catalog" },
+        training: { text: "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.", src: "anthropic-privacy" },
         retention: { text: "Anthropic retains your personal data for as long as reasonably necessary for the purposes and criteria outlined in this Privacy Policy", src: "anthropic-privacy" },
       },
       {
         plan: "Commercial plans",
-        training: { text: "Commercial plans don't train by default.", src: "catalog" },
+        training: { text: "Anthropic may not train models on Customer Content from Services.", src: "anthropic-commercial" },
         retention: null,
       },
       {
@@ -66,7 +67,6 @@ export const QA_PAGES: QaEntry[] = [
     ],
     retention: [
       { text: "You also are able to delete individual conversations, which will be removed immediately from your conversation history and automatically deleted from our back-end within 30 days.", src: "anthropic-privacy" },
-      { text: "Feedback data stored for up to 5 years in secured back-end", src: "catalog" },
     ],
     optOutSteps: [
       { text: "Anthropic gives you access to a variety of tools to help you manage your data. You can access these in your Privacy Settings.", src: "anthropic-privacy" },
@@ -83,6 +83,7 @@ export const QA_PAGES: QaEntry[] = [
     changelog: [
       { date: "2026-10-15", text: "Verdict checked against Anthropic's privacy policy: trains by default, you can opt out." },
       { date: "2026-10-28", text: "Q&A page published from the catalog verdict; privacy policy re-read for plan, retention, opt-out and UK GDPR quotes." },
+      { date: "2026-11-18", text: "Removed our own words that had been shown as policy quotes. The consumer training row and retention line now use verbatim Privacy Policy sentences; the commercial row uses the Commercial Terms sentence 'Anthropic may not train models on Customer Content from Services.'" },
     ],
   },
   {

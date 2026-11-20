@@ -9,17 +9,17 @@ Both ChatGPT and Claude can use your chats for training by default, and both let
 | Tool | PolicyPeek badge | What we recorded from the policy | Source | Last checked |
 |---|---|---|---|---|
 | [ChatGPT](https://getpolicypeek.com/tools/openai.com/) | **Trains by default, you can opt out** | We may use Content you provide us to improve our Services, for example to train the models that power ChatGPT. Read our instructions on how you can opt out of our use of your Content to train our models. | [policy](https://openai.com/policies/row-privacy-policy/) | 2026-09-01 |
-| [Claude](https://getpolicypeek.com/tools/claude.com/) | **Trains by default, you can opt out** | Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. Commercial plans don't train by default. | [policy](https://www.anthropic.com/legal/privacy) | 2026-10-15 |
+| [Claude](https://getpolicypeek.com/tools/claude.com/) | **Trains by default, you can opt out** | We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts. Anthropic's Commercial Terms say "Anthropic may not train models on Customer Content from Services." | [policy](https://www.anthropic.com/legal/privacy), [terms](https://www.anthropic.com/legal/commercial-terms) | 2026-11-18 |
 
 ## What each policy says
 
 **ChatGPT.** OpenAI's [privacy policy](https://openai.com/policies/row-privacy-policy/) says: "We may use Content you provide us to improve our Services, for example to train the models that power ChatGPT. Read our instructions on how you can opt out of our use of your Content to train our models." PolicyPeek badge: **Trains by default, you can opt out**. ([ChatGPT](https://getpolicypeek.com/tools/openai.com/))
 
-**Claude.** Anthropic's [privacy policy](https://www.anthropic.com/legal/privacy), as recorded by PolicyPeek: "Consumer plans (Free, Pro, Max): We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings. Commercial plans don't train by default." PolicyPeek badge: **Trains by default, you can opt out**. ([Claude](https://getpolicypeek.com/tools/claude.com/))
+**Claude.** Anthropic's [privacy policy](https://www.anthropic.com/legal/privacy) says: "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings." "This Privacy Policy does not apply to content that we process on behalf of customers of our business offerings, such as our Enterprise accounts." Anthropic's Commercial Terms say "Anthropic may not train models on Customer Content from Services." PolicyPeek badge: **Trains by default, you can opt out**. ([Claude](https://getpolicypeek.com/tools/claude.com/))
 
 ## So which one uses your chats?
 
-On the badges, neither is ahead: both get **Trains by default, you can opt out**. The difference PolicyPeek recorded is scope. Claude's entry separates consumer plans from commercial plans, which don't train by default. ChatGPT's entry is rated on OpenAI's general policy. If you'd rather a tool that doesn't train at all, see [AI tools that don't train on your data](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/) or the deeper [ChatGPT guide](https://getpolicypeek.com/guides/does-chatgpt-train-on-your-data/).
+On the badges, neither is ahead: both get **Trains by default, you can opt out**. The difference PolicyPeek recorded is scope. Claude's card quotes Anthropic's Privacy Policy for consumer chats, and Anthropic's Commercial Terms say "Anthropic may not train models on Customer Content from Services." ChatGPT's entry is rated on OpenAI's general policy. If you'd rather a tool that doesn't train at all, see [AI tools that don't train on your data](https://getpolicypeek.com/guides/ai-tools-that-dont-train-on-your-data-uk/) or the deeper [ChatGPT guide](https://getpolicypeek.com/guides/does-chatgpt-train-on-your-data/).
 
 ## How PolicyPeek decides
 
@@ -33,7 +33,7 @@ By default, yes. OpenAI's policy says it may use content you provide "to train t
 
 ### Does Claude use my chats for training?
 
-On consumer plans (Free, Pro, Max), yes by default: Anthropic "may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings." Commercial plans don't train by default.
+On consumer plans (Free, Pro, Max), Anthropic's Privacy Policy says it "may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings." Anthropic's Commercial Terms say "Anthropic may not train models on Customer Content from Services."
 
 ### Is Claude more private than ChatGPT?
 
