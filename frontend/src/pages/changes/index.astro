@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import rows from "../../../data/policy-changes.json";
 import { publishedChanges, type PolicyChange } from "../../policyChanges";
+import { toolPath } from "../../toolPaths.mjs";
 
 const changes = publishedChanges(rows as PolicyChange[]);
 const jsonLd = {
@@ -24,7 +25,7 @@ const jsonLd = {
       {changes.map((c) => (
         <li>
           <time datetime={c.date}>{c.date}</time>
-          <a href={`/tools/${c.toolDomain}/`}>{c.toolName}</a>
+          <a href={toolPath(c.toolDomain)}>{c.toolName}</a>
           <p>{c.summary}</p>
           <p class="src"><a href={c.sourceUrl} rel="nofollow noopener noreferrer">Vendor source</a></p>
         </li>

@@ -86,12 +86,42 @@ export function asOfText(tool: Tool): string {
   return [d ? `As of ${d}.` : "", s ? `Source: ${s.host}.` : ""].filter(Boolean).join(" ");
 }
 
+/** Top-level straight-quoted strings in `s`, keeping any quotes nested inside
+ *  them (D2, 18 Nov 2026: DeepSeek's `"you can opt out by turning off
+ *  "Improve the model for everyone"."` used to render as just "you can opt out
+ *  by turning off", because the old regex paired the first two quote marks).
+ *  A `"` after the start, a space or an opening bracket opens a quote; one
+ *  before the end, a space or punctuation closes it; when both apply it closes
+ *  an open quote, otherwise opens one. Returns null (caller falls back to the
+ *  old pairing) when the marks don't balance, so odd rows render as before.
+ *  Pieces shorter than 12 characters are dropped, as before. */
+export function outerQuotes(s: string): string[] | null {
+  const out: string[] = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== '"') continue;
+    const prev = i === 0 ? " " : s[i - 1], next = i === s.length - 1 ? " " : s[i + 1];
+    const canOpen = /[\s([{]/.test(prev), canClose = /[\s.,;:!?)\]}]/.test(next);
+    let open: boolean;
+    if (canOpen && !canClose) open = true;
+    else if (canClose && !canOpen) open = false;
+    else if (canOpen && canClose) open = depth === 0;
+    else continue; // e.g. a"b: not a quote boundary
+    if (open) { if (depth++ === 0) start = i + 1; }
+    else {
+      if (depth === 0) return null;
+      if (--depth === 0) { const piece = s.slice(start, i).trim(); if (piece.length >= 12) out.push(piece); }
+    }
+  }
+  return depth === 0 ? out : null;
+}
+
 /** The stored policy wording split into verbatim pieces: the quoted strings
  *  when the summary uses quotes, otherwise its sentences. */
 export function quoteParts(tool: Tool): string[] {
   const s = tool.summary?.trim();
   if (!s) return [];
-  const quoted = [...s.matchAll(/"([^"]{12,})"/g)].map((m) => m[1].trim());
+  const quoted = outerQuotes(s) ?? [...s.matchAll(/"([^"]{12,})"/g)].map((m) => m[1].trim());
   if (quoted.length) return quoted;
   return s.split(/(?<=[.!?])\s+(?=["A-Z])/).map((x) => x.trim()).filter(Boolean);
 }
@@ -113,7 +143,8 @@ const q = (parts: string[]) => parts.map((p) => `"${p.replace(/^"|"$/g, "")}"`).
 export function genericFaq(tool: Tool): { q: string; a: string }[] {
   if (tool.compliance_status === "not_ai_tool") return [];
   const n = tool.name, parts = quoteParts(tool), out: { q: string; a: string }[] = [];
-  const plan = parts.filter((p) => /\b(free|paid|enterprise|consumer|plans?|tiers?)\b/i.test(p) && TRAINING.test(p));
+  // (?<!royalty-) so "royalty-free" (a licence term, not a plan) is not read as a plan.
+  const plan = parts.filter((p) => /\b(?<!royalty-)(free|paid|enterprise|consumer|plans?|tiers?)\b/i.test(p) && TRAINING.test(p));
   if (plan.length) out.push({ q: "Do free AI tools use my data for training?", a: `It depends on the tool, and sometimes on the plan. For ${n}, the policy wording PolicyPeek recorded mentions plans: ${q(plan)}` });
   const del = parts.filter((p) => /\bdelet\w*/i.test(p) && TRAINING.test(p));
   if (del.length) out.push({ q: "Does deleting my chat history stop training?", a: `For ${n}, the policy wording PolicyPeek recorded says: ${q(del)}` });

@@ -7,14 +7,16 @@ import toolsData from "../../../data/tools.json";
 import { guidesForDomain } from "../../guides";
 import { toolSummary } from "../../toolSummary";
 import { toolFaq, cardTitle, clamp } from "../../toolFaq";
-import { qaForDomain } from "../../qa";
+import { qaForDomain, NOT_STATED } from "../../qa";
 import { answerLine, asOfText, checkedDate, primarySource, quoteParts, optOut, ICO_AI_GUIDANCE } from "../../toolAnswer";
 import { categoryFor, relatedTools } from "../../categories";
+import { toolPath, toolUrl as cardUrl, toolRouteParam } from "../../toolPaths.mjs";
+import { planTable, optOutSteps, policyUpdated, jsonLdV2, REVIEWER_NAME } from "../../toolPageV2";
 
 export async function getStaticPaths() {
   const tools = toolsData as Tool[];
   return tools.map((tool) => ({
-    params: { domain: tool.domain },
+    params: { card: toolRouteParam(tool.domain) },
     props: { tool },
   }));
 }
@@ -75,6 +77,10 @@ const parts = quoteParts(tool);
 const trainingParts = parts.filter((p) => /\btrain\w*|\bmodels?\b|\bfine-tun\w*/i.test(p));
 const trainingQuote = trainingParts.length ? trainingParts : parts;
 const opt = optOut(tool);
+// Template v2 (D1, 18 Nov 2026): each block is hidden when its data is missing.
+const plans = isNotAi ? null : planTable(tool);
+const steps = opt ? optOutSteps(tool) : [];
+const policyDate = isNotAi ? null : policyUpdated(tool);
 const trainsText = tool.compliance_status === "shared_domain_unverified" ? "Not verified for this product (company-wide policy)"
   : tool.trains_on_user_data === null ? "Unclear from the policy" : tool.trains_on_user_data ? "Yes, according to the policy" : "No, according to the policy";
 const gdprText = tool.gdpr_mentioned === true ? `${tool.name}'s published policy mentions GDPR.`
@@ -127,10 +133,10 @@ const breadcrumbs = {
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "PolicyPeek", item: siteUrl },
     { "@type": "ListItem", position: 2, name: "Tools", item: `${siteUrl}tools/` },
-    { "@type": "ListItem", position: 3, name: tool.name, item: `${siteUrl}tools/${tool.domain}/` },
+    { "@type": "ListItem", position: 3, name: tool.name, item: cardUrl(tool.domain) },
   ],
 };
-const toolUrl = `${siteUrl}tools/${tool.domain}/`;
+const toolUrl = cardUrl(tool.domain);
 const jsonLd = [
   breadcrumbs,
   {
@@ -141,6 +147,7 @@ const jsonLd = [
     url: toolUrl,
     inLanguage: "en-GB",
     ...(lastCheckedValid ? { dateModified: lastCheckedDate!.toISOString() } : {}),
+    ...jsonLdV2(tool, siteUrl),
     publisher: { "@type": "Organization", name: "PolicyPeek", url: siteUrl },
     about: { "@type": "SoftwareApplication", name: tool.name, url: `https://${tool.domain}/`, applicationCategory: "BusinessApplication" },
     ...(!isNotAi && plainAnswer ? { mainEntity: { "@type": "Question", name: h1, acceptedAnswer: { "@type": "Answer", text: asOf ? `${plainAnswer} ${asOf}` : plainAnswer } } } : {}),
@@ -179,12 +186,35 @@ const jsonLd = [
           <blockquote cite={tool.source_urls.length === 1 ? primary?.href : undefined}>{trainingQuote.map((p) => <p>{p}</p>)}</blockquote>
         </>
       )}
+      {plans && (
+        <>
+          <h3 id="plans-h">By plan</h3>
+          <div class="tablewrap">
+            <table class="plans" aria-labelledby="plans-h">
+              <thead><tr><th scope="col">Plan</th><th scope="col">Training on your data</th><th scope="col">How long data is kept</th></tr></thead>
+              <tbody>
+                {plans.rows.map((r) => (
+                  <tr>
+                    <th scope="row">{r.plan}</th>
+                    <td>{r.training ? <>"{r.training.text}" <a class="src" href={r.training.href} rel="nofollow noopener noreferrer">source</a></> : NOT_STATED}</td>
+                    <td>{r.retention ? <>"{r.retention.text}" <a class="src" href={r.retention.href} rel="nofollow noopener noreferrer">source</a></> : NOT_STATED}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p class="note">Plans not listed here: {NOT_STATED.toLowerCase()}. We only list plans the sources name.</p>
+        </>
+      )}
     </section>
   )}
 
   {opt && (
     <section class="aeo" aria-labelledby="opt-h">
       <h2 id="opt-h">Can I opt out of {/\bAI$/.test(tool.name) ? `${tool.name} training` : `${tool.name} AI training`}?</h2>
+      {steps.length > 0 && (
+        <ol class="opt-steps">{steps.map((st) => <li>{st.text} <a class="src" href={st.href} rel="nofollow noopener noreferrer">source</a></li>)}</ol>
+      )}
       {opt.quotes.length > 0 ? (
         <>
           <p>What {tool.name}'s policy says about opting out:</p>
@@ -265,11 +295,17 @@ const jsonLd = [
       </div>
       <div>
         <dt>Last checked</dt>
-        <dd>{lastCheckedValid ? <time datetime={lastCheckedDate!.toISOString().slice(0, 10)}>{lastCheckedText}</time> : lastCheckedText}</dd>
+        <dd>{lastCheckedValid ? <><time datetime={lastCheckedDate!.toISOString().slice(0, 10)}>{lastCheckedText}</time><span class="age" data-age-from={lastCheckedDate!.toISOString().slice(0, 10)}></span></> : lastCheckedText}</dd>
       </div>
+      {policyDate && (
+        <div>
+          <dt>Policy last updated</dt>
+          <dd><time datetime={policyDate.iso}>{policyDate.text}</time> <a class="src" href={policyDate.href} rel="nofollow noopener noreferrer">source</a></dd>
+        </div>
+      )}
       <div>
         <dt>Reviewed by a human</dt>
-        <dd>{tool.auto_published ? "No — auto-published" : "Yes"}</dd>
+        <dd>{tool.auto_published ? "No — auto-published" : `Yes. Checked by ${REVIEWER_NAME}`}</dd>
       </div>
     </dl>
   </section>
@@ -303,7 +339,7 @@ const jsonLd = [
       <h2 id="rel-h">Related tools</h2>
       <ul>
         {related.map((t) => (
-          <li><a href={`/tools/${t.domain}/`}>Does {t.name} train on my data?</a></li>
+          <li><a href={toolPath(t.domain)}>Does {t.name} train on my data?</a></li>
         ))}
       </ul>
       {category && <p class="hub"><a href={`/categories/${category.slug}/`}>{category.title}</a></p>}
@@ -319,10 +355,18 @@ const jsonLd = [
         <button type="submit">Look it up</button>
       </div>
     </form>
-    <button type="button" class="share" data-share-url={`${siteUrl}tools/${tool.domain}/`} data-share-title={pageTitle}>Copy link / share this verdict</button>
+    <button type="button" class="share" data-share-url={toolUrl} data-share-title={pageTitle}>Copy link / share this verdict</button>
     <p class="share-msg" role="status" aria-live="polite"></p>
   </section>
   <script>
+    // Template v2: "(n days ago)" after Last checked, worked out in the
+    // visitor's browser so a static build never shows a stale age.
+    for (const el of document.querySelectorAll<HTMLElement>("[data-age-from]")) {
+      const t = Date.parse(`${el.dataset.ageFrom}T00:00:00Z`);
+      if (Number.isNaN(t)) continue;
+      const days = Math.floor((Date.now() - t) / 86_400_000);
+      if (days >= 0) el.textContent = days === 0 ? " (today)" : ` (${days} day${days === 1 ? "" : "s"} ago)`;
+    }
     for (const btn of document.querySelectorAll<HTMLButtonElement>("button.share")) {
       const msg = btn.parentElement?.querySelector(".share-msg");
       btn.addEventListener("click", async () => {
@@ -365,6 +409,14 @@ const jsonLd = [
   .aeo blockquote { margin: 0.5rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 4px solid var(--line); overflow-wrap: anywhere; }
   .aeo blockquote p { margin: 0.4rem 0; }
   .aeo .qk { margin: 0.8rem 0 0; font-weight: 600; }
+  /* Template v2 (D1): by-plan table, numbered opt-out steps, source links. */
+  .aeo .tablewrap { overflow-x: auto; }
+  .aeo table.plans { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  .aeo table.plans th, .aeo table.plans td { border: 1px solid var(--line-soft); padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+  .aeo .note { font-size: 0.9rem; color: var(--muted); }
+  .opt-steps { padding-left: 1.4rem; }
+  .opt-steps li { margin-bottom: 0.35rem; }
+  .src { font-size: 0.85rem; }
   .aeo .tp { margin: 0.6rem 0; }
   .aeo .tp div { display: flex; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line-soft); }
   .aeo .tp dt { flex: 0 0 13rem; font-weight: 700; }
