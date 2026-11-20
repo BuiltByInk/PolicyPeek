@@ -79,8 +79,8 @@ test("SEO: tool page title/description from the verdict, related links, every to
   }
   const h = read(plain, "tools/claude.com/index.html");
   assert.match(h, /<title>Does Claude train on your data\? · PolicyPeek<\/title>/);
-  assert.match(h, /name="description" content="Yes, by default. Claude/);
-  assert.match(h, /may train on your data, but you can opt out/);
+  assert.match(h, /name="description" content="Anthropic(&#39;|')s Privacy Policy says it may use your Inputs and Outputs/);
+  assert.match(h, /unless you opt out through your account settings/);
   assert.match(h, /id="rel-h"[^>]*>Related tools</);
   assert.ok((h.match(/class="related"[\s\S]*?<\/section>/)[0].match(/href="\/tools\/[^"]+\/"/g) || []).length >= 3);
   assert.doesNotMatch(h, /href="\/tools\/claude\.com\/"[^>]*>Does Claude/);

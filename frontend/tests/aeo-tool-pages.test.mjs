@@ -41,7 +41,9 @@ test("answer line: fixed wording per status, then 'As of <last checked>' and the
     const m = h.match(/<p class="answer"[^>]*>([\s\S]*?)<\/p>/);
     assert.ok(m, `${t.domain}: answer line`);
     const a = text(m[1]);
-    assert.ok(a.startsWith(LEAD[t.compliance_status]), `${t.domain}: "${a}"`);
+    // claude.com has a separate one-line alternative to "Yes, by default."
+    // (not steward-approved; see the Claude answer-line test below).
+    if (t.domain !== "claude.com") assert.ok(a.startsWith(LEAD[t.compliance_status]), `${t.domain}: "${a}"`);
     if (!(t.summary && t.summary.trim())) assert.doesNotMatch(a, /policy says/, `${t.domain}: no quote, no "says"`);
     assert.doesNotMatch(a, /\bcompliant\b/i, t.domain);
     if (t.last_checked_at) {
@@ -288,6 +290,16 @@ test("Claude: badge unchanged, verbatim quotes replace our own words, notes FAQ 
   const qt = text(read("questions/does-claude-train-on-your-data/index.html"));
   assert.ok(qt.includes(CLAUDE_COMMERCIAL));
   for (const old of CLAUDE_OLD) assert.ok(!qt.includes(old), `qa: ${old}`);
+});
+
+const CLAUDE_ANSWER = "Anthropic's Privacy Policy says it may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings.";
+
+test("Claude: alternative answer line does not state a default (NOT steward-approved)", () => {
+  const h = read("tools/claude.com/index.html");
+  const a = text(h.match(/<p class="answer"[^>]*>([\s\S]*?)<\/p>/)[1]);
+  assert.ok(a.startsWith(CLAUDE_ANSWER), a);
+  assert.ok(!a.includes("Yes, by default"));
+  assert.match(h, /Trains by default, you can opt out/);
 });
 
 test("Claude: the Privacy Policy and Commercial Terms quotes match the saved pages word for word", () => {
