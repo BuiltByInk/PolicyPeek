@@ -48,3 +48,13 @@ invocation_logs = false
 name = "ALERT_EMAIL"
 destination_address = "elliotink@pm.me"
 allowed_sender_addresses = ["privacy@mail.getpolicypeek.com"]
+
+# Read-only use (2026-11-18, held-alert detail): lets held alerts and the
+# daily digest show clarification-email status from the outreach D1. The
+# backend issues SELECTs only on this binding (heldDetail.ts::loadOutreach);
+# D1 bindings cannot be made read-only, so this needs Security review before
+# deploy. Without it, alerts still send and say outreach data is not connected.
+[[d1_databases]]
+binding = "OUTREACH_DB"
+database_name = "policypeek-outreach"
+database_id = "1c15b227-8642-4642-9301-b1e8598a966a"

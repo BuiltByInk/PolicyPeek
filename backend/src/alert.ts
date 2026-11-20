@@ -23,11 +23,21 @@ export function subjectFrom(text: string): string {
   return first.replace(/[\x00-\x1f\x7f]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_SUBJECT);
 }
 
-export async function sendAlert(env: Env, text: string): Promise<boolean> {
+export const MAX_DETAIL_TEXT = 60_000; // held alerts/digest with per-tool detail
+
+export interface AlertOptions {
+  /** Optional HTML part. Caller is responsible for escaping (see heldDetail.ts). */
+  html?: string;
+  /** Overrides the default 3,500-char cap for detailed alerts. */
+  maxText?: number;
+}
+
+export async function sendAlert(env: Env, text: string, opts: AlertOptions = {}): Promise<boolean> {
   if (!env.ALERT_EMAIL) return false;
 
-  const body = text.slice(0, MAX_TEXT);
+  const body = text.slice(0, Math.min(opts.maxText ?? MAX_TEXT, MAX_DETAIL_TEXT));
   const subject = subjectFrom(body);
+  const html = opts.html ? opts.html.slice(0, MAX_DETAIL_TEXT * 3) : undefined;
 
   try {
     await Promise.race([
@@ -37,6 +47,7 @@ export async function sendAlert(env: Env, text: string): Promise<boolean> {
         replyTo: ALERT_REPLY_TO,
         subject,
         text: body,
+        ...(html ? { html } : {}),
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("timeout")), ALERT_TIMEOUT_MS)

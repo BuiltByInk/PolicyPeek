@@ -459,6 +459,55 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(rows[1].status).toBe("extracted");
   });
 
+  it("a recheck supersedes the older held recheck of the same tool instead of piling up (2026-11-18)", async () => {
+    const { runDueRechecks } = await import("./cron");
+    const w = makeWorld();
+    sitePolicy("app.acme.com", "https://acme.com/privacy", NOT_COMPLIANT);
+    await w.submit({ domain: "app.acme.com", source_url: "https://acme.com/privacy" });
+    await w.approve(1);
+    // two held rechecks of a second, unrelated tool must be left alone
+    w.db.prepare("INSERT INTO pending_checks (domain, is_recheck, status, extracted_facts) VALUES ('other.ai', 1, 'extracted', '{}')").run();
+    const due = () => w.db.prepare("UPDATE tools SET last_checked_at = '2020-01-01T00:00:00.000Z', last_attempt_at = NULL").run();
+
+    due();
+    await runDueRechecks(w.env); // row 3: held (parent-site policy)
+    due();
+    await runDueRechecks(w.env); // row 4: held, supersedes row 3
+    due();
+    await runDueRechecks(w.env); // row 5: held, supersedes row 4
+
+    const rows = w.pendingRows();
+    const acme = rows.filter((r) => r.domain === "app.acme.com" && r.is_recheck === 1);
+    expect(acme.map((r) => r.status)).toEqual(["rejected", "rejected", "extracted"]);
+    expect(acme[0].extraction_error).toMatch(/^superseded_by #4: a newer recheck of this tool replaced it \(was: queued_for_review: .*parent site \(acme\.com\)/);
+    expect(acme[1].extraction_error).toMatch(/^superseded_by #5:/);
+    expect(acme[2].extraction_error).toContain("parent site (acme.com)");
+    expect(rows.find((r) => r.domain === "other.ai")!.status).toBe("extracted");
+    // the first-time submission row that was approved is untouched
+    expect(rows[0].status).toBe("approved");
+    // only one held row for the tool in the review queue
+    const queue = (await w.pending()).body.pending_checks.filter((r: { domain: string; status: string }) => r.domain === "app.acme.com" && r.status === "extracted");
+    expect(queue).toHaveLength(1);
+    // a superseded row can still be approved (change of mind), as before
+    expect((await w.approve(acme[0].id)).status).toBe(200);
+  });
+
+  it("a recheck whose extraction fails supersedes nothing", async () => {
+    const { runDueRechecks } = await import("./cron");
+    const w = makeWorld();
+    sitePolicy("app.acme.com", "https://acme.com/privacy", NOT_COMPLIANT);
+    await w.submit({ domain: "app.acme.com", source_url: "https://acme.com/privacy" });
+    await w.approve(1);
+    const due = () => w.db.prepare("UPDATE tools SET last_checked_at = '2020-01-01T00:00:00.000Z', last_attempt_at = NULL").run();
+    due();
+    await runDueRechecks(w.env); // held
+    delete factsByDomain["app.acme.com"]; // fake LLM now fails
+    due();
+    await runDueRechecks(w.env);
+    const rows = w.pendingRows().filter((r) => r.is_recheck === 1);
+    expect(rows.map((r) => r.status)).toEqual(["extracted", "pending"]);
+  });
+
   // Decision 4 (2026-10-09): thin pages are accepted, flagged and held.
   it("thin page (just a cookie banner): accepted, held for review even with a clear verdict, flagged thin_content in the queue", async () => {
     const w = makeWorld();
@@ -532,8 +581,10 @@ describe.skipIf(!DatabaseSync)("submit flow, end to end", () => {
     expect(email.send).toHaveBeenCalledTimes(1);
     const heldBody = (email.send.mock.calls as unknown as Array<[{ text: string; to: string }]>)[0][0];
     expect(heldBody.to).toBe("elliotink@pm.me");
-    expect(heldBody.text).toContain("#1 held-tool.com");
-    expect(heldBody.text).not.toContain("https://held-tool.com/privacy");
+    // Since 2026-11-18 held alerts carry per-tool detail, including the policy URL (as text).
+    expect(heldBody.text).toContain("held-tool.com - check #1");
+    expect(heldBody.text).toContain("Policy checked: https://held-tool.com/privacy");
+    expect(heldBody.text).toContain("Proposed verdict: Doesn't train on your data");
     expect(heldBody.text).not.toContain("203.0.113.20");
 
     sitePolicy("auto-tool.com", "https://auto-tool.com/privacy", NOT_COMPLIANT);

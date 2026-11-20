@@ -13,6 +13,18 @@ export interface ToolOverride {
   answer?: string;
   /** Replaces the generated FAQ with the same question, or is added if new. */
   faq?: { q: string; a: string }[];
+  /** D1 (template v2): numbered "How to opt out" steps, each verbatim from or
+   *  checked against `src` (an http(s) URL). EMPTY FOR EVERY TOOL until
+   *  Research's R4 opt-out data is steward-approved; while empty nothing is
+   *  rendered and the page keeps the quote-based opt-out section. */
+  opt_out_steps?: { text: string; src: string }[];
+  /** D1: the vendor's own "last updated" date for the policy we quote
+   *  (YYYY-MM-DD) and where it is shown. Hidden when absent; never inferred. */
+  policy_updated?: { date: string; src: string };
+  /** D1: per-plan rows for the "By plan" table, same shape as qa.ts PlanRow
+   *  (verbatim quotes only). Tools with a /questions/ page use that page's
+   *  rows; others show no table until steward-approved rows are added here. */
+  plans?: { plan: string; training: { text: string; src: string } | null; retention: { text: string; src: string } | null }[];
 }
 
 export const TOOL_OVERRIDES: Record<string, ToolOverride> = {

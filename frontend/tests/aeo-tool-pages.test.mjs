@@ -99,9 +99,15 @@ test("quotes shown in the new sections are cut verbatim from the catalog summary
   }
 });
 
-test("no plan table on tool pages (the catalog has no per-plan fields)", () => {
+// Template v2 (D1, 18 Nov 2026): a plan table only where per-plan quotes exist
+// (the /questions/ data); see tool-template-v2.test.mjs for the row checks.
+test("plan table on tool pages only where /questions/ per-plan data exists (the catalog has no per-plan fields)", () => {
   assert.ok(!tools.some((t) => Object.keys(t).some((k) => /plan|tier/i.test(k))), "tools.json gained a per-plan field: render it");
-  for (const t of tools) assert.doesNotMatch(read(`tools/${t.domain}/index.html`), /<table/, t.domain);
+  for (const t of tools) {
+    const h = read(`tools/${t.domain}/index.html`);
+    if (QA_DOMAINS.has(t.domain)) assert.match(h, /<table class="plans"/, t.domain);
+    else assert.doesNotMatch(h, /<table/, t.domain);
+  }
 });
 
 test("tool titles ask the question, stay at or under 60 characters, and omit the checked-month", () => {
