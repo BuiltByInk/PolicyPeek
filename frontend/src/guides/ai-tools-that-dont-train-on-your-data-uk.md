@@ -73,7 +73,7 @@ By default, yes, but you can opt out. OpenAI's policy says: "We may use Content 
 
 ### Does Claude train on your data?
 
-On consumer plans (Free, Pro, Max), Claude trains by default unless you opt out in account settings. PolicyPeek recorded that commercial plans don't train by default.
+Anthropic's Privacy Policy says: "We may use your Inputs and Outputs to train and improve Anthropic AI models, unless you opt out through your account settings." For its business offerings, Anthropic's Commercial Terms say: "Anthropic may not train models on Customer Content from Services."
 
 ### Is "doesn't train" the same as "private"?
 
